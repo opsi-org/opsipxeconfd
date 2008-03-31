@@ -1,0 +1,23 @@
+opsipxeconfd (0.2-3) stable; urgency=low
+
+  * postinst script returns 0 if opsipxeconfd init script return error
+
+ -- Jan Schneider <j.schneider@uib.de>  Thu, 15 Nov 2007 13:08:08 +0100
+
+opsipxeconfd (0.2-2) stable; urgency=low
+
+  * Init script modified to return 0 on action start if daemon already running
+
+ -- Jan Schneider <j.schneider@uib.de>  Tue, 13 Nov 2007 10:34:06 +0100
+
+opsipxeconfd (0.2-1) stable; urgency=low
+
+  * Added support for pxe config templates defined in netboot-products
+
+ -- Jan Schneider <j.schneider@uib.de>  Thu,  5 Jul 2007 12:20:39 +0200
+
+opsipxeconfd (0.1-1) stable; urgency=low
+
+  * Debina package created
+
+ -- Jan Schneider <j.schneider@uib.de>  Fri, 27 Apr 2007 10:38:01 +0100

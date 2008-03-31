@@ -1,0 +1,150 @@
+#!/bin/bash
+
+DEBUG_LEVEL=0
+
+command=$1
+hostname=$2
+macaddr=$3
+
+usage() {
+	echo "reinstmgr backwards compatibility wrapper script."
+	echo ""
+	echo "usage: $0 <Optionen>"
+	echo "Optionen:"
+	echo "      version   gibt die aktuelle Versionsnummer aus."
+	echo "      start     startet den daemon und die Prozesse zum Schreiben"
+	echo "                der bootfiles (named pipes)."
+	echo "      stop      beendet die Prozesse zum Schreiben der bootfiles"
+	echo "                und den daemon."
+	echo "      <bootfile> <hostname> [<ethernet adresse>]"
+	echo "                schreibt eine named pipe mit der Hardware Adresse"
+	echo "                des hosts als private Version der angegeben Bootdatei,"
+	echo "                von der der Host das naechste mal bootet."
+	echo "                Wird die Ethernet Adresse mit angegeben, so eird nicht"
+	echo "                versucht diese selbstaendig zu ermitteln."
+	echo "                Dies kann noetig sein, falls ein anderer Server als"
+	echo "                dieser dhcpd-Server spielt."
+	echo "      unset <hostname>"
+	echo "                beim naechsten Booten wird der angegeben Host vom"
+	echo "                Default Bootfile booten."
+	echo "      password <username>"
+	echo "                erstellt einen verschluesselten Eintrag in der Datei"
+	echo "                /etc/opsi/passwd fuer den angegeben Benutzer"
+	echo "                aus dem der Serverprozess das Kennwort"
+	echo "                wiederherstellen kann."
+}
+
+deprecated() {
+	echo "" 1>&2
+	echo "!!! DEPRECATED - PLEASE USE 'opsi-admin' AND 'opsipxeconfd' INSTEAD !!!" 1>&2
+	echo "" 1>&2
+}
+
+deprecated
+
+if [ "$command" = "password" ]; then
+	echo "Deprecated - Please use opsi-admin task setPcpatchPassword instead" 1>&2
+	echo "" 1>&2
+	exit 1
+fi
+
+if [ "$command" = "version" ]; then
+	opsipxeconfd version
+	exit 0
+fi
+
+if [ "$command" = "start" ]; then
+	opsipxeconfd start
+	exit 0
+fi
+
+if [ "$command" = "stop" ]; then
+	opsipxeconfd stop
+	exit 0
+fi
+
+if [ "$command" = "unset" ]; then
+	if [ "$hostname" = "" ]; then
+		echo "Ungueltige Anzahl Argumente fuer \"unset\"." 1>&2
+		usage
+		exit 1
+	fi
+	
+	part=`echo $hostname | cut -d"." -f3`
+	if [ "$part" = "" -o "$part" = "$hostname" ]; then
+		hostname=${hostname}.`hostname -d`
+	fi
+	
+	unsetProductIds=""
+	
+	eval `opsi-admin -l $DEBUG_LEVEL -sd method getNetBootProductIds_list`
+	productIds=( "${RESULT[@]}" )
+	
+	eval `opsi-admin -l $DEBUG_LEVEL -ds method getProductActionRequests_listOfHashes $hostname`
+	for ((i=0; i<${#RESULT[*]}; i++)); do
+		element=( $(eval "echo \${$(echo RESULT${i})[@]}") )
+		eval ${element[0]}
+		eval ${element[1]}
+		[ "$actionRequest" != "setup" ] && continue
+		
+		for ((j=0; j<${#productIds[*]}; j++)); do
+			if [ "${productIds[$j]}" = "$productId" ]; then
+				unsetProductIds="$unsetProductIds $productId"
+			fi
+		done
+	done
+	
+	if [ "$unsetProductIds" = "" ]; then
+		echo "No bootimage was set for $hostname" 1>&2
+		exit 1
+	fi
+	for product in $unsetProductIds; do
+		opsi-admin -l $DEBUG_LEVEL -d method unsetProductActionRequest $product $hostname && echo "Bootimage $product for host $hostname is unset"
+	done
+	
+	exit 0
+fi
+
+if [ "$command" != "" ]; then
+	if [ "$hostname" = "" ]; then
+		echo "Ungueltige Anzahl Argumente." 1>&2
+		usage
+		exit 1
+	fi
+	
+	part=`echo $hostname | cut -d"." -f3`
+	if [ "$part" = "" -o "$part" = "$hostname" ]; then
+		hostname=${hostname}.`hostname -d`
+	fi
+	
+	eval `opsi-admin -l $DEBUG_LEVEL -sd method getNetBootProductIds_list`
+	productIds=( "${RESULT[@]}" )
+	exists=false
+	for ((j=0; j<${#productIds[*]}; j++)); do
+		if [ "${productIds[$j]}" = "$command" ]; then
+			exists=true
+		fi
+	done
+	if [ $exists = false ]; then
+		echo "Unbekanntes Bootimages $command" 1>&2
+		echo "Folgende Bootimages sind bekannt:" 1>&2
+		for ((j=0; j<${#productIds[*]}; j++)); do
+			echo -n "   ${productIds[$j]}" 1>&2
+		done
+		echo "" 1>&2
+		exit 1
+	fi
+	
+	eval `opsi-admin -l $DEBUG_LEVEL -ds method setProductActionRequest $command $hostname setup`
+	pipename=`opsipxeconfd set $hostname | cut -d\' -f 2`
+	if [ "$pipename" = "" ]; then
+		echo "Fehler beim Setzen des bootimages $command fuer $hostname"
+		exit 1
+	fi
+	echo "now writing bootimage winxppro to Pipe $pipename"
+	exit 0
+fi
+
+usage
+
+exit 1
