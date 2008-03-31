@@ -1,0 +1,800 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+"""
+   = = = = = = = = = = = = = = = = = = = = = = = = = = =
+   =   opsipxeconfd                                    =
+   = = = = = = = = = = = = = = = = = = = = = = = = = = =
+   
+   @copyright:	uib - http://www.uib.de - <info@uib.de>
+   @author: Jan Schneider <j.schneider@uib.de>
+   @license: GNU GPL, see COPYING for details.
+"""
+
+__version__ = '0.3'
+
+# Imports
+import os, sys, time, socket, stat, getopt, re, fcntl
+from threading import Thread
+
+# OPSI imports    
+from OPSI.Logger import *
+from OPSI.Backend.BackendManager import BackendManager
+
+logger = Logger()
+logLevel = LOG_WARNING
+logger.setConsoleLevel(logLevel)
+logger.setConsoleFormat('(%l) %D %M (%F|%N)')
+logger.setConsoleColor(True)
+
+configFile = '/etc/opsi/opsipxeconfd.conf'
+
+PORT = '/var/run/opsipxeconfd.socket'
+
+class OpsiPXEConfd:
+	def __init__(self, port):
+		self.port = port
+		self.configFile = configFile
+		self.logLevel = logLevel
+		self.pidFile = '/var/run/opsipxeconfd.pid'
+		self.logFile = '/var/log/opsi/opsipxeconfd.log'
+		self.logFormat = '(%l) %D %M (%F|%N)'
+		self.pxeDir = '/tftpboot/linux/pxelinux.cfg'
+		self.pxeConfTemplate = '/tftpboot/linux/pxelinux.cfg/install'
+		self.backendManagerConf = '/etc/opsi/backendManager.d'
+		self.maxConnections = 5
+		self.maxPxeConfigWriters = 100
+		self.daemon = False
+		
+		(name, aliaslist, addresslist) = socket.gethostbyname_ex(socket.gethostname())
+		if ( len(name.split('.')) > 1 ):
+			self.fqdn = name
+		else:
+			raise Exception("Failed to get my own fully qualified domainname")
+		
+		self.readConfigFile()
+		
+		self._controlConnections = []
+		self._pxeConfigWriters = []
+		self._startupBootimageSetter = None
+	
+	def readConfigFile(self):
+		''' Get settings from config file '''
+		if not self.configFile:
+			logger.warning("Cannot read config file, config file not given")
+			return
+		
+		logger.notice("Trying to read config from file: '%s'" % self.configFile)
+		
+		try:
+			config = open(self.configFile)
+			for line in config.readlines():
+				line = line.strip()
+				if not line or line.startswith('#') or line.startswith(';'):
+					continue
+				if (line.find('=') == -1):
+					logger.error('Parse error: %s' % line)
+				(option, value) = line.split('=', 1)
+				option = option.strip()
+				value = value.strip()
+				
+				if   (option.lower() == 'bm config'):
+					self.backendManagerConf = value
+					logger.debug("bm config: %s" % self.backendManagerConf)
+				elif (option.lower() == 'pid file'):
+					self.pidFile = value
+					logger.debug("pid file: %s" % self.pidFile)
+				elif (option.lower() == 'log level'):
+					self.logLevel = int(value)
+					logger.debug("log level: %s" % self.logLevel)
+				elif (option.lower() == 'log file'):
+					self.logFile = value
+					logger.debug("log file: %s" % self.logFile)
+				elif (option.lower() == 'log format'):
+					self.logFormat = value
+					logger.debug("log format: %s" % self.logFormat)
+				elif (option.lower() == 'pxe config dir'):
+					self.pxeDir = value
+					logger.debug("pxe config dir: %s" % self.pxeDir)
+				elif (option.lower() == 'pxe config template'):
+					self.pxeConfTemplate = value
+					logger.debug("pxe config template: %s" % self.pxeConfTemplate)
+				elif (option.lower() == 'max pxe config writers'):
+					self.maxPxeConfigWriters = int(value)
+					logger.debug("max pxe config writers: %s" % self.maxPxeConfigWriters)
+				elif (option.lower() == 'max control connections'):
+					self.maxConnections = int(value)
+					logger.debug("max control connections: %s" % self.maxConnections)
+				else:
+					logger.warning("Ignoring unknown option '%s' in config file: '%s'" \
+							% (option, self.configFile))
+			
+		
+		except Exception, e:
+			# An error occured while trying to read the config file
+			raise Exception("Failed to read config file '%s': %s" % (self.configFile, e))
+		
+		self.initLogging()
+		
+	def initLogging(self):
+		if self.logFile:
+			logger.setLogFile(self.logFile)
+			logger.setFileLevel(self.logLevel)
+		else:
+			logger.setLogFile(None)
+			logger.setSyslogLevel(self.logLevel)
+		
+		if not self.daemon:
+			logger.setConsoleLevel(self.logLevel)
+		
+		logger.setLogFormat(self.logFormat)
+	
+	def daemonize(self):
+		pid = 0
+		
+		# Fork to allow the shell to return and to call setsid
+		try:
+			pid = os.fork()
+			if (pid > 0):
+				# Parent exits
+				sys.exit(0)
+		except OSError, e:
+			raise Exception("First fork failed: %e" % e)
+		
+		# Do not hinder umounts
+		os.chdir("/")
+		# Create a new session
+		os.setsid()
+		
+		# Fork a second time to not remain session leader
+		try:
+			pid = os.fork()
+			if (pid > 0):
+				sys.exit(0)
+		except OSError, e:
+			raise Exception("Second fork failed: %e" % e)
+		
+		logger.setConsoleLevel(LOG_NONE)
+		
+		# Close standard output and standard error.
+		os.close(0)
+		os.close(1)
+		os.close(2)
+		
+		# Open standard input (0)
+		if (hasattr(os, "devnull")):
+			os.open(os.devnull, os.O_RDWR)
+		else:
+			os.open("/dev/null", os.O_RDWR)
+		
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
+		sys.stdout = logger.getStdout()
+		sys.stderr = logger.getStderr()
+		
+		f = open(self.pidFile, 'w')
+		print >> f, os.getpid()
+		f.close()
+		
+		self.daemon = True
+		logger.setConsoleLevel(LOG_NONE)
+	
+	def run(self):
+		logger.notice("opsipxeconfd starting on server '%s'" % self.fqdn)
+		self.running = True
+		self.backend = BackendManager(authRequired = False, configFile = self.backendManagerConf)
+		self.backend.authenticated()
+		logger.info("Setting needed boot configurations")
+		self._startupBootimageSetter = StartupBootimageSetter(self)
+		self._startupBootimageSetter.start()
+		self.createSocket()
+		while self.running:
+			self.getConnection()
+			#time.sleep(1)
+	
+	def status(self):
+		logger.notice("Getting opsipxeconfd status")
+		result = 'opsipxeconfd status:\n'
+		result += '%s control connection(s) established\n' % len(self._controlConnections)
+		for i in range(len(self._controlConnections)):
+			result += '    Connection %s established at %s\n' \
+				% (i+1, time.asctime(time.localtime(self._controlConnections[i].startTime)))
+		
+		result += '\n%s boot configuration(s) set\n' % len(self._pxeConfigWriters)
+		for pcw in self._pxeConfigWriters:
+			result += "    Boot config for client '%s', args %s, path '%s' set at %s\n" \
+				% (	pcw.hostId,
+					pcw.args,
+					pcw.pxefile,
+					time.asctime(time.localtime(pcw.startTime) ))
+		logger.notice(result)
+		return result
+	
+	def stop(self, cc = None):
+		logger.notice("Opsipxeconfd is going down")
+		self.running = False
+		
+		if self._startupBootimageSetter and self._startupBootimageSetter.isAlive():
+			logger.notice("Stopping startup bootimage setter...")
+			self._startupBootimageSetter.stop()
+			while self._startupBootimageSetter.isAlive():
+				time.sleep(0.1)
+		
+		logger.notice("Stopping control connections...")
+		for t in self._controlConnections:
+			if not cc or (t != cc):
+				t.stop()
+		if cc:
+			self._controlConnections = [ cc ]
+		else:
+			self._controlConnections = []
+		
+		logger.notice("Stopping PXE config writers...")
+		for t in self._pxeConfigWriters:
+			t.stop()
+		self._pxeConfigWriters = []
+		
+		if os.path.exists(self.pidFile):
+			os.unlink(self.pidFile)
+		
+	def createSocket(self):
+		return self.createUnixSocket()
+		
+	def createUnixSocket(self):
+		logger.notice("Creating unix socket '%s'" % self.port)
+		if os.path.exists(self.port):
+			os.unlink(self.port)
+		self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+		#self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		try:
+			self._socket.bind(self.port)
+		except Exception, e:
+			raise Exception("Failed to bind to socket '%s': %s" % (self.port, e))
+		self._socket.settimeout(0.1)
+		self._socket.listen(self.maxConnections)
+		
+		mode = os.stat(self.port)[0]
+		os.chmod(self.port, mode | stat.S_IROTH | stat.S_IWOTH)
+		
+	def getConnection(self):
+		#logger.debug("getConnection()")
+		addr = None
+		sock = None
+		try:
+			(sock, addr) = self._socket.accept()
+		except socket.error, e:
+			if (e.args[0] == 'timed out' or e.args[0] == 11):
+				return
+			raise
+		logger.notice("Got connection from '%s'" % addr)
+		logger.info("Creating thread for connection %s" % len(self._controlConnections))
+		cc = ControlConnection(self, sock, self.clientConnectionCallback)
+		self._controlConnections.append(cc)
+		cc.start()
+	
+	def setBootConfiguration(self, hostId, args={}):
+		logger.info("Setting PXE boot configuration for host %s" % hostId)
+		
+		if (len(self._pxeConfigWriters) >= self.maxPxeConfigWriters):
+			raise Exception("Maximum number (%s) of PXE config writers reached." % self.maxPxeConfigWriters)
+		
+		if (len(hostId.split('.')) < 2):
+			try:
+				domain = '.'.join(socket.getfqdn().split('.')[1:])
+				logger.debug("OS reports '%s' as domain" % domain)
+				hostId = '%s.%s' % (hostId, domain)
+			except Exception, e:
+				raise Exception("Failed to get fqdn for host '%s': %s" % (hostId, e))
+		
+		for pcw in self._pxeConfigWriters:
+			if (pcw.hostId == hostId):
+				logger.warning("PXE config for host '%s' was already set @ %s, resetting." \
+					% (hostId, time.asctime(time.localtime(pcw.startTime))) )
+				self.unsetBootConfiguration(hostId)
+				break
+		
+		try:
+			host = self.backend.getHost_hash(hostId)
+		except Exception, e:
+			raise Exception("Host '%s' not found" % hostId)
+		
+		# Get opsiHostKey
+		args['pckey'] = self.backend.getOpsiHostKey(hostId)
+		
+		# Get netboot product from args
+		productId = args.get('product')
+		
+		netbootProducts = self.backend.getInstallableNetBootProductIds_list(hostId)
+		if productId and productId not in netbootProducts:
+			raise Exception("Failed to set PXE boot configuration for host '%s': product '%s' not available" \
+													% (hostId, productId))
+		if not productId:
+			# Get netboot product from action request
+			productIds = []
+			for actionRequest in self.backend.getProductActionRequests_listOfHashes(hostId):
+				logger.debug("Action '%s' is set for product '%s', host '%s'" \
+						% (actionRequest.get('actionRequest'), actionRequest.get('productId'), hostId) )
+				if actionRequest.get('productId') not in netbootProducts:
+					logger.info( "Skipping product '%s', not a netboot product" \
+							%  actionRequest.get('productId') )
+					continue
+				if not actionRequest.get('actionRequest').startswith('setup'):
+					logger.info( "Skipping product '%s', action request '%s'" \
+							% (actionRequest.get('actionRequest'), actionRequest.get('productId')) )
+					continue
+				productIds.append(actionRequest.get('productId'))
+			
+			if (len(productIds) > 0):
+				if (len(productIds) > 1):
+					logger.warning("More than one product set to setup: %s, using '%s'" \
+						% (', '.join(productIds), productIds[0]) )
+				productId = productIds[0]
+			else:
+				raise Exception("Failed to set PXE boot configuration for host '%s': Action request 'setup' not set for any netboot product" % hostId)
+		
+		#if not productId:
+		#	# Get netboot product from installation status
+		#	productIds = []
+		#	for installationStatus in self.backend.getProductInstallationStatus_listOfHashes(hostId):
+		#		if installationStatus.get('productId') not in netbootProducts:
+		#			continue
+		#		if installationStatus.get('actionRequest') not in ['installed']:
+		#			continue
+		#		productIds.append(installationStatus.get('productId'))
+		#	
+		#	if (len(productIds) > 0):
+		#		if (len(productIds) > 1):
+		#			logger.warning("More than one netboot product is installed: %s, using '%s'" \
+		#				% (', '.join(productIds), productIds[0]) )
+		#		productId = productIds[0]
+		#	else:
+		#		logger.info("Installation status 'installed' not set for any netboot product")
+		#
+		#if not productId:
+		#	# Get default netboot product
+		#	productId = self.backend.getDefaultNetBootProductId(hostId)
+		#
+		#if not productId:
+		#	raise Exception("Failed to set PXE boot configuration for host '%s': failed to get default netboot product" % hostId)
+			
+		
+		args['product'] = productId
+		
+		# Get pxe config template
+		product = self.backend.getProduct_hash(productId)
+		pxeConfigTemplate = product.get('pxeConfigTemplate')
+		if not pxeConfigTemplate:
+			pxeConfigTemplate = self.pxeConfTemplate
+		else:
+			if not os.path.isabs(pxeConfigTemplate):
+				# Not an absolute path
+				pxeConfigTemplate = os.path.join( os.path.dirname(self.pxeConfTemplate), pxeConfigTemplate )
+			logger.notice("Special pxe config template '%s' will be used used for host '%s', product '%s'" \
+										% (pxeConfigTemplate, hostId, productId))
+		if not os.path.exists(pxeConfigTemplate):
+			raise Exception("pxe config template '%s' does not exist" % pxeConfigTemplate)
+		
+		# Get name for PXE config file
+		pxeConfigName = ''
+		try:
+			macs = self.backend.getMacAddresses_list(hostId)
+			logger.debug("Got hardware addresses %s for host '%s'" % (macs, hostId))
+			if not macs:
+				raise Exception("no hardware address in database")
+			mac = macs[0]
+			mac = mac.replace('-','')
+			mac = mac.replace(':','')
+			pxeConfigName = "01-%s-%s-%s-%s-%s-%s" % (mac[0:2],mac[2:4],mac[4:6],mac[6:8],mac[8:10],mac[10:12])
+		except Exception, e:
+			logger.warning("Failed to get hardware address for host '%s': %s" % (hostId, e))
+		
+		if not pxeConfigName:
+			try:
+				ip = self.backend.getIpAddress(hostId)
+				logger.debug("Got ip address '%s' for client '%s'" % (ip, hostId))
+				pxeConfigName = '%02X%02X%02X%02X' % tuple( map( lambda i:int(i), ip.split('.') ) )
+			except Exception, e:
+				logger.warning("Failed to get ip address for host '%s': %s" % (hostId, e))
+				raise Exception("Neither hardware address nor ip address known for host '%s'" % hostId)
+		
+		pxefile = os.path.join(self.pxeDir, pxeConfigName)
+		pcw = PXEConfigWriter(pxeConfigTemplate, hostId, args, pxefile, self.pxeConfigWriterCallback)
+		logger.info("Creating thread for pxeconfig %s" % len(self._pxeConfigWriters))
+		self._pxeConfigWriters.append(pcw)
+		pcw.start()
+		
+		logger.notice("PXE boot configuration for host %s is now set at '%s' %s" % (hostId, pxefile, args))
+		return "PXE boot configuration for host %s is now set at '%s' %s" % (hostId, pxefile, args)
+		
+	def unsetBootConfiguration(self, hostId):
+		logger.info("Unsetting bootimage for host '%s'" % hostId)
+		if (len(hostId.split('.')) < 2):
+			try:
+				domain = '.'.join(socket.getfqdn().split('.')[1:])
+				logger.debug("OS reports '%s' as domain" % domain)
+				hostId = '%s.%s' % (hostId, domain)
+			except Exception, e:
+				raise Exception("Failed to get fqdn for host '%s': %s" % (hostId, e))
+		
+		for i in range(len(self._pxeConfigWriters)):
+			pcw = self._pxeConfigWriters[i]
+			if (pcw.hostId == hostId):
+				del self._pxeConfigWriters[i]
+				pcw.stop()
+				while pcw.isAlive():
+					time.sleep(0.1)
+				logger.notice("Bootimage for host '%s' is unset" % hostId)
+				return '%s is unset.' % hostId
+		
+		logger.warning('no bootimage was set for %s' % hostId)
+		return '%s is unset.' % hostId
+	
+	def clientConnectionCallback(self, cc):
+		dt = round(time.time() - cc.startTime, 5)
+		logger.info("ClientConnection '%s' finished (time: %ss)" % (cc.getName(), dt))
+		
+		num = -1
+		for i in range(len(self._controlConnections)):
+			if (self._controlConnections[i] == cc):
+				num = i
+		
+		if (num < 0):
+			logger.critical("Failed to remove connection")
+		else:
+			del self._controlConnections[num]
+			logger.debug("Connection removed")
+	
+	def pxeConfigWriterCallback(self, pcw):
+		dt = round(time.time() - pcw.startTime, 5)
+		logger.info("PXEConfigWriter '%s' finished (time: %ss)" % (pcw.getName(), dt))
+		
+		num = -1
+		for i in range(len(self._pxeConfigWriters)):
+			if (self._pxeConfigWriters[i] == pcw):
+				num = i
+		
+		if (num < 0):
+			logger.critical("Failed to remove PXE config writer")
+		else:
+			del self._pxeConfigWriters[num]
+			logger.debug("PXE config writer removed")
+		
+		productId = pcw.args.get('product')
+		if productId:
+			if (pcw.templatefile != self.pxeConfTemplate):
+				logger.info("Special pxe config template was used for host '%s', product '%s'" % (pcw.hostId, productId))
+				logger.info("Unsetting action request for host '%s', product '%s'" % (pcw.hostId, productId))
+				self.backend.unsetProductActionRequest(productId, pcw.hostId)
+			else:
+				logger.info("Setting action request for host '%s', product '%s' to 'start_install'" % (pcw.hostId, productId))
+				self.backend.setProductActionRequest(productId, pcw.hostId, 'start_install')
+		else:
+			logger.error("Failed to get product id from pxeConfigWriter")
+	
+
+class StartupBootimageSetter(Thread):
+	def __init__(self, opsipxeconfd):
+		Thread.__init__(self)
+		self._opsipxeconfd = opsipxeconfd
+		self._running = False
+	
+	def isAlive(self):
+		# Overwrite method isAlive()
+		return self._running
+	
+	def run(self):
+		self._running = True
+		# TODO: use setup_by_policy too ?
+		try:
+			for productId in self._opsipxeconfd.backend.getProductIds_list(productType = 'netboot'):
+				if not self._running:
+					logger.info("Interrupted while setting needed boot configurations")
+					return
+				for clientId in self._opsipxeconfd.backend.getClientIds_list(serverId = self._opsipxeconfd.fqdn, productId = productId, actionRequest = 'setup'):
+					if not self._running:
+						logger.info("Interrupted while setting needed boot configurations")
+						return
+					logger.notice("Action request for product '%s', client '%s' is 'setup', setting PXE boot config" \
+								% (productId, clientId))
+					try:
+						self._opsipxeconfd.setBootConfiguration(clientId, { "product": productId } )
+					except Exception, e:
+						logger.error("Failed to set PXE boot config for client '%s': %s" % (clientId, e))
+			logger.info("Finished setting needed boot configurations")
+		except Exception, e:
+			logger.logException(e)
+			self._running = False
+			self._opsipxeconfd.stop()
+	
+	def stop(self):
+		self._running = False
+
+class PXEConfigWriter(Thread):
+	def __init__(self, templatefile, hostId, args, pxefile, callback = None):
+		Thread.__init__(self)
+		self.templatefile = templatefile
+		self.args = args
+		self.hostId = hostId
+		self.pxefile = pxefile
+		self.startTime = time.time()
+		self._callback = callback
+		self._pipe = None
+		
+		# Set pxe config content
+		self.content = ''
+		f = open(self.templatefile)
+		for line in f.readlines():
+			line = line.rstrip()
+			if line.lstrip().startswith('append'):
+				append = { 'hn': hostId.split('.')[0] }
+				for value in line.strip().split()[1:]:
+					(k, v) = ('', '')
+					if (value.find('=') == -1):
+						k = value
+					else:
+						(k, v) = value.split('=', 1)
+					append[k] = v
+				for (k,v) in self.args.items():
+					append[k] = v
+				
+				append[k] = v
+				
+				line = line.split('append')[0] + 'append'
+				for (k,v) in append.items():
+					line += ' %s' % k
+					if v: line += '=%s' % v
+				
+			self.content += line + '\n'
+		f.close()
+		
+		if args.has_key('pckey'):
+			del self.args['pckey']
+		
+		if os.path.exists(self.pxefile):
+			os.unlink(self.pxefile)
+		os.mkfifo(self.pxefile)
+		os.chmod(self.pxefile, 0644)
+		
+	def run(self):
+		self._running = True
+		pipeOpenend = False
+		while self._running and not pipeOpenend:
+			try:
+				self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
+				pipeOpenend = True
+			except Exception, e:
+				if (e.errno != 6):
+					raise
+				time.sleep(1)
+		
+		logger.notice("Pipe '%s' opened, piping pxe boot configuration" % self.pxefile)
+		
+		if pipeOpenend:
+			os.write(self._pipe, self.content)
+			os.close(self._pipe)
+		
+		if os.path.exists(self.pxefile):
+			os.unlink(self.pxefile)
+		
+		if pipeOpenend and self._callback:
+				self._callback(self)
+		
+	def stop(self):
+		self._running = False
+	
+class ControlConnection(Thread):
+	def __init__ (self, opsipxeconfd, socket, callback = None):
+		Thread.__init__(self)
+		self._opsipxeconfd = opsipxeconfd
+		self._socket = socket
+		self._callback = callback
+		self.startTime = time.time()
+	
+	def run(self):
+		self._running = True
+		self._socket.settimeout(1.0)
+		
+		cmd = self._socket.recv(4096)
+		cmd = cmd.strip()
+		logger.info('Got command: %s' % cmd)
+		
+		result = self._processCommand(cmd)
+		logger.info("Returning result %s" % result)
+		
+		try:
+			self._socket.send(result)
+		except Exception, e:
+			logger.warning(e)
+		
+		self._socket.close()
+		
+		if self._running and self._callback:
+			self._callback(self)
+	
+	def stop(self):
+		self._running = False
+		if self._socket:
+			self._socket.close()
+		
+	def _processCommand(self, cmd):
+		
+		cp = cmd.split()
+		
+		if (cp[0] == 'stop'):
+			self._opsipxeconfd.stop(self)
+			return 'opsipxeconfd is going down'
+		
+		if (cp[0] == 'status'):
+			return self._opsipxeconfd.status()
+		
+		elif (cp[0] =='unset'):
+			if (len(cp) != 2):
+				return "(ERROR) bad arguments for command 'unset'"
+			hostId = cp[1]
+			
+			try:
+				return self._opsipxeconfd.unsetBootConfiguration(hostId)
+			except Exception, e:
+				logger.logException(e)
+				return "(ERROR): %s" % e
+		
+		elif (cp[0] =='set'):
+			if (len(cp) < 2):
+				return "(ERROR) bad arguments for command 'set'"
+			hostId = cp[1]
+			args = {}
+			if (len(cp) > 2):
+				for value in cp[2:]:
+					(k, v) = ('', '')
+					if (value.find('=') == -1):
+						k = value
+					else:
+						(k, v) = value.split('=', 1)
+					args[k] = v
+			try:
+				return self._opsipxeconfd.setBootConfiguration(hostId, args)
+			except Exception, e:
+				logger.logException(e)
+				logger.error(e)
+				return "(ERROR): %s" % e
+			
+	
+class ServerConnection:
+	def __init__(self, port):
+		self.port = port
+	
+	def createUnixSocket(self):
+		logger.notice("Creating unix socket '%s'" % self.port)
+		self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+		self._socket.settimeout(5.0)
+		try:
+			self._socket.connect(self.port)
+		except Exception, e:
+			raise Exception("Failed to connect to socket '%s': %s" % (self.port, e))
+	
+	def sendCommand(self, cmd):
+		self.createUnixSocket()
+		self._socket.send(cmd)
+		result = None
+		try:
+			result = self._socket.recv(4096)
+		except Exception, e:
+			raise Exception("Failed to receive: %s" % e)
+		self._socket.close()
+		if result.startswith('(ERROR)'):
+			raise Exception("Command '%s' failed: %s" % (cmd, result))
+		return result
+		
+
+
+def usage():
+	print "\nUsage: %s [options] <command> [clientId] [args]..." % os.path.basename(sys.argv[0])
+	print "Commands:"
+	print "  version         Show version information and exit"
+	print "  start           Start main process"
+	print "  stop            Stop main process"
+	print "  status          Print status information of the main process"
+	print "  set             Set PXE boot configuration for client"
+	print "  unset           Unset PXE boot configuration of client"
+	print "Options:"
+	print "  -F, --no-fork   Do not fork to background"
+	print "  -c, --conffile  Location of config file"
+	print "  -l, --loglevel  Set log level (default: 3)"
+	print "                  0=nothing, 1=critical, 2=error, 3=warning, 4=notice, 5=info, 6=debug"
+	print ""
+
+def signalHandler(signo, stackFrame):
+	
+	if (signo == SIGHUP) and opsipxeconfd:
+		logger.notice("Got signal %s, reloading config..." % signo)
+		opsipxeconfd.readConfigFile()
+	
+	if (signo == SIGTERM or signo == SIGINT):
+		logger.notice("Got signal %s, exiting..." % signo)
+		if opsipxeconfd:
+			opsipxeconfd.stop()
+	
+
+def main(argv):
+	global logger
+	global opsipxeconfd
+	global logLevel
+	global configFile
+	opsipxeconfd = None
+	daemon = True
+	
+	# Set umask
+	os.umask(0077)
+	
+	# Process command line arguments
+	try:
+		(opts, args) = getopt.getopt(argv, "Fl:c:", [ "no-fork", "loglevel=", "conffile=" ])
+	
+	except getopt.GetoptError:
+		usage()
+		sys.exit(1)
+	
+	for (opt, arg) in opts:
+		if opt in ("-F", "--no-fork"):
+			daemon = False
+		if opt in ("-l", "--loglevel"):
+			logLevel = int(arg)
+			logger.setConsoleLevel(logLevel)
+		if opt in ("-c", "--conffile"):
+			configFile = arg
+	
+	if (len(args) < 1):
+		usage()
+		sys.exit(1)
+	
+	if (args[0] == 'version'):
+		print __version__
+		sys.exit(0)
+	
+	elif (args[0] == 'start'):
+		opsipxeconfd = OpsiPXEConfd(PORT)
+		if daemon:
+			opsipxeconfd.daemonize()
+		opsipxeconfd.run()
+	
+	else:
+		con = ServerConnection(PORT)
+		result = con.sendCommand(' '.join(args))
+		if result:
+			if result.startswith('(ERROR)'):
+				print >> sys.stderr, result
+				sys.exit(1)
+			print >> sys.stdout, result
+			sys.exit(0)
+		else:
+			sys.exit(1)
+
+
+if (__name__ == "__main__"):
+	if (os.name == 'posix'):
+		from signal import *
+		# Call signalHandler on signal SIGHUP, SIGTERM, SIGINT
+		signal(SIGHUP, signalHandler)
+		signal(SIGTERM, signalHandler)
+		signal(SIGINT, signalHandler)
+	
+	exception = None
+	
+	try:
+		main(sys.argv[1:])
+	
+	except SystemExit, e:
+		pass
+		
+	except Exception, e:
+		exception = e
+	
+	if exception:
+		logger.logException(exception)
+		print >> sys.stderr, "ERROR:", str(exception)
+		sys.exit(1)
+	
+	sys.exit(0)
+	
+	
+

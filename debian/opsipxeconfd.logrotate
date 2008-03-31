@@ -1,0 +1,10 @@
+/var/log/opsi/opsipxeconfd.log {
+    daily
+    missingok
+    rotate 1
+    extension old
+    compress
+    notifempty
+    create 640 root opsiadmin
+}
+
