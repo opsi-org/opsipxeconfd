@@ -1,3 +1,9 @@
+opsipxeconfd (0.3.1-1) stable; urgency=low
+
+  * adpated for multidepot
+
+ -- Jan Schneider <j.schneider@uib.de>  Tue,  1 Apr 2008 11:56:01 +0200
+
 opsipxeconfd (0.2-3) stable; urgency=low
 
   * postinst script returns 0 if opsipxeconfd init script return error
