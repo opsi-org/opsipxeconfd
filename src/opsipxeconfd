@@ -10,7 +10,7 @@
    @license: GNU GPL, see COPYING for details.
 """
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 # Imports
 import os, sys, time, socket, stat, getopt, re, fcntl
@@ -300,6 +300,14 @@ class OpsiPXEConfd:
 		
 		# Get opsiHostKey
 		args['pckey'] = self.backend.getOpsiHostKey(hostId)
+		
+		# Get nextBootServiceUrl
+		nextBootServiceURL = self.backend.getNetworkConfig_hash(hostId).get('nextBootServiceURL', '')
+		if nextBootServiceURL:
+			try:
+				args['service'] = nextBootServiceURL.split('/')[2].split(':')[0]
+			except Exception, e:
+				logger.error("Bad nextBootServiceURL '%s'" % nextBootServiceURL)
 		
 		# Get netboot product from args
 		productId = args.get('product')
