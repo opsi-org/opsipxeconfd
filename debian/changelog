@@ -1,3 +1,9 @@
+opsipxeconfd (0.3.2-1) stable; urgency=low
+
+  * writing nextBootServiceURL to kernel command line (service=)
+
+ -- Jan Schneider <j.schneider@uib.de>  Tue, 13 May 2008 10:39:46 +0200
+
 opsipxeconfd (0.3.1-1) stable; urgency=low
 
   * adpated for multidepot
