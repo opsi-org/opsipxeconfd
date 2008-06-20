@@ -10,7 +10,7 @@
    @license: GNU GPL, see COPYING for details.
 """
 
-__version__ = '0.3.2'
+__version__ = '0.3.3'
 
 # Imports
 import os, sys, time, socket, stat, getopt, re, fcntl
@@ -320,7 +320,7 @@ class OpsiPXEConfd:
 			# Get netboot product from action request
 			productIds = []
 			for actionRequest in self.backend.getProductActionRequests_listOfHashes(hostId):
-				logger.debug("Action '%s' is set for product '%s', host '%s'" \
+				logger.info("Action '%s' is set for product '%s', host '%s'" \
 						% (actionRequest.get('actionRequest'), actionRequest.get('productId'), hostId) )
 				if actionRequest.get('productId') not in netbootProducts:
 					logger.info( "Skipping product '%s', not a netboot product" \
@@ -492,22 +492,21 @@ class StartupBootimageSetter(Thread):
 	
 	def run(self):
 		self._running = True
-		# TODO: use setup_by_policy too ?
 		try:
-			for productId in self._opsipxeconfd.backend.getProductIds_list(productType = 'netboot'):
-				if not self._running:
-					logger.info("Interrupted while setting needed boot configurations")
-					return
-				for clientId in self._opsipxeconfd.backend.getClientIds_list(depotId = self._opsipxeconfd.fqdn, productId = productId, actionRequest = 'setup'):
+			netbootProductIds = self._opsipxeconfd.backend.getProductIds_list(productType = 'netboot', objectId = self._opsipxeconfd.fqdn)
+			for clientId in self._opsipxeconfd.backend.getClientIds_list(depotId = self._opsipxeconfd.fqdn):
+				for actionRequest in self._opsipxeconfd.backend.getProductActionRequests_listOfHashes(clientId):
 					if not self._running:
 						logger.info("Interrupted while setting needed boot configurations")
 						return
-					logger.notice("Action request for product '%s', client '%s' is 'setup', setting PXE boot config" \
-								% (productId, clientId))
-					try:
-						self._opsipxeconfd.setBootConfiguration(clientId, { "product": productId } )
-					except Exception, e:
-						logger.error("Failed to set PXE boot config for client '%s': %s" % (clientId, e))
+					if actionRequest['actionRequest'] in ['setup'] and actionRequest['productId'] in netbootProductIds:
+						productId = actionRequest['productId']
+						logger.notice("Action request for product '%s', client '%s' is 'setup', setting PXE boot config" \
+									% (productId, clientId))
+						try:
+							self._opsipxeconfd.setBootConfiguration(clientId, { "product": productId } )
+						except Exception, e:
+							logger.error("Failed to set PXE boot config for client '%s': %s" % (clientId, e))
 			logger.info("Finished setting needed boot configurations")
 		except Exception, e:
 			logger.logException(e)
