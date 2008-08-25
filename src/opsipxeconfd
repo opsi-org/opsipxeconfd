@@ -10,7 +10,7 @@
    @license: GNU GPL, see COPYING for details.
 """
 
-__version__ = '0.3.3'
+__version__ = '0.3.4'
 
 # Imports
 import os, sys, time, socket, stat, getopt, re, fcntl
@@ -23,7 +23,7 @@ from OPSI.Backend.BackendManager import BackendManager
 logger = Logger()
 logLevel = LOG_WARNING
 logger.setConsoleLevel(logLevel)
-logger.setConsoleFormat('(%l) %D %M (%F|%N)')
+logger.setConsoleFormat('[%l] [%D] %M (%F|%N)')
 logger.setConsoleColor(True)
 
 configFile = '/etc/opsi/opsipxeconfd.conf'
@@ -37,7 +37,7 @@ class OpsiPXEConfd:
 		self.logLevel = logLevel
 		self.pidFile = '/var/run/opsipxeconfd.pid'
 		self.logFile = '/var/log/opsi/opsipxeconfd.log'
-		self.logFormat = '(%l) %D %M (%F|%N)'
+		self.logFormat = '[%l] [%D] %M (%F|%N)'
 		self.pxeDir = '/tftpboot/linux/pxelinux.cfg'
 		self.pxeConfTemplate = '/tftpboot/linux/pxelinux.cfg/install'
 		self.backendManagerConf = '/etc/opsi/backendManager.d'
