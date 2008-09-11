@@ -63,7 +63,7 @@ binary-indep-stamp:
 	# Install logrotate config files
 	dh_installlogrotate
 	# Install init scripts into package build directories
-	dh_installinit --init-script=opsipxeconfd
+	dh_installinit --init-script=opsipxeconfd -u"defaults 80 20"
 	# Install files into the DEBIAN directory
 	dh_installdeb
 	# Generate DEBIAN/md5sums file
