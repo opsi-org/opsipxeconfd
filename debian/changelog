@@ -1,3 +1,27 @@
+opsipxeconfd (0.3.4-2) stable; urgency=low
+
+  * changed init
+
+ -- Jan Schneider <j.schneider@uib.de>  Thu, 11 Sep 2008 10:03:19 +0200
+
+opsipxeconfd (0.3.4-1) stable; urgency=low
+
+  * changed default logging format
+
+ -- Jan Schneider <j.schneider@uib.de>  Mon, 25 Aug 2008 15:29:41 +0200
+
+opsipxeconfd (0.3.3-1) stable; urgency=low
+
+  * improved performance on setting initial boot configuration
+
+ -- Jan Schneider <j.schneider@uib.de>  Fri, 20 Jun 2008 19:18:48 +0200
+
+opsipxeconfd (0.3.2-1) stable; urgency=low
+
+  * writing nextBootServiceURL to kernel command line (service=)
+
+ -- Jan Schneider <j.schneider@uib.de>  Tue, 13 May 2008 10:39:46 +0200
+
 opsipxeconfd (0.3.1-1) stable; urgency=low
 
   * adpated for multidepot
