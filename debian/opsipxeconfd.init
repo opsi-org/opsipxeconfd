@@ -70,18 +70,16 @@ case "$1" in
 		else
 			echo "(not running)."
 		fi
-			
 		;;
 	status)
 		echo -n "Checking status of opsi pxe configuration service...   "
 		
 		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
-			echo
-			$DAEMON status
-		else
-			echo "(not running)."
+			echo "(running)."
+			exit 0
 		fi
-			
+		echo "(not running)."
+		exit 1
 		;;
 	reload)
 		echo -n "Reloading opsi pxe configuration service...   "
@@ -92,7 +90,6 @@ case "$1" in
 		else
 			echo "(not running)."
 		fi
-		
 		;;
 	restart|force-reload)
 		$0 stop
