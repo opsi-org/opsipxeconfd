@@ -19,9 +19,11 @@ PIDFILE=$PIDDIR/opsipxeconfd.pid
 
 # See if the binary is there
 if [ ! -x $DAEMON ]; then
-	echo Binary \"${DAEMON}\" not found or not executable!
-	exit 1
+	echo "$DAEMON not installed"
+	[ "$1" = "stop" ] && exit 0
+	exit 5
 fi
+
 
 case "$1" in
 	start)
@@ -72,7 +74,7 @@ case "$1" in
 		fi
 		;;
 	status)
-		echo -n "Checking status of opsi pxe configuration service...   "
+		echo -n "Checking opsi pxe configuration service...   "
 		
 		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
 			echo "(running)."
