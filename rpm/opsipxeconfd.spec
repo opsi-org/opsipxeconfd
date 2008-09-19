@@ -7,7 +7,7 @@
 #
 
 Name:           opsipxeconfd
-Requires:       opsi-atftpd python-opsi opsi-linux-bootimage
+Requires:       opsi-atftp python-opsi opsi-linux-bootimage
 PreReq:         %insserv_prereq
 Url:            http://www.opsi.org
 License:        GPL v2 or later
