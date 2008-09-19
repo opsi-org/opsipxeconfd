@@ -19,6 +19,7 @@ Summary:        OPSI PXE configuration daemon
 %define tarname opsipxeconfd
 Source:         %{tarname}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+BuildArch:      noarch
 %{py_requires}
 
 # ===[ description ]================================
