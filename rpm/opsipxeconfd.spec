@@ -43,10 +43,12 @@ This package contains the OPSI PXE configuration daemon.
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
 mkdir -p $RPM_BUILD_ROOT/etc/opsi
 mkdir -p $RPM_BUILD_ROOT/etc/init.d
+mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 install -m 0755 src/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/
 install -m 0644 files/opsipxeconfd.conf $RPM_BUILD_ROOT/etc/opsi/
 install -m 0755 debian/opsipxeconfd.init $RPM_BUILD_ROOT/etc/init.d/opsipxeconfd
+install -m 0644 debian/opsipxeconfd.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/opsipxeconfd
 ln -sf ../../etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 
 # ===[ clean ]======================================
@@ -84,6 +86,7 @@ fi
 # configfiles
 %config(noreplace) /etc/opsi/opsipxeconfd.conf
 %attr(0755,root,root) %config /etc/init.d/opsipxeconfd
+%config /etc/logrotate.d/opsipxeconfd
 
 # other files
 %attr(0755,root,root) /usr/sbin/opsipxeconfd
