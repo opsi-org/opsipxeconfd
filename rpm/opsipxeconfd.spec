@@ -57,13 +57,16 @@ rm -rf $RPM_BUILD_ROOT
 
 # ===[ post ]=======================================
 %post
-%{fillup_and_insserv opsipxeconfd}
+#%{fillup_and_insserv opsipxeconfd}
+insserv opsipxeconfd
 
 # update?
 if [ ${FIRST_ARG:-0} -gt 1 ]; then
 	if [ -e /var/run/opsipxeconfd.pid ]; then
 		/etc/init.d/opsipxeconfd restart
 	fi
+else
+	/etc/init.d/opsipxeconfd start
 fi
 
 # ===[ preun ]======================================
