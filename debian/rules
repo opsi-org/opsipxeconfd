@@ -2,14 +2,7 @@
 
 build: build-arch build-indep
 
-build-arch: build24-stamp build-stamp
-	
-build24-stamp:
-	rm -f build24-stamp
-	rm -Rf debian/tmp24 || true
-	mkdir debian/tmp24
-	cat src/opsipxeconfd | sed 's/#!\/usr\/bin\/python/#!\/usr\/bin\/python2.4/' > debian/tmp24/opsipxeconfd
-	touch build24-stamp
+build-arch: build-stamp
 
 build-stamp:
 
@@ -29,19 +22,11 @@ build-indep-stamp:
 
 clean:
 	rm -f *-stamp
-	rm -Rf debian/tmp24 || true
 	rm -f debian/files || true
 
 binary: binary-arch binary-indep
 
-binary-arch: build-arch binary24-stamp binary-stamp
-
-binary24-stamp:
-	# Create subdirectories in package build directories
-	install -m 0755 debian/tmp24/opsipxeconfd debian/opsipxeconfd-python2.4/usr/sbin/
-	install -m 0755 src/reinstmgr debian/opsipxeconfd-python2.4/usr/sbin/
-	install -m 0644 files/opsipxeconfd.conf debian/opsipxeconfd-python2.4/etc/opsi/
-	rm -Rf debian/tmp24 || true
+binary-arch: build-arch binary-stamp
 
 binary-stamp:
 	# Create subdirectories in package build directories
