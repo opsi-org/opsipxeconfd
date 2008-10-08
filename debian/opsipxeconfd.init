@@ -1,8 +1,14 @@
 #!/bin/sh
 #
-# Starts/stops opsi pxe configuration service (opsipxeconfd)
-#
-#
+### BEGIN INIT INFO
+# Provides:          opsipxeconfd
+# Required-Start:    $network $local_fs
+# Required-Stop:     $network $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: opsi pxe config service
+# Description:       Opsi PXE Configuration Service
+### END INIT INFO
 
 DAEMON=/usr/sbin/opsipxeconfd
 USER=root
@@ -13,9 +19,11 @@ PIDFILE=$PIDDIR/opsipxeconfd.pid
 
 # See if the binary is there
 if [ ! -x $DAEMON ]; then
-	echo Binary \"${DAEMON}\" not found or not executable!
-	exit 1
+	echo "$DAEMON not installed"
+	[ "$1" = "stop" ] && exit 0
+	exit 5
 fi
+
 
 case "$1" in
 	start)
@@ -64,18 +72,16 @@ case "$1" in
 		else
 			echo "(not running)."
 		fi
-			
 		;;
 	status)
-		echo -n "Checking status of opsi pxe configuration service...   "
+		echo -n "Checking opsi pxe configuration service...   "
 		
 		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
-			echo
-			$DAEMON status
-		else
-			echo "(not running)."
+			echo "(running)."
+			exit 0
 		fi
-			
+		echo "(not running)."
+		exit 1
 		;;
 	reload)
 		echo -n "Reloading opsi pxe configuration service...   "
@@ -86,7 +92,6 @@ case "$1" in
 		else
 			echo "(not running)."
 		fi
-		
 		;;
 	restart|force-reload)
 		$0 stop
