@@ -63,10 +63,10 @@ insserv opsipxeconfd
 # update?
 if [ ${FIRST_ARG:-0} -gt 1 ]; then
 	if [ -e /var/run/opsipxeconfd.pid ]; then
-		/etc/init.d/opsipxeconfd restart
+		/etc/init.d/opsipxeconfd restart || true
 	fi
 else
-	/etc/init.d/opsipxeconfd start
+	/etc/init.d/opsipxeconfd start || true
 fi
 
 # ===[ preun ]======================================
