@@ -10,13 +10,13 @@
    @license: GNU GPL, see COPYING for details.
 """
 
-__version__ = '0.3.4'
+__version__ = '0.3.5'
 
 # Imports
 import os, sys, time, socket, stat, getopt, re, fcntl
 from threading import Thread
 
-# OPSI imports    
+# OPSI imports
 from OPSI.Logger import *
 from OPSI.Backend.BackendManager import BackendManager
 
@@ -311,6 +311,7 @@ class OpsiPXEConfd:
 		
 		# Get netboot product from args
 		productId = args.get('product')
+		actionRequest = args.get('action')
 		
 		netbootProducts = self.backend.getInstallableNetBootProductIds_list(hostId)
 		if productId and productId not in netbootProducts:
@@ -318,27 +319,25 @@ class OpsiPXEConfd:
 													% (hostId, productId))
 		if not productId:
 			# Get netboot product from action request
-			productIds = []
-			for actionRequest in self.backend.getProductActionRequests_listOfHashes(hostId):
-				logger.info("Action '%s' is set for product '%s', host '%s'" \
-						% (actionRequest.get('actionRequest'), actionRequest.get('productId'), hostId) )
-				if actionRequest.get('productId') not in netbootProducts:
-					logger.info( "Skipping product '%s', not a netboot product" \
-							%  actionRequest.get('productId') )
+			actionRequests = []
+			for ar in self.backend.getProductActionRequests_listOfHashes(hostId):
+				if ar.get('productId') not in netbootProducts:
+					logger.debug( "Skipping product '%s', not a netboot product" % ar.get('productId') )
 					continue
-				if not actionRequest.get('actionRequest').startswith('setup'):
-					logger.info( "Skipping product '%s', action request '%s'" \
-							% (actionRequest.get('actionRequest'), actionRequest.get('productId')) )
+				if not ar.get('actionRequest').startswith('setup') and not ar.get('actionRequest').startswith('always'):
+					logger.debug( "Skipping product '%s', action request '%s'" % (ar.get('actionRequest'), ar.get('productId')) )
 					continue
-				productIds.append(actionRequest.get('productId'))
+				logger.info("Action '%s' is set for product '%s', host '%s'" % (ar.get('actionRequest'), ar.get('productId'), hostId) )
+				actionRequests.append(ar)
 			
-			if (len(productIds) > 0):
-				if (len(productIds) > 1):
-					logger.warning("More than one product set to setup: %s, using '%s'" \
-						% (', '.join(productIds), productIds[0]) )
-				productId = productIds[0]
+			if (len(actionRequests) > 0):
+				if (len(actionRequests) > 1):
+					logger.warning("More than one netboot product action request set: %s, using product '%s'" \
+						% (', '.join(actionRequests), actionRequests[0].get('productId')) )
+				productId = actionRequests[0].get('productId')
+				actionRequest = actionRequests[0].get('actionRequest')
 			else:
-				raise Exception("Failed to set PXE boot configuration for host '%s': Action request 'setup' not set for any netboot product" % hostId)
+				raise Exception("Failed to set PXE boot configuration for host '%s': Action request 'setup' or 'always' not set for any netboot product" % hostId)
 		
 		#if not productId:
 		#	# Get netboot product from installation status
@@ -364,9 +363,10 @@ class OpsiPXEConfd:
 		#
 		#if not productId:
 		#	raise Exception("Failed to set PXE boot configuration for host '%s': failed to get default netboot product" % hostId)
-			
+		
 		
 		args['product'] = productId
+		args['action'] = actionRequest
 		
 		# Get pxe config template
 		product = self.backend.getProduct_hash(productId)
@@ -476,6 +476,9 @@ class OpsiPXEConfd:
 			else:
 				logger.info("Setting action request for host '%s', product '%s' to 'start_install'" % (pcw.hostId, productId))
 				self.backend.setProductActionRequest(productId, pcw.hostId, 'start_install')
+			if pcw.args.get('action', '').startswith('always'):
+				logger.info("Setting action request for host '%s', product '%s' to '%s' again" % (pcw.hostId, productId, pcw.args.get('action')))
+				self.backend.setProductActionRequest(productId, pcw.hostId, pcw.args.get('action'))
 		else:
 			logger.error("Failed to get product id from pxeConfigWriter")
 	
@@ -499,12 +502,12 @@ class StartupBootimageSetter(Thread):
 					if not self._running:
 						logger.info("Interrupted while setting needed boot configurations")
 						return
-					if actionRequest['actionRequest'] in ['setup'] and actionRequest['productId'] in netbootProductIds:
+					if actionRequest['actionRequest'] in ['setup', 'always'] and actionRequest['productId'] in netbootProductIds:
 						productId = actionRequest['productId']
-						logger.notice("Action request for product '%s', client '%s' is 'setup', setting PXE boot config" \
-									% (productId, clientId))
+						logger.notice("Action request for product '%s', client '%s' is '%s', setting PXE boot config" \
+									% (productId, clientId, actionRequest['actionRequest']))
 						try:
-							self._opsipxeconfd.setBootConfiguration(clientId, { "product": productId } )
+							self._opsipxeconfd.setBootConfiguration(clientId, { "product": productId, "action": actionRequest['actionRequest'] } )
 						except Exception, e:
 							logger.error("Failed to set PXE boot config for client '%s': %s" % (clientId, e))
 			logger.info("Finished setting needed boot configurations")
@@ -583,7 +586,7 @@ class PXEConfigWriter(Thread):
 			os.unlink(self.pxefile)
 		
 		if pipeOpenend and self._callback:
-				self._callback(self)
+			self._callback(self)
 		
 	def stop(self):
 		self._running = False
