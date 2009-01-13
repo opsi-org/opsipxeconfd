@@ -13,8 +13,8 @@ Url:            http://www.opsi.org
 License:        GPL v2 or later
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        0.3.5
-Release:        2
+Version:        0.3.6
+Release:        1
 Summary:        OPSI PXE configuration daemon
 %define tarname opsipxeconfd
 Source:         %{tarname}-%{version}.tar.bz2
