@@ -76,7 +76,10 @@ fi
 # ===[ postun ]=====================================
 %postun
 %restart_on_update opsipxeconfd
-%insserv_cleanup
+if [ $1 -eq 0 ]; then
+	%insserv_cleanup
+fi
+
 
 # ===[ files ]======================================
 %files
