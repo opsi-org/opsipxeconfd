@@ -8,7 +8,7 @@ Standards-Version: 3.6.1
 Package: opsipxeconfd
 Section: opsi
 Architecture: all
-Depends: opsi-atftpd, python-opsi | python2.3-opsi | python2.4-opsi, opsi-linux-bootimage
+Depends: opsi-atftpd, python-opsi (>=3.3.1), opsi-linux-bootimage
 Replaces: opsi-reinstmgr
 Conflicts: opsi-reinstmgr
 Provides: opsi-reinstmgr

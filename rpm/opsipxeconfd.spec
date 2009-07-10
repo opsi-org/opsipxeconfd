@@ -13,8 +13,8 @@ Url:            http://www.opsi.org
 License:        GPL v2 or later
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        0.3.4
-Release:        2
+Version:        0.3.7
+Release:        1
 Summary:        OPSI PXE configuration daemon
 %define tarname opsipxeconfd
 Source:         %{tarname}-%{version}.tar.bz2
@@ -76,7 +76,10 @@ fi
 # ===[ postun ]=====================================
 %postun
 %restart_on_update opsipxeconfd
-%insserv_cleanup
+if [ $1 -eq 0 ]; then
+	%insserv_cleanup
+fi
+
 
 # ===[ files ]======================================
 %files
