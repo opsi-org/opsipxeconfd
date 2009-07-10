@@ -1,3 +1,9 @@
+opsipxeconfd (0.3.7-1) stable; urgency=high
+
+  * Speedup in multi-depot environment
+
+ -- Jan Schneider <j.schneider@uib.de>  Fri, 10 Jul 2009 16:42:54 +0200
+
 opsipxeconfd (0.3.6-1) stable; urgency=low
 
   * Adapted to python-opsi >= 3.3.1

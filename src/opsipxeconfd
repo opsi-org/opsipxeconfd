@@ -10,7 +10,7 @@
    @license: GNU GPL, see COPYING for details.
 """
 
-__version__ = '0.3.6'
+__version__ = '0.3.7'
 
 # Imports
 import os, sys, time, socket, stat, getopt, re, fcntl
@@ -22,6 +22,7 @@ from OPSI.Backend.BackendManager import BackendManager
 
 logger = Logger()
 logLevel = LOG_WARNING
+logLevelOpt = False
 logger.setConsoleLevel(logLevel)
 logger.setConsoleFormat('[%l] [%D] %M (%F|%N)')
 logger.setConsoleColor(True)
@@ -84,8 +85,9 @@ class OpsiPXEConfd:
 					self.pidFile = value
 					logger.debug("pid file: %s" % self.pidFile)
 				elif (option.lower() == 'log level'):
-					self.logLevel = int(value)
-					logger.debug("log level: %s" % self.logLevel)
+					if not logLevelOpt:
+						self.logLevel = int(value)
+						logger.debug("log level: %s" % self.logLevel)
 				elif (option.lower() == 'log file'):
 					self.logFile = value
 					logger.debug("log file: %s" % self.logFile)
@@ -498,7 +500,7 @@ class StartupBootimageSetter(Thread):
 		try:
 			netbootProductIds = self._opsipxeconfd.backend.getProductIds_list(productType = 'netboot', objectId = self._opsipxeconfd.fqdn)
 			for clientId in self._opsipxeconfd.backend.getClientIds_list(depotIds = [ self._opsipxeconfd.fqdn ]):
-				for actionRequest in self._opsipxeconfd.backend.getProductActionRequests_listOfHashes(clientId):
+				for actionRequest in self._opsipxeconfd.backend.getProductActionRequests_listOfHashes(clientId, options = {'processPriorities': False, 'processDependencies': False}):
 					if not self._running:
 						logger.info("Interrupted while setting needed boot configurations")
 						return
@@ -728,6 +730,7 @@ def main(argv):
 	global logger
 	global opsipxeconfd
 	global logLevel
+	global logLevelOpt
 	global configFile
 	opsipxeconfd = None
 	daemon = True
@@ -747,6 +750,7 @@ def main(argv):
 		if opt in ("-F", "--no-fork"):
 			daemon = False
 		if opt in ("-l", "--loglevel"):
+			logLevelOpt = True
 			logLevel = int(arg)
 			logger.setConsoleLevel(logLevel)
 		if opt in ("-c", "--conffile"):
