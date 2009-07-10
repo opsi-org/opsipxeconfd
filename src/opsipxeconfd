@@ -322,7 +322,7 @@ class OpsiPXEConfd:
 		if not productId:
 			# Get netboot product from action request
 			actionRequests = []
-			for ar in self.backend.getProductActionRequests_listOfHashes(hostId):
+			for ar in self.backend.getProductActionRequests_listOfHashes(hostId, options = {'processPriorities': False, 'processDependencies': False}):
 				if ar.get('productId') not in netbootProducts:
 					logger.debug( "Skipping product '%s', not a netboot product" % ar.get('productId') )
 					continue
