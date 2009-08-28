@@ -13,7 +13,7 @@
 DAEMON=/usr/sbin/opsipxeconfd
 USER=root
 LOGFILE=/var/log/opsi/opsipxeconfd.log
-PIDDIR=/var/run
+PIDDIR=/var/run/opsipxeconfd
 PIDFILE=$PIDDIR/opsipxeconfd.pid
 
 

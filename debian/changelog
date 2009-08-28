@@ -1,3 +1,28 @@
+opsipxeconfd (0.3.8-1) stable; urgency=high
+
+  * Moved pid file to /var/run/opsipxeconfd/opsipxeconfd.pid
+  * Moved socket to /var/run/opsipxeconfd/opsipxeconfd.socket
+
+ -- Jan Schneider <j.schneider@uib.de>  Fri, 28 Aug 2009 15:12:00 +0200
+
+opsipxeconfd (0.3.7-1) stable; urgency=high
+
+  * Speedup in multi-depot environment
+
+ -- Jan Schneider <j.schneider@uib.de>  Fri, 10 Jul 2009 16:42:54 +0200
+
+opsipxeconfd (0.3.6-1) stable; urgency=low
+
+  * Adapted to python-opsi >= 3.3.1
+
+ -- Jan Schneider <j.schneider@uib.de>  Tue, 13 Jan 2009 17:18:38 +0100
+
+opsipxeconfd (0.3.5-1) stable; urgency=low
+
+  * allowing action request "always" for netboot products (thanks to wardenik)
+
+ -- Jan Schneider <j.schneider@uib.de>  Thu, 18 Dec 2008 13:50:54 +0100
+
 opsipxeconfd (0.3.4-2) stable; urgency=low
 
   * changed init
