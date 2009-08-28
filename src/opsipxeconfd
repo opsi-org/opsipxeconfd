@@ -236,6 +236,8 @@ class OpsiPXEConfd:
 			t.stop()
 		self._pxeConfigWriters = []
 		
+		if os.path.exists(self.port):
+			os.unlink(self.port)
 		if os.path.exists(self.pidFile):
 			os.unlink(self.pidFile)
 		
