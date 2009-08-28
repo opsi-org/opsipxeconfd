@@ -70,6 +70,9 @@ else
 	/etc/init.d/opsipxeconfd start || true
 fi
 
+# Moved to /var/run/opsipxeconfd/opsipxeconfd.socket
+rm '/var/run/opsipxeconfd.socket' >/dev/null 2>&1 || true
+
 # ===[ preun ]======================================
 %preun
 %stop_on_removal opsipxeconfd
