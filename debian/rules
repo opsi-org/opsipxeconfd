@@ -31,7 +31,6 @@ binary-arch: build-arch binary-stamp
 binary-stamp:
 	# Create subdirectories in package build directories
 	install -m 0755 src/opsipxeconfd debian/opsipxeconfd/usr/sbin/
-	install -m 0755 src/reinstmgr debian/opsipxeconfd/usr/sbin/
 	install -m 0644 files/opsipxeconfd.conf debian/opsipxeconfd/etc/opsi/
 
 binary-indep: build-indep binary-indep-stamp

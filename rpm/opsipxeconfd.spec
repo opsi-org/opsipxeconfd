@@ -13,8 +13,8 @@ Url:            http://www.opsi.org
 License:        GPL v2 or later
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        0.3.4
-Release:        2
+Version:        3.4.99
+Release:        1
 Summary:        OPSI PXE configuration daemon
 %define tarname opsipxeconfd
 Source:         %{tarname}-%{version}.tar.bz2
@@ -62,12 +62,16 @@ insserv opsipxeconfd
 
 # update?
 if [ ${FIRST_ARG:-0} -gt 1 ]; then
-	if [ -e /var/run/opsipxeconfd.pid ]; then
+	if [ -e /var/run/opsipxeconfd.pid -o -e /var/run/opsipxeconfd/opsipxeconfd.pid ]; then
+		rm /var/run/opsipxeconfd.pid
 		/etc/init.d/opsipxeconfd restart || true
 	fi
 else
 	/etc/init.d/opsipxeconfd start || true
 fi
+
+# Moved to /var/run/opsipxeconfd/opsipxeconfd.socket
+rm '/var/run/opsipxeconfd.socket' >/dev/null 2>&1 || true
 
 # ===[ preun ]======================================
 %preun
@@ -76,7 +80,10 @@ fi
 # ===[ postun ]=====================================
 %postun
 %restart_on_update opsipxeconfd
-%insserv_cleanup
+if [ $1 -eq 0 ]; then
+	%insserv_cleanup
+fi
+
 
 # ===[ files ]======================================
 %files

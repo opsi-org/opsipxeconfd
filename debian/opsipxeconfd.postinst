@@ -10,3 +10,6 @@ if [ -x "/etc/init.d/opsipxeconfd" ]; then
 	fi
 fi
 
+# Moved to /var/run/opsipxeconfd/opsipxeconfd.socket
+rm '/var/run/opsipxeconfd.socket' >/dev/null 2>&1 || true
+
