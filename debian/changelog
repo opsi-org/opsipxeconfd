@@ -1,3 +1,9 @@
+opsipxeconfd (3.4.99-1) stable; urgency=low
+
+  * Ported to opsi 3.5
+
+ -- Jan Schneider <j.schneider@uib.de>  Mon, 25 Jan 2010 13:13:28 +0200
+
 opsipxeconfd (0.3.8-1) stable; urgency=high
 
   * Moved pid file to /var/run/opsipxeconfd/opsipxeconfd.pid
