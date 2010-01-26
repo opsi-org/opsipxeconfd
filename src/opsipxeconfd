@@ -62,7 +62,7 @@ class Opsipxeconfd(threading.Thread):
 		self._pxeConfigWritersLock = threading.Lock()
 		self._clientConnections = []
 		self._pxeConfigWriters = []
-		self._startupBootimageSetter = None
+		self._startupTask = None
 		
 		self._setOpsiLogging()
 		logger.comment(	"\n==================================================================\n" \
@@ -78,6 +78,9 @@ class Opsipxeconfd(threading.Thread):
 	
 	def stop(self):
 		logger.notice(u"Stopping opsipxeconfd main thread")
+		if self._startupTask:
+			self._startupTask.stop()
+			self._startupTask.join(10)
 		try:
 			self._socket.close()
 		except Exception, e:
@@ -108,6 +111,7 @@ class Opsipxeconfd(threading.Thread):
 			extensionConfigDir    = self.config['extensionConfigDir'],
 			#aclFile            = self.config['aclFile']
 		)
+		self._backend.backend_setOptions({ 'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True })
 	
 	def _createSocket(self):
 		return self._createUnixSocket()
@@ -159,6 +163,9 @@ class Opsipxeconfd(threading.Thread):
 		logger.notice(u"Starting opsipxeconfd main thread")
 		try:
 			self._createBackendInstance()
+			logger.info("Setting needed boot configurations")
+			self._startupTask = StartupTask(self)
+			self._startupTask.start()
 			self._createSocket()
 			while self._running:
 				self._getConnection()
@@ -191,20 +198,18 @@ class Opsipxeconfd(threading.Thread):
 			logger.error(u"Failed to remove PXE config writer: %s" % e)
 		self._pxeConfigWritersLock.release()
 		
-		#gotAlways = False
+		gotAlways = False
 		for i in range(len(pcw.productOnClients)):
 			pcw.productOnClients[i].setActionProgress(u'pxe boot configuration read')
-			#if (pcw.templatefile != self.config['pxeConfTemplate']):
-			#
-			#if (pcw.productOnClients[i].getActionRequest() == u'always'):
-			#	#gotAlways = True
-			#	pcw.productOnClients[i].setActionRequest(u'always')
-			#else:
-			#	pcw.productOnClients[i].setActionRequest(u'none')
+			if (pcw.templatefile != self.config['pxeConfTemplate']):
+				pcw.productOnClients[i].setActionRequest(u'none')
+			
+			if (pcw.productOnClients[i].getActionRequest() == u'always'):
+				gotAlways = True
 		
-		#if gotAlways:
-		#	self.updateBootConfiguration(pcw.hostId)
 		self._backend.productOnClient_updateObjects(pcw.productOnClients)
+		if gotAlways:
+			self.updateBootConfiguration(pcw.hostId)
 		
 	def status(self):
 		logger.notice(u"Getting opsipxeconfd status")
@@ -268,13 +273,22 @@ class Opsipxeconfd(threading.Thread):
 				raise Exception(u"Host '%s' not found" % hostId)
 			host = host[0]
 			
-			# Get pxe config template
-			pxeConfigTemplate = None
+			newProductOnClients = []
 			for poc in productOnClients:
 				if not self._backend.productOnDepot_getObjects(productId = poc.productId, depotId = self.config['depotId']):
 					logger.info(u"Product %s not available on depot '%s'" % (poc.productId, self.config['depotId']))
 					continue
-				
+				newProductOnClients.append(poc)
+			productOnClients = newProductOnClients
+			
+			if not productOnClients:
+				return u'Boot configuration updated'
+			
+			self._backend.backend_setOptions({ 'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True })
+			
+			# Get pxe config template
+			pxeConfigTemplate = None
+			for poc in productOnClients:
 				product = self._backend.product_getObjects(
 					id             = poc.productId,
 					productVersion = poc.productVersion,
@@ -312,21 +326,20 @@ class Opsipxeconfd(threading.Thread):
 				raise Exception(u"Neither hardware address nor ip address known for host '%s'" % hostId)
 			pxefile = os.path.join(self.config['pxeDir'], pxeConfigName)
 			
-			# Get config service id
-			serviceUrl = u''
-			configState = self._backend.configState_getObjects(objectId = hostId, configId = 'clientconfig.configserver.url')
-			if configState:
-				serviceUrl = configState[0].getValues()[0]
-			
 			# Append arguments
 			append = {
 				'pckey':   host.getOpsiHostKey(),
-				'service': serviceUrl,
 				'hn':      hostId.split('.')[0],
 				'dn':      u'.'.join(hostId.split('.')[1:]),
 			}
 			if append['pckey']:
 				logger.addConfidentialString(append['pckey'])
+			
+			# Get config service id
+			append['service'] = u''
+			configStates = self._backend.configState_getObjects(objectId = hostId, configId = 'clientconfig.configserver.url')
+			if configStates:
+				append['service'] = configStates[0].getValues()[0]
 			
 			# Get additional bootimage append params
 			configStates = self._backend.configState_getObjects(objectId = hostId, configId = 'opsi-linux-bootimage.append.*')
@@ -334,10 +347,19 @@ class Opsipxeconfd(threading.Thread):
 				key = configState.configId.replace(u'opsi-linux-bootimage.append.', u'')
 				append[key] = u','.join(configState.getValues())
 			
+			# Get product property states
+			productPropertyStates = {}
+			productIds = []
+			for poc in productOnClients:
+				productIds.append(poc.productId)
+			if productIds:
+				for pps in self._backend.productPropertyState_getObjects(objectId = hostId, productId = productIds):
+					productPropertyStates[pps.propertyId] = u','.join(pps.getValues())
+			
 			pcw = None
 			try:
 				logger.info(u"Creating thread for pxeconfig %s" % (len(self._pxeConfigWriters)+1))
-				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, pxefile, self.pxeConfigWriterCallback)
+				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback)
 				self._pxeConfigWritersLock.acquire()
 				self._pxeConfigWriters.append(pcw)
 				self._pxeConfigWritersLock.release()
@@ -358,7 +380,53 @@ class Opsipxeconfd(threading.Thread):
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-# =                                    CLASS CLIENTCONNECTION                                         =
+# =                                       CLASS STARTUPTASK                                           =
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+class StartupTask(threading.Thread):
+	def __init__(self, opsipxeconfd):
+		threading.Thread.__init__(self)
+		self._opsipxeconfd = opsipxeconfd
+		self._running = False
+		self._stop = False
+		
+	def run(self):
+		self._running = True
+		try:
+			logger.notice(u"Start setting needed boot configurations")
+			
+			clientIds = []
+			for clientToDepot in self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds = [ self._opsipxeconfd.config['depotId'] ]):
+				clientIds.append(clientToDepot['clientId'])
+			
+			productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(
+				productType   = u'NetbootProduct',
+				clientId      = clientIds,
+				actionRequest = [ 'setup', 'uninstall', 'update', 'always', 'once', 'custom' ]
+			)
+			
+			clientIds = []
+			for poc in productOnClients:
+				if not poc.clientId in clientIds:
+					clientIds.append(poc.clientId)
+			
+			for clientId in clientIds:
+				if self._stop:
+					return
+				try:
+					self._opsipxeconfd.updateBootConfiguration(clientId)
+				except Exception, e:
+					logger.error(u"Failed to update PXE boot config for client '%s': %s" % (clientId, e))
+			
+			logger.notice(u"Finished setting needed boot configurations")
+		except Exception, e:
+			logger.logException(e)
+		self._running = False
+		
+	def stop(self):
+		self._stop = True
+	
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+# =                                     CLASS PXECONFIGWRITER                                         =
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 class PXEConfigWriter(threading.Thread):
 	def _fillPlaceholders(string, backend, context = {}):
@@ -381,10 +449,11 @@ class PXEConfigWriter(threading.Thread):
 				
 		return string
 		
-	def __init__(self, templatefile, hostId, productOnClients, append, pxefile, callback = None):
+	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback = None):
 		threading.Thread.__init__(self)
 		self.templatefile = templatefile
 		self.append = append
+		self.productPropertyStates = productPropertyStates
 		self.hostId = hostId
 		self.productOnClients = productOnClients
 		self.pxefile = pxefile
@@ -402,6 +471,8 @@ class PXEConfigWriter(threading.Thread):
 		f = codecs.open(self.templatefile, 'r', 'utf-8')
 		for line in f.readlines():
 			line = line.rstrip()
+			for (propertyId, value) in self.productPropertyStates.items():
+				line = line.replace(u'%%%s%%' % propertyId, value)
 			if line.lstrip().startswith(u'append'):
 				append = { 'hn': hostId.split('.')[0] }
 				for value in line.strip().split()[1:]:
