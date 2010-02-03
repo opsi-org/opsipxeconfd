@@ -318,7 +318,7 @@ class Opsipxeconfd(threading.Thread):
 			pxeConfigName = ''
 			if host.getHardwareAddress():
 				logger.debug(u"Got hardware address '%s' for host '%s'" % (host.getHardwareAddress(), hostId))
-				pxeConfigName = u"01-%s" % host.getHardwareAddress()
+				pxeConfigName = u"01-%s" % host.getHardwareAddress().replace(u':', u'-')
 			elif host.getIpAddress():
 				logger.warning(u"Failed to get hardware address for host '%s', using ip address '%s'" % (hostId, host.getIpAddress()))
 				pxeConfigName = '%02X%02X%02X%02X' % tuple( map( lambda i:int(i), host.getIpAddress().split('.') ) )
@@ -398,25 +398,26 @@ class StartupTask(threading.Thread):
 			for clientToDepot in self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds = [ self._opsipxeconfd.config['depotId'] ]):
 				clientIds.append(clientToDepot['clientId'])
 			
-			productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(
-				productType   = u'NetbootProduct',
-				clientId      = clientIds,
-				actionRequest = [ 'setup', 'uninstall', 'update', 'always', 'once', 'custom' ]
-			)
-			
-			clientIds = []
-			for poc in productOnClients:
-				if not poc.clientId in clientIds:
-					clientIds.append(poc.clientId)
-			
-			for clientId in clientIds:
-				if self._stop:
-					return
-				try:
-					self._opsipxeconfd.updateBootConfiguration(clientId)
-				except Exception, e:
-					logger.error(u"Failed to update PXE boot config for client '%s': %s" % (clientId, e))
-			
+			if clientIds:
+				productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(
+					productType   = u'NetbootProduct',
+					clientId      = clientIds,
+					actionRequest = [ 'setup', 'uninstall', 'update', 'always', 'once', 'custom' ]
+				)
+				
+				clientIds = []
+				for poc in productOnClients:
+					if not poc.clientId in clientIds:
+						clientIds.append(poc.clientId)
+				
+				for clientId in clientIds:
+					if self._stop:
+						return
+					try:
+						self._opsipxeconfd.updateBootConfiguration(clientId)
+					except Exception, e:
+						logger.error(u"Failed to update PXE boot config for client '%s': %s" % (clientId, e))
+				
 			logger.notice(u"Finished setting needed boot configurations")
 		except Exception, e:
 			logger.logException(e)
@@ -429,26 +430,6 @@ class StartupTask(threading.Thread):
 # =                                     CLASS PXECONFIGWRITER                                         =
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 class PXEConfigWriter(threading.Thread):
-	def _fillPlaceholders(string, backend, context = {}):
-		placeholderRegex = re.compile('%\[([a-zA-Z]+)\]([a-zA-Z0-9]+){?([^}]*)}?%')
-		match = True
-		while match:
-			match = placeholderRegex.search(string)
-			if match:
-				objectClass = match.group(1)
-				attribute = match.group(2)
-				transformation = match.group(3)
-				Class = None
-				try:
-					Class = eval(objectClass)
-					if not issubclass(Class, BaseObject):
-						raise Exception(u'Not a subclass of BaseObject')
-				except Exception, e:
-					logger.error(u"Object class not found: '%s'" % objectClass)
-					continue
-				
-		return string
-		
 	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback = None):
 		threading.Thread.__init__(self)
 		self.templatefile = templatefile
