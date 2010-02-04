@@ -107,9 +107,7 @@ class Opsipxeconfd(threading.Thread):
 			dispatchConfigFile    = self.config['dispatchConfigFile'],
 			# Avoid loops
 			dispatchIgnoreModules = ['OpsiPXEConfd'],
-			backendConfigDir      = self.config['backendConfigDir'],
-			extensionConfigDir    = self.config['extensionConfigDir'],
-			#aclFile            = self.config['aclFile']
+			backendConfigDir      = self.config['backendConfigDir']
 		)
 		self._backend.backend_setOptions({ 'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True })
 	
@@ -687,8 +685,6 @@ class OpsipxeconfdInit(object):
 			'maxPxeConfigWriters'          : 100,
 			'backendConfigDir'             : u'/etc/opsi/backends',
 			'dispatchConfigFile'           : u'/etc/opsi/backendManager/dispatch.conf',
-			'extensionConfigDir'           : u'/etc/opsi/backendManager/compose.d',
-			'aclFile '                     : u'/etc/opsi/backendManager/acl.conf'
 		}
 	
 	def setCommandlineConfig(self):
@@ -778,6 +774,10 @@ class OpsipxeconfdInit(object):
 					self.config['maxPxeConfigWriters'] = forceInt(value)
 				elif (option == 'max control connections'):
 					self.config['maxConnections'] = forceInt(value)
+				elif (option == 'backend config dir'):
+					self.config['backendConfigDir'] = forceFilename(value)
+				elif (option == 'dispatch config file'):
+					self.config['dispatchConfigFile'] = forceFilename(value)
 				else:
 					logger.warning(u"Ignoring unknown option '%s' in config file: '%s'" % (option, self.config['configFile']))
 	
