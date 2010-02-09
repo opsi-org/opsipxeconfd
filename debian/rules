@@ -32,6 +32,6 @@ binary-indep: install
 	dh_builddeb
 
 binary: binary-indep
-build: binary
+build:
 .PHONY: clean binary-indep binary install build
 
