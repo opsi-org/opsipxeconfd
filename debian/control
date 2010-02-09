@@ -9,8 +9,5 @@ Package: opsipxeconfd
 Section: opsi
 Architecture: all
 Depends: opsi-atftpd, python-opsi (>=3.4.99), opsi-linux-bootimage
-Replaces: opsi-reinstmgr
-Conflicts: opsi-reinstmgr
-Provides: opsi-reinstmgr
-Description: OPSI PXE configuration daemon
- This package contains the OPSI PXE configuration daemon.
+Description: opsi pxe configuration daemon
+ This package contains the opsi pxe configuration daemon.
