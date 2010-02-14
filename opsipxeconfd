@@ -107,7 +107,8 @@ class Opsipxeconfd(threading.Thread):
 			dispatchConfigFile    = self.config['dispatchConfigFile'],
 			# Avoid loops
 			dispatchIgnoreModules = ['OpsiPXEConfd'],
-			backendConfigDir      = self.config['backendConfigDir']
+			backendConfigDir      = self.config['backendConfigDir'],
+			extend                = True
 		)
 		self._backend.backend_setOptions({ 'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True })
 	
