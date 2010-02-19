@@ -324,12 +324,24 @@ class Opsipxeconfd(threading.Thread):
 			else:
 				raise Exception(u"Neither hardware address nor ip address known for host '%s'" % hostId)
 			pxefile = os.path.join(self.config['pxeDir'], pxeConfigName)
-			
+			if os.path.exists(pxefile):
+				for pcw in self._pxeConfigWriters:
+					if (pcw.pxefile == pxefile):
+						if (host.id == pcw.hostId):
+							logger.notice(u"PXE boot configuration '%s' for client '%s' already exists." % (pxefile, host.id))
+							return
+						else:
+							raise Exception(u"PXE boot configuration '%s' already exists. Clients '%s' and '%s' using same address?" \
+									% (pxefile, host.id, pcw.hostId))
+				logger.debug(u"PXE boot configuration '%s' already exists, removing." % pxefile)
+				os.unlink(pxefile)
+				
 			# Append arguments
 			append = {
 				'pckey':   host.getOpsiHostKey(),
 				'hn':      hostId.split('.')[0],
 				'dn':      u'.'.join(hostId.split('.')[1:]),
+				'product': product.id
 			}
 			if append['pckey']:
 				logger.addConfidentialString(append['pckey'])
@@ -339,6 +351,8 @@ class Opsipxeconfd(threading.Thread):
 			configStates = self._backend.configState_getObjects(objectId = hostId, configId = 'clientconfig.configserver.url')
 			if configStates:
 				append['service'] = configStates[0].getValues()[0]
+			if not append['service'].endswith('/rpc'):
+				append['service'] += u'/rpc'
 			
 			# Get additional bootimage append params
 			configStates = self._backend.configState_getObjects(objectId = hostId, configId = 'opsi-linux-bootimage.append.*')
