@@ -814,8 +814,8 @@ class OpsipxeconfdInit(object):
 		print u"Options:"
 		print u"  -F, --no-fork   Do not fork to background"
 		print u"  -c, --conffile  Location of config file"
-		print u"  -l, --loglevel  Set log level (default: 4)"
-		print u"        0=comment, 1=critical, 2=error, 3=warning, 4=notice, 5=info, 6=debug, 7=debug2, 9=confidential"
+		print u"  -l, --loglevel  Set log level (default: 5)"
+		print u"        0=comment, 1=essential, 2=critical, 3=error, 4=warning, 5=notice, 6=info, 7=debug, 8=debug2, 9=confidential"
 		print u""
 	
 	def daemonize(self):
