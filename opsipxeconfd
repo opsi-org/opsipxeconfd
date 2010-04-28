@@ -367,7 +367,7 @@ class Opsipxeconfd(threading.Thread):
 				productIds.append(poc.productId)
 			if productIds:
 				for pps in self._backend.productPropertyState_getObjects(objectId = hostId, productId = productIds):
-					productPropertyStates[pps.propertyId] = u','.join(pps.getValues())
+					productPropertyStates[pps.propertyId] = u','.join(forceUnicodeList(pps.getValues()))
 			
 			pcw = None
 			try:
