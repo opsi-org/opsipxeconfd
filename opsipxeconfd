@@ -355,10 +355,15 @@ class Opsipxeconfd(threading.Thread):
 				append['service'] += u'/rpc'
 			
 			# Get additional bootimage append params
-			configStates = self._backend.configState_getObjects(objectId = hostId, configId = 'opsi-linux-bootimage.append.*')
-			for configState in configStates:
-				key = configState.configId.replace(u'opsi-linux-bootimage.append.', u'')
-				append[key] = u','.join(configState.getValues())
+			configStates = self._backend.configState_getObjects(objectId = hostId, configId = 'opsi-linux-bootimage.append')
+			if configStates:
+				app = u' '.join(forceUnicodeList(configStates[0].getValues()))
+				for option in app.split():
+					keyValue = option.split(u"=")
+					if ( len(keyValue) < 2 ):
+						append[keyValue[0].strip().lower()] = u''
+					 else:
+						append[keyValue[0].strip().lower()] = keyValue[1].strip()
 			
 			# Get product property states
 			productPropertyStates = {}
