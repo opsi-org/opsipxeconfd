@@ -67,7 +67,7 @@ case "$1" in
 		echo -n "Stopping opsi pxe configuration service...   "
 		
 		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
-			$DAEMON stop 2>/dev/null || kill `cat $PIDFILE`
+			$DAEMON stop >/dev/null 2>/dev/null || kill `cat $PIDFILE`
 			echo "(done)."
 		else
 			echo "(not running)."
