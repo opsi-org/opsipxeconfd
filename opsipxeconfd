@@ -32,7 +32,7 @@
    @license: GNU General Public License version 2
 """
 
-__version__ = '3.99'
+__version__ = '3.99.0'
 
 # Imports
 import os, sys, socket, stat, threading, getopt
@@ -348,21 +348,21 @@ class Opsipxeconfd(threading.Thread):
 			
 			# Get config service id
 			append['service'] = u''
-			configStates = self._backend.configState_getObjects(objectId = hostId, configId = 'clientconfig.configserver.url')
+			configStates = self._backend.configState_getObjects(objectId = hostId, configId = u'clientconfig.configserver.url')
 			if configStates:
 				append['service'] = configStates[0].getValues()[0]
-			if not append['service'].endswith('/rpc'):
+			if not append['service'].endswith(u'/rpc'):
 				append['service'] += u'/rpc'
 			
 			# Get additional bootimage append params
-			configStates = self._backend.configState_getObjects(objectId = hostId, configId = 'opsi-linux-bootimage.append')
+			configStates = self._backend.configState_getObjects(objectId = hostId, configId = u'opsi-linux-bootimage.append')
 			if configStates:
 				app = u' '.join(forceUnicodeList(configStates[0].getValues()))
 				for option in app.split():
 					keyValue = option.split(u"=")
 					if ( len(keyValue) < 2 ):
 						append[keyValue[0].strip().lower()] = u''
-					 else:
+					else:
 						append[keyValue[0].strip().lower()] = keyValue[1].strip()
 			
 			# Get product property states
@@ -382,7 +382,7 @@ class Opsipxeconfd(threading.Thread):
 				self._pxeConfigWriters.append(pcw)
 				self._pxeConfigWritersLock.release()
 				pcw.start()
-				logger.notice("PXE boot configuration for host %s is now set at '%s'" % (hostId, pxefile))
+				logger.notice(u"PXE boot configuration for host %s is now set at '%s'" % (hostId, pxefile))
 				return u'Boot configuration updated'
 			except Exception, e:
 				logger.error(u"Failed to create pxe config writer: %s" % e)
