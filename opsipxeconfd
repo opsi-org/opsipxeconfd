@@ -274,9 +274,15 @@ class Opsipxeconfd(threading.Thread):
 			
 			newProductOnClients = []
 			for poc in productOnClients:
-				if not self._backend.productOnDepot_getObjects(productId = poc.productId, depotId = self.config['depotId']):
+				productOnDepot = self._backend.productOnDepot_getObjects(
+						productType = u'NetbootProduct',
+						productId   = poc.productId,
+						depotId     = self.config['depotId'])
+				if not productOnDepot:
 					logger.info(u"Product %s not available on depot '%s'" % (poc.productId, self.config['depotId']))
 					continue
+				poc.productVersion = productOnDepot[0].productVersion
+				poc.packageVersion = productOnDepot[0].packageVersion
 				newProductOnClients.append(poc)
 			productOnClients = newProductOnClients
 			
@@ -289,6 +295,7 @@ class Opsipxeconfd(threading.Thread):
 			pxeConfigTemplate = None
 			for poc in productOnClients:
 				product = self._backend.product_getObjects(
+					type           = u'NetbootProduct',
 					id             = poc.productId,
 					productVersion = poc.productVersion,
 					packageVersion = poc.packageVersion
