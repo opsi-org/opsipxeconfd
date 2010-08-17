@@ -34,7 +34,7 @@
 
 from setuptools import setup, os
 version = None
-f = open("opsipxeconfd")
+f = open("scripts/opsipxeconfd")
 for line in f.readlines():
 	if (line.find('__version__') != -1):
 		version = line.split('=')[1].strip()
@@ -48,7 +48,7 @@ setup(
 	url="http://www.opsi.org",
 	description='The opsi pxe configiration management daemon',
 	#long-description='Long description goes here',
-	packages=['opsipxeconfd'],
+	#packages=['opsipxeconfd'],
 	scripts=['scripts/opsipxeconfd'],
 	data_files=[('/etc/opsi', ['data/etc/opsi/opsipxeconfd.conf']),
 		    ('/etc/init.d', ['data/etc/init.d/opsipxeconfd']),
