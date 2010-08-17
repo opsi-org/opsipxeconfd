@@ -7,15 +7,15 @@
 #
 
 Name:           opsipxeconfd
-Requires:       opsi-atftp python-opsi opsi-linux-bootimage
+Requires:       opsi-atftp python-opsi >= 3.99 opsi-linux-bootimage
 PreReq:         %insserv_prereq
 Url:            http://www.opsi.org
 License:        GPL v2 or later
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        3.4.99
+Version:        3.99
 Release:        1
-Summary:        OPSI PXE configuration daemon
+Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
 Source:         %{tarname}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -24,7 +24,7 @@ BuildArch:      noarch
 
 # ===[ description ]================================
 %description
-This package contains the OPSI PXE configuration daemon.
+This package contains the opsi pxe configuration daemon.
 
 # ===[ debug_package ]==============================
 %debug_package

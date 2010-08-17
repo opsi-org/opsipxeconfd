@@ -32,7 +32,7 @@
    @license: GNU General Public License version 2
 """
 
-__version__ = '3.99.0'
+__version__ = '4.0'
 
 # Imports
 import os, sys, socket, stat, threading, getopt
