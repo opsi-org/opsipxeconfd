@@ -48,7 +48,6 @@ setup(
 	url="http://www.opsi.org",
 	description='The opsi pxe configiration management daemon',
 	#long-description='Long description goes here',
-	#packages=['opsipxeconfd'],
 	scripts=['scripts/opsipxeconfd'],
 	data_files=[('/etc/opsi', ['data/etc/opsi/opsipxeconfd.conf']),
 		    ('/etc/init.d', ['data/etc/init.d/opsipxeconfd']),
