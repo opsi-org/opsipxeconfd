@@ -49,7 +49,7 @@ setup(
 	description='The opsi pxe configiration management daemon',
 	#long-description='Long description goes here',
 	packages=['opsipxeconfd'],
-	scripts=['opsipxeconfd'],
+	scripts=['scripts/opsipxeconfd'],
 	data_files=[('/etc/opsi', ['data/etc/opsi/opsipxeconfd.conf']),
 		    ('/etc/init.d', ['data/etc/init.d/opsipxeconfd']),
 		    ('/etc/logrotate.d/', ['data/etc/logrotate.d/opsipxeconfd.logrotate']),
