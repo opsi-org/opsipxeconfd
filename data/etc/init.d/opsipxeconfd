@@ -10,7 +10,7 @@
 # Description:       Opsi PXE Configuration Service
 ### END INIT INFO
 
-DAEMON=/usr/sbin/opsipxeconfd
+DAEMON=/usr/bin/opsipxeconfd
 USER=root
 LOGFILE=/var/log/opsi/opsipxeconfd.log
 PIDDIR=/var/run/opsipxeconfd
@@ -99,7 +99,7 @@ case "$1" in
 		$0 start
 		;;
 	*)
-		echo "Usage: /etc/init.d/opsiconfd {start|stop|status|reload|restart|force-reload}"
+		echo "Usage: /etc/init.d/opsipxeconfd {start|stop|status|reload|restart|force-reload}"
 		exit 1
 		;;
 esac
