@@ -7,6 +7,7 @@
 #
 
 Name:           opsipxeconfd
+BuildRequires:  python-devel python-setuptools 
 Requires:       opsi-atftp python-opsi >= 3.99 opsi-linux-bootimage
 PreReq:         %insserv_prereq
 Url:            http://www.opsi.org
