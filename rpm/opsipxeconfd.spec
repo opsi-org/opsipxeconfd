@@ -1,7 +1,7 @@
 #
 # spec file for package opsipxeconfd
 #
-# Copyright (c) 2008 uib GmbH.
+# Copyright (c) 2010 uib GmbH.
 # This file and all modifications and additions to the pristine
 # package are under the same license as the package itself.
 #
@@ -13,7 +13,7 @@ Url:            http://www.opsi.org
 License:        GPL v2 or later
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        3.99
+Version:        3.99.0
 Release:        1
 Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
@@ -40,15 +40,8 @@ This package contains the opsi pxe configuration daemon.
 
 # ===[ install ]====================================
 %install
-mkdir -p $RPM_BUILD_ROOT/usr/sbin
-mkdir -p $RPM_BUILD_ROOT/etc/opsi
-mkdir -p $RPM_BUILD_ROOT/etc/init.d
-mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
+python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
-install -m 0755 src/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/
-install -m 0644 files/opsipxeconfd.conf $RPM_BUILD_ROOT/etc/opsi/
-install -m 0755 debian/opsipxeconfd.init $RPM_BUILD_ROOT/etc/init.d/opsipxeconfd
-install -m 0644 debian/opsipxeconfd.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/opsipxeconfd
 ln -sf ../../etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 
 # ===[ clean ]======================================
@@ -58,7 +51,7 @@ rm -rf $RPM_BUILD_ROOT
 # ===[ post ]=======================================
 %post
 #%{fillup_and_insserv opsipxeconfd}
-insserv opsipxeconfd
+insserv opsipxeconfd || true
 
 # update?
 if [ ${FIRST_ARG:-0} -gt 1 ]; then
@@ -86,7 +79,7 @@ fi
 
 
 # ===[ files ]======================================
-%files
+%files -f INSTALLED_FILES
 # default attributes
 %defattr(-,root,root)
 
@@ -108,14 +101,3 @@ fi
 
 # ===[ changelog ]==================================
 %changelog
-* Fri Sep 19 2008 - j.schneider@uib.de
-- created new package
-
-
-
-
-
-
-
-
-
