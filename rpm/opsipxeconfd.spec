@@ -38,11 +38,14 @@ This package contains the opsi pxe configuration daemon.
 
 # ===[ build ]======================================
 %build
+export CFLAGS="$RPM_OPT_FLAGS"
+python setup.py build
 
 # ===[ install ]====================================
 %install
 python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
+mkdir -p $RPM_BUILD_ROOT/usr/sbin
 ln -sf ../../etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 
 # ===[ clean ]======================================
