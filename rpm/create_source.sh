@@ -21,7 +21,7 @@ rm /tmp/${packagename}.spec
 
 test -e $tmpdir && rm -rf $tmpdir
 mkdir $tmpdir
-cp -r opsipxeconfd files ${tmpdir}/
+cp -r setup.py scripts data ${tmpdir}/
 find ${tmpdir} -iname "*.pyc"   -exec rm "{}" \;
 find ${tmpdir} -iname "*.marks" -exec rm "{}" \;
 find ${tmpdir} -iname "*~"      -exec rm "{}" \;
