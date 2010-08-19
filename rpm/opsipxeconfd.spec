@@ -7,7 +7,7 @@
 #
 
 Name:           opsipxeconfd
-BuildRequires:  python-devel python-setuptools 
+BuildRequires:  python-devel python-setuptools
 Requires:       opsi-atftp python-opsi >= 3.99 opsi-linux-bootimage
 PreReq:         %insserv_prereq
 Url:            http://www.opsi.org
@@ -93,7 +93,7 @@ fi
 %config /etc/logrotate.d/opsipxeconfd
 
 # other files
-%attr(0755,root,root) /usr/sbin/opsipxeconfd
+%attr(0755,root,root) /usr/bin/opsipxeconfd
 %attr(0755,root,root) /usr/sbin/rcopsipxeconfd
 
 # directories
