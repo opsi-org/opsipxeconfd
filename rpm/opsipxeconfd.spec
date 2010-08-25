@@ -9,7 +9,6 @@
 Name:           opsipxeconfd
 BuildRequires:  python-devel python-setuptools python-opsi >= 3.99
 Requires:       opsi-atftp python-opsi >= 3.99 opsi-linux-bootimage
-PreReq:         %insserv_prereq
 Url:            http://www.opsi.org
 License:        GPL v2 or later
 Group:          Productivity/Networking/Opsi
@@ -21,7 +20,10 @@ Summary:        opsi pxe configuration daemon
 Source:         %{tarname}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
+%if 0%{?suse_version}
+PreReq:         %insserv_prereq
 %{py_requires}
+%endif
 
 # ===[ description ]================================
 %description
@@ -43,10 +45,14 @@ python setup.py build
 
 # ===[ install ]====================================
 %install
+%if 0%{?suse_version}
 python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
+%else
+python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
+%endif
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
-ln -sf ../../etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
+ln -sf /etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 
 # ===[ clean ]======================================
 %clean
