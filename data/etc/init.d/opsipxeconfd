@@ -35,19 +35,19 @@ case "$1" in
 		# Make sure logfile is writable
 		test -e $LOGFILE && chown -R $USER $LOGFILE
 		
-		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
+		if [ -f $PIDFILE ] && ps h  $(cat $PIDFILE) > /dev/null; then
 			echo ".   (already running)."
 			exit 0
 		else
 			rm -f $PIDFILE 2>/dev/null
-					
+			
 			su - $USER -c "$DAEMON start"
 			
 			running=false
 			i=1
 			while [ "$running" != "true" -a $i -le 10 ]; do
 				echo -n "."
-				if ([ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null); then
+				if ([ -f $PIDFILE ] && ps h $(cat $PIDFILE) > /dev/null); then
 					running=true
 				else
 					sleep 1
@@ -66,7 +66,7 @@ case "$1" in
 	stop)
 		echo -n "Stopping opsi pxe configuration service...   "
 		
-		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
+		if [ -f $PIDFILE ] && ps h  $(cat $PIDFILE) > /dev/null; then
 			$DAEMON stop >/dev/null 2>/dev/null || kill `cat $PIDFILE`
 			echo "(done)."
 		else
@@ -76,7 +76,7 @@ case "$1" in
 	status)
 		echo -n "Checking opsi pxe configuration service...   "
 		
-		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
+		if [ -f $PIDFILE ] && ps h  $(cat $PIDFILE) > /dev/null; then
 			echo "(running)."
 			exit 0
 		fi
@@ -86,16 +86,8 @@ case "$1" in
 	reload)
 		echo -n "Reloading opsi pxe configuration service...   "
 		
-		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
-			set +e
-			which killproc 1>/dev/null 2>/dev/null
-			ret=$?
-			set -e
-			if [ "$ret" = "0" ]; then
-				killproc -p $PIDFILE -HUP $DAEMON
-			else
-				start-stop-daemon --stop --signal HUP --pidfile $PIDFILE > /dev/null
-			fi
+		if [ -f $PIDFILE ] && ps h  $(cat $PIDFILE) > /dev/null; then
+			kill -1 $(cat $PIDFILE) 1>/dev/null 2>/dev/null
 			echo "(done)."
 		else
 			echo "(not running)."
