@@ -61,7 +61,11 @@ rm -rf $RPM_BUILD_ROOT
 # ===[ post ]=======================================
 %post
 #%{fillup_and_insserv opsipxeconfd}
+%if 0%{?centos_version} || 0%{?redhat_version} || 0%{?fedora_version}
+chkconfig --add opsipxeconfd
+%else
 insserv opsipxeconfd || true
+%endif
 
 # update?
 if [ ${FIRST_ARG:-0} -gt 1 ]; then
@@ -84,7 +88,11 @@ rm '/var/run/opsipxeconfd.socket' >/dev/null 2>&1 || true
 %postun
 %restart_on_update opsipxeconfd
 if [ $1 -eq 0 ]; then
-	%insserv_cleanup
+	%if 0%{?centos_version} || 0%{?redhat_version} || 0%{?fedora_version}
+		chkconfig --del opsipxeconfd
+	%else
+		%insserv_cleanup
+	%endif
 fi
 
 
