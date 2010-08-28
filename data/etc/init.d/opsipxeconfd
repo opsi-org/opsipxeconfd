@@ -9,7 +9,7 @@
 # Short-Description: opsi pxe config service
 # Description:       Opsi PXE Configuration Service
 ### END INIT INFO
-# chkconfig: 2345 20 80
+# chkconfig: 2345 80 20
 
 DAEMON=/usr/bin/opsipxeconfd
 USER=root
