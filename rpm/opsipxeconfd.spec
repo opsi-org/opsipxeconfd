@@ -17,7 +17,7 @@ Version:        3.99.0
 Release:        1
 Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
-Source:         %{tarname}-%{version}.tar.bz2
+Source:         opsipxeconfd_3.99.0-1.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 %if 0%{?suse_version}
 PreReq:         %insserv_prereq
@@ -26,6 +26,8 @@ PreReq:         %insserv_prereq
 %if 0%{?centos_version} || 0%{?redhat_version} || 0%{?fedora_version}
 BuildArch:      noarch
 %endif
+
+%define toplevel_dir %{name}-%{version}
 
 # ===[ description ]================================
 %description
