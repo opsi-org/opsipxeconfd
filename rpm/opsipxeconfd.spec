@@ -19,10 +19,12 @@ Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
 Source:         %{tarname}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-BuildArch:      noarch
 %if 0%{?suse_version}
 PreReq:         %insserv_prereq
 %{py_requires}
+%endif
+%if 0%{?centos_version} || 0%{?redhat_version} || 0%{?fedora_version}
+BuildArch:      noarch
 %endif
 
 # ===[ description ]================================
@@ -53,6 +55,8 @@ python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INST
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
 ln -sf /etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
+
+sed -i 's#/etc/init.d$##;s#/etc/logrotate.d$##' INSTALLED_FILES
 
 # ===[ clean ]======================================
 %clean
