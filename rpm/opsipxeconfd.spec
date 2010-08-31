@@ -58,6 +58,10 @@ mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
 ln -sf /etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 
+%if 0%{?sles_version}
+	sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
+%endif
+
 sed -i 's#/etc/init.d$##;s#/etc/logrotate.d$##' INSTALLED_FILES
 
 # ===[ clean ]======================================
@@ -66,25 +70,27 @@ rm -rf $RPM_BUILD_ROOT
 
 # ===[ post ]=======================================
 %post
-#%{fillup_and_insserv opsipxeconfd}
-%if 0%{?centos_version} || 0%{?redhat_version} || 0%{?fedora_version}
-chkconfig --add opsipxeconfd
-%else
-insserv opsipxeconfd || true
-%endif
-
-# update?
-if [ ${FIRST_ARG:-0} -gt 1 ]; then
+if [ $1 -eq 1 ]; then
+	# Install
+	#%{fillup_and_insserv opsipxeconfd}
+	
+	%if 0%{?centos_version} || 0%{?redhat_version} || 0%{?fedora_version}
+	chkconfig --add opsipxeconfd
+	%else
+	insserv opsipxeconfd || true
+	%endif
+	
+	/etc/init.d/opsipxeconfd start || true
+else
+	# Upgrade
+	# Moved to /var/run/opsipxeconfd/opsipxeconfd.socket
+	rm /var/run/opsipxeconfd.socket >/dev/null 2>&1 || true
+	
 	if [ -e /var/run/opsipxeconfd.pid -o -e /var/run/opsipxeconfd/opsipxeconfd.pid ]; then
-		rm /var/run/opsipxeconfd.pid
+		rm /var/run/opsipxeconfd.pid >/dev/null 2>&1 || true
 		/etc/init.d/opsipxeconfd restart || true
 	fi
-else
-	/etc/init.d/opsipxeconfd start || true
 fi
-
-# Moved to /var/run/opsipxeconfd/opsipxeconfd.socket
-rm '/var/run/opsipxeconfd.socket' >/dev/null 2>&1 || true
 
 # ===[ preun ]======================================
 %preun
