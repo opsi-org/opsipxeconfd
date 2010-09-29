@@ -8,6 +8,6 @@ Standards-Version: 3.6.1
 Package: opsipxeconfd
 Section: opsi
 Architecture: all
-Depends: opsi-atftpd, python-opsi (>=3.99), opsi-linux-bootimage
+Depends: opsi-atftpd, python-opsi (>=4.0), opsi-linux-bootimage (>=20100927)
 Description: opsi pxe configuration daemon
  This package contains the opsi pxe configuration daemon.
