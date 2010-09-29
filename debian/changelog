@@ -1,3 +1,9 @@
+opsipxeconfd (4.0-1) stable; urgency=low
+
+  * opsi 4.0 stable release
+
+ -- Jan Schneider <j.schneider@uib.de>  Wed, 29 Sep 2010 11:25:55 +0200
+
 opsipxeconfd (3.99.2-1) testing; urgency=low
 
   * opsi 4.0 rc 2
