@@ -1,3 +1,33 @@
+opsipxeconfd (4.0-1) stable; urgency=low
+
+  * opsi 4.0 stable release
+
+ -- Jan Schneider <j.schneider@uib.de>  Wed, 29 Sep 2010 11:25:55 +0200
+
+opsipxeconfd (3.99.2-1) testing; urgency=low
+
+  * opsi 4.0 rc 2
+
+ -- Jan Schneider <j.schneider@uib.de>  Thu, 16 Sep 2010 10:10:00 +0200
+
+opsipxeconfd (3.99.1-1) testing; urgency=low
+
+  * opsi 4.0 rc 1
+
+ -- Jan Schneider <j.schneider@uib.de>  Wed, 01 Sep 2010 15:51:14 +0200
+
+opsipxeconfd (3.99.0-1) testing; urgency=low
+
+  * opsi 4.0
+
+ -- Jan Schneider <j.schneider@uib.de>  Wed, 21 Apr 2010 10:08:41 +0200
+
+opsipxeconfd (3.4.99-1) stable; urgency=low
+
+  * Ported to opsi 3.5
+
+ -- Jan Schneider <j.schneider@uib.de>  Mon, 25 Jan 2010 13:13:28 +0200
+
 opsipxeconfd (0.3.8-1) stable; urgency=high
 
   * Moved pid file to /var/run/opsipxeconfd/opsipxeconfd.pid
