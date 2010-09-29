@@ -9,8 +9,9 @@
 # Short-Description: opsi pxe config service
 # Description:       Opsi PXE Configuration Service
 ### END INIT INFO
+# chkconfig: 2345 80 20
 
-DAEMON=/usr/sbin/opsipxeconfd
+DAEMON=/usr/bin/opsipxeconfd
 USER=root
 LOGFILE=/var/log/opsi/opsipxeconfd.log
 PIDDIR=/var/run/opsipxeconfd
@@ -35,19 +36,19 @@ case "$1" in
 		# Make sure logfile is writable
 		test -e $LOGFILE && chown -R $USER $LOGFILE
 		
-		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
+		if [ -f $PIDFILE ] && ps h  $(cat $PIDFILE) > /dev/null; then
 			echo ".   (already running)."
 			exit 0
 		else
 			rm -f $PIDFILE 2>/dev/null
-					
+			
 			su - $USER -c "$DAEMON start"
 			
 			running=false
 			i=1
 			while [ "$running" != "true" -a $i -le 10 ]; do
 				echo -n "."
-				if ([ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null); then
+				if ([ -f $PIDFILE ] && ps h $(cat $PIDFILE) > /dev/null); then
 					running=true
 				else
 					sleep 1
@@ -66,8 +67,8 @@ case "$1" in
 	stop)
 		echo -n "Stopping opsi pxe configuration service...   "
 		
-		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
-			$DAEMON stop 2>/dev/null || kill `cat $PIDFILE`
+		if [ -f $PIDFILE ] && ps h  $(cat $PIDFILE) > /dev/null; then
+			$DAEMON stop >/dev/null 2>/dev/null || kill `cat $PIDFILE`
 			echo "(done)."
 		else
 			echo "(not running)."
@@ -76,7 +77,7 @@ case "$1" in
 	status)
 		echo -n "Checking opsi pxe configuration service...   "
 		
-		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
+		if [ -f $PIDFILE ] && ps h  $(cat $PIDFILE) > /dev/null; then
 			echo "(running)."
 			exit 0
 		fi
@@ -86,8 +87,8 @@ case "$1" in
 	reload)
 		echo -n "Reloading opsi pxe configuration service...   "
 		
-		if [ -f $PIDFILE ] && ps h `cat $PIDFILE` > /dev/null; then
-			start-stop-daemon --stop --signal HUP --pidfile $PIDFILE > /dev/null
+		if [ -f $PIDFILE ] && ps h  $(cat $PIDFILE) > /dev/null; then
+			kill -1 $(cat $PIDFILE) 1>/dev/null 2>/dev/null
 			echo "(done)."
 		else
 			echo "(not running)."
@@ -99,7 +100,7 @@ case "$1" in
 		$0 start
 		;;
 	*)
-		echo "Usage: /etc/init.d/opsiconfd {start|stop|status|reload|restart|force-reload}"
+		echo "Usage: /etc/init.d/opsipxeconfd {start|stop|status|reload|restart|force-reload}"
 		exit 1
 		;;
 esac

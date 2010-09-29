@@ -2,15 +2,12 @@ Source: opsipxeconfd
 Section: opsi
 Priority: optional
 Maintainer: uib GmbH <info@uib.de>
-Build-Depends: debhelper (>= 4.0.0)
+Build-Depends: debhelper (>= 7), python (>=2.5), python-support, python-setuptools
 Standards-Version: 3.6.1
 
 Package: opsipxeconfd
 Section: opsi
 Architecture: all
-Depends: opsi-atftpd, python-opsi (>=3.3.1), opsi-linux-bootimage
-Replaces: opsi-reinstmgr
-Conflicts: opsi-reinstmgr
-Provides: opsi-reinstmgr
-Description: OPSI PXE configuration daemon
- This package contains the OPSI PXE configuration daemon.
+Depends: opsi-atftpd, python-opsi (>=4.0), opsi-linux-bootimage (>=20100927)
+Description: opsi pxe configuration daemon
+ This package contains the opsi pxe configuration daemon.
