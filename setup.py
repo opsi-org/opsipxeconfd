@@ -33,6 +33,15 @@
 """
 
 from setuptools import setup, os
+
+cmdclass = {}
+
+try:
+	from opsidistutils.commands.osc_cmd import osc_publish as osc
+	cmdclass['osc'] = osc
+except ImportError, e:
+	print "osc integration is not available on this machine. please install ospi-distutils."
+
 version = None
 f = open("scripts/opsipxeconfd")
 for line in f.readlines():
@@ -52,6 +61,7 @@ setup(
 	data_files=[('/etc/opsi', ['data/etc/opsi/opsipxeconfd.conf']),
 		    ('/etc/init.d', ['data/etc/init.d/opsipxeconfd']),
 		    ('/etc/logrotate.d/', ['data/etc/logrotate.d/opsipxeconfd']),
-		   ]
+		   ],
+	cmdclass=cmdclass
 )
 
