@@ -74,11 +74,7 @@ if [ $1 -eq 1 ]; then
 	# Install
 	#%{fillup_and_insserv opsipxeconfd}
 	
-	%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora_version}
 	chkconfig --add opsipxeconfd
-	%else
-	insserv opsipxeconfd || true
-	%endif
 	
 	/etc/init.d/opsipxeconfd start || true
 else
@@ -100,11 +96,7 @@ fi
 %postun
 %restart_on_update opsipxeconfd
 if [ $1 -eq 0 ]; then
-	%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora_version}
-		chkconfig --del opsipxeconfd
-	%else
-		%insserv_cleanup
-	%endif
+	chkconfig --del opsipxeconfd
 fi
 
 
