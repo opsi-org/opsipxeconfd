@@ -40,6 +40,7 @@ from signal import *
 
 # OPSI imports
 from OPSI.Logger import *
+from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import *
 from OPSI.Backend.BackendManager import BackendManager
@@ -700,7 +701,7 @@ class OpsipxeconfdInit(object):
 		self.config = {
 			'pidFile'                      : u'/var/run/opsipxeconfd/opsipxeconfd.pid',
 			'configFile'                   : u'/etc/opsi/opsipxeconfd.conf',
-			'depotId'                      : forceHostId(socket.getfqdn()),
+			'depotId'                      : forceHostId(getfqdn(conf='/etc/opsi/global.conf')),
 			'daemon'                       : True,
 			'logLevel'                     : LOG_NOTICE,
 			'logFile'                      : u'/var/log/opsi/opsipxeconfd.log',
