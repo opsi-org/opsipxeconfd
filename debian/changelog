@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.1-1) stable; urgency=low
+
+  * use virtual fqdn if available
+
+ -- Christian Kampka <c.kampka@uib.de>  Tue, 12 Jul 2011 13:06:33 +0200
+
 opsipxeconfd (4.0-1) stable; urgency=low
 
   * opsi 4.0 stable release
