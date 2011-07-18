@@ -7,7 +7,7 @@
 #
 
 Name:           opsipxeconfd
-BuildRequires:  python-devel python-setuptools python-opsi >= 4.0
+BuildRequires:  python-devel python-setuptool
 Requires:       opsi-atftp python-opsi >= 4.0 opsi-linux-bootimage
 Url:            http://www.opsi.org
 License:        GPL v2 or later
@@ -19,6 +19,9 @@ Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
 Source:         opsipxeconfd_4.0.1-1.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+%if 0%{?sles_version}
+BuildRequires: python-opsi >= 4.0.1
+%endif
 %if 0%{?suse_version}
 PreReq:         %insserv_prereq
 %{py_requires}
