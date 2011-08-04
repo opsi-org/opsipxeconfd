@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.1.2-1) stable; urgency=low
+
+  * Update spec file for Centos 6
+
+ -- Jan Schneider <j.schneider@uib.de>  Thu, 04 Aug 2011 10:05:36 +0200
+
 opsipxeconfd (4.0.1-1) stable; urgency=low
 
   * use virtual fqdn if available
