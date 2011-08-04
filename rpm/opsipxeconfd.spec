@@ -7,7 +7,7 @@
 #
 
 Name:           opsipxeconfd
-BuildRequires:  python-devel python-setuptool
+BuildRequires:  python-devel
 Requires:       opsi-atftp python-opsi >= 4.0 opsi-linux-bootimage
 Url:            http://www.opsi.org
 License:        GPL v2 or later
