@@ -8,6 +8,6 @@ Standards-Version: 3.6.1
 Package: opsipxeconfd
 Section: opsi
 Architecture: all
-Depends: tftpd, python-opsi (>=4.0.1.33-1)
+Depends: tftpd, python-opsi (>=4.0.1.32-1)
 Description: opsi pxe configuration daemon
  This package contains the opsi pxe configuration daemon.
