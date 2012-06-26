@@ -75,7 +75,7 @@ rm -rf $RPM_BUILD_ROOT
 %post
 
 #fix for runlevel 4 (not used on rpm-based machines)
-if [ -e "/etc/init.di/opsipxeconfd" ]; then
+if [ -e "/etc/init.d/opsipxeconfd" ]; then
 	sed -i "s/2 3 4 5/2 3 5/g; s/2345/235/g" /etc/init.d/opsipxeconfd
 fi
 
