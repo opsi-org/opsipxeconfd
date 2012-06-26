@@ -26,7 +26,7 @@ BuildRequires: python-opsi >= 4.0.1
 PreReq:         %insserv_prereq
 %{py_requires}
 %endif
-%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora_version}
+%if 0%{?suse_version} != 1110
 BuildArch:      noarch
 %endif
 
