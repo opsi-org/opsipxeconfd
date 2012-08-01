@@ -1,6 +1,7 @@
 opsipxeconfd (4.0.2.2-1) testing; urgency=low
 
   * fixing init.d lsb-header for SUSE based servers. Removing runlevel 4
+  * fileadmingroup added in /etc/opsi/backends/file.conf
 
  -- Erol Ueluekmen <e.ueluekmen@uib.de>  Fri, 22 Jun 2012 16:26:42 +0200
 
