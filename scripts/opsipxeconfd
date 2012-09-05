@@ -478,9 +478,16 @@ class PXEConfigWriter(threading.Thread):
 		f = codecs.open(self.templatefile, 'r', 'utf-8')
 		for line in f.readlines():
 			line = line.rstrip()
+			
+			lineold = None
 			for (propertyId, value) in self.productPropertyStates.items():
+				logger.debug("Property: '%s': value: '%s'" % (propertyId, value))
 				line = line.replace(u'%%%s%%' % propertyId, value)
+				if line.lstrip().startswith(u'append'):
+					lineold = line
+			
 			if line.lstrip().startswith(u'append'):
+				line = u'append'
 				append = { 'hn': hostId.split('.')[0] }
 				for value in line.strip().split()[1:]:
 					(k, v) = (u'', u'')
@@ -499,6 +506,9 @@ class PXEConfigWriter(threading.Thread):
 					line += u' %s' % k
 					if v: line += u'=%s' % v
 				
+			if lineold:
+				line = lineold + line.replace('append','')
+			
 			self.content += line + u'\n'
 		f.close()
 		
@@ -881,7 +891,7 @@ class OpsipxeconfdInit(object):
 if (__name__ == "__main__"):
 	logger.setConsoleLevel(LOG_WARNING)
 	exception = None
-	
+
 	try:
 		OpsipxeconfdInit()
 		
