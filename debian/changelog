@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.2.3-1) experimental; urgency=low
+
+  * when spaces are in append, does not shuffle productPropertyStates 
+
+ -- Jim Pizagno <j.pizagno@uib.de>  Wed, 05 Sep 2012 17:03:22 +0200
+
 opsipxeconfd (4.0.2.2-1) testing; urgency=low
 
   * fixing init.d lsb-header for SUSE based servers. Removing runlevel 4
