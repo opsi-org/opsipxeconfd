@@ -201,11 +201,10 @@ class Opsipxeconfd(threading.Thread):
 		gotAlways = False
 		for i in range(len(pcw.productOnClients)):
 			pcw.productOnClients[i].setActionProgress(u'pxe boot configuration read')
-			if (pcw.templatefile != self.config['pxeConfTemplate']):
-				pcw.productOnClients[i].setActionRequest(u'none')
-			
 			if (pcw.productOnClients[i].getActionRequest() == u'always'):
-				gotAlways = True
+					gotAlways = True
+			if (pcw.templatefile != self.config['pxeConfTemplate'] and not gotAlways):
+					pcw.productOnClients[i].setActionRequest(u'none')
 		
 		self._backend.productOnClient_updateObjects(pcw.productOnClients)
 		if gotAlways:
