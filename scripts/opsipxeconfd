@@ -479,6 +479,9 @@ class PXEConfigWriter(threading.Thread):
 			line = line.rstrip()
 			
 			lineold = None
+			if line.lstrip().startswith(u'append'):
+				lineold = line
+
 			for (propertyId, value) in self.productPropertyStates.items():
 				logger.debug("Property: '%s': value: '%s'" % (propertyId, value))
 				line = line.replace(u'%%%s%%' % propertyId, value)
