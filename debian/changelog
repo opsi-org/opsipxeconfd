@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.2.5-1) experimental; urgency=low
+
+  * Fix: dont lose append entry from template, if no productProperty set
+
+ -- Erol Ueluekmen <e.ueluekmen@uib.de>  Tue, 25 Sep 2012 14:48:08 +0200
+
 opsipxeconfd (4.0.2.4-1) experimental; urgency=low
 
   * write pipe again, if product has set always actionRequest for client.
