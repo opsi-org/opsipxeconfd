@@ -200,8 +200,18 @@ class Opsipxeconfd(threading.Thread):
 		
 		gotAlways = False
 		for i in range(len(pcw.productOnClients)):
-			pcw.productOnClients[i].setActionProgress(u'pxe boot configuration read')
-			if (pcw.productOnClients[i].getActionRequest() == u'always'):
+			#renew objects and check if anythin changes on service since callback
+			productOnClients = self._backend.productOnClient_getObjects(
+				productType        = u'NetbootProduct',
+				clientId                = pcw.productOnClients[i].clientId,
+				productId            = pcw.productOnClients[i].productId
+			)
+			if productOnClients:
+				productOnClient = productOnClients[0]
+			else:
+				pcw.productOnClients.del(i)
+			productOnClient.setActionProgress(u'pxe boot configuration read')
+			if (productOnClient.getActionRequest() == u'always'):
 					gotAlways = True
 			if (pcw.templatefile != self.config['pxeConfTemplate'] and not gotAlways):
 					pcw.productOnClients[i].setActionRequest(u'none')
