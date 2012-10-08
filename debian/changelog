@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.2.6-1) testing; urgency=low
+
+  * Fix: if always switched to none, don't create new pipe for client.
+
+ -- e.ueluekmen@uib.de <erol@erollinux.uib.local>  Mon, 08 Oct 2012 14:42:45 +0200
+
 opsipxeconfd (4.0.2.5-1) experimental; urgency=low
 
   * Fix: dont lose append entry from template, if no productProperty set
