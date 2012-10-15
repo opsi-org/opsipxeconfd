@@ -1,4 +1,4 @@
-opsipxeconfd (4.0.2.6-1) testing; urgency=low
+opsipxeconfd (4.0.2.6-1) stable; urgency=low
 
   * Fix: if always switched to none, don't create new pipe for client.
 
