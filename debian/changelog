@@ -1,3 +1,10 @@
+opsipxeconfd (4.0.3.1-1) stable; urgency=low
+
+  * featurepack-release 4.0.3
+  * this version is stable, because no changes were made, only version modified for new featurepack-release
+
+ -- Erol Ueluekmen <e.ueluekmen@uib.de>  Thu, 14 Feb 2013 17:57:02 +0100
+
 opsipxeconfd (4.0.2.6-1) stable; urgency=low
 
   * Fix: if always switched to none, don't create new pipe for client.
