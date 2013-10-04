@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.4.1-1) UNRELEASED; urgency=low
+
+  * Specified user / group to use for logrotate 3.8 or newer
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Wed, 21 Aug 2013 11:58:55 +0200
+
 opsipxeconfd (4.0.3.1-1) stable; urgency=low
 
   * featurepack-release 4.0.3
