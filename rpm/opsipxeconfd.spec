@@ -101,6 +101,25 @@ else
 	fi
 fi
 
+%if 0%{?suse_version}
+LOGROTATE_VERSION="$(zypper info logrotate | grep -i "version" | awk '{print $2}' | cut -d '-' -f 1)"
+if [ "$(zypper --terse versioncmp $LOGROTATE_VERSION 3.8)" == "-1" ]; then
+        LOGROTATE_TEMP=/tmp/opsi-logrotate_config
+        grep -v "su opsiconfd pcpatch" /etc/logrotate.d/opsipxeconfd > $LOGROTATE_TEMP
+        mv $LOGROTATE_TEMP /etc/logrotate.d/opsipxeconfd
+fi
+%else
+        %if 0%{?rhel_version} || 0%{?centos_version}
+                # Currently neither RHEL nor CentOS ship an logrotate > 3.8
+                # Maybe some day in the future RHEL / CentOS will have a way for easy version comparison
+                # LOGROTATE_VERSION="$(yum list logrotate | grep "installed$" | awk '{ print $2 }' | cut -d '-' -f 1)"
+                LOGROTATE_TEMP=/tmp/opsi-logrotate_config
+                grep -v "su opsiconfd pcpatch" /etc/logrotate.d/opsipxeconfd > $LOGROTATE_TEMP
+                mv $LOGROTATE_TEMP /etc/logrotate.d/opsipxeconfd
+        %endif
+%endif
+
+
 # ===[ preun ]======================================
 %preun
 %stop_on_removal opsipxeconfd

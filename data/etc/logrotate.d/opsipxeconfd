@@ -6,5 +6,5 @@
     compress
     notifempty
     create 640 root opsiadmin
+    su root opsiadmin
 }
-
