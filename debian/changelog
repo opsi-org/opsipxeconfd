@@ -1,4 +1,4 @@
-opsipxeconfd (4.0.4.1-1) UNRELEASED; urgency=low
+opsipxeconfd (4.0.4.1-1) testing; urgency=low
 
   * Specified user / group to use for logrotate 3.8 or newer
 
