@@ -105,7 +105,7 @@ fi
 LOGROTATE_VERSION="$(zypper info logrotate | grep -i "version" | awk '{print $2}' | cut -d '-' -f 1)"
 if [ "$(zypper --terse versioncmp $LOGROTATE_VERSION 3.8)" == "-1" ]; then
         LOGROTATE_TEMP=/tmp/opsi-logrotate_config
-        grep -v "su opsiconfd pcpatch" /etc/logrotate.d/opsipxeconfd > $LOGROTATE_TEMP
+        grep -v "su root opsiadmin" /etc/logrotate.d/opsipxeconfd > $LOGROTATE_TEMP
         mv $LOGROTATE_TEMP /etc/logrotate.d/opsipxeconfd
 fi
 %else
@@ -114,7 +114,7 @@ fi
                 # Maybe some day in the future RHEL / CentOS will have a way for easy version comparison
                 # LOGROTATE_VERSION="$(yum list logrotate | grep "installed$" | awk '{ print $2 }' | cut -d '-' -f 1)"
                 LOGROTATE_TEMP=/tmp/opsi-logrotate_config
-                grep -v "su opsiconfd pcpatch" /etc/logrotate.d/opsipxeconfd > $LOGROTATE_TEMP
+                grep -v "su root opsiadmin" /etc/logrotate.d/opsipxeconfd > $LOGROTATE_TEMP
                 mv $LOGROTATE_TEMP /etc/logrotate.d/opsipxeconfd
         %endif
 %endif
