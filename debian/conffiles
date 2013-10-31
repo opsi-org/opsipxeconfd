@@ -1,1 +1,2 @@
 /etc/opsi/opsipxeconfd.conf
+/etc/logrotate.d/opsipxeconfd
