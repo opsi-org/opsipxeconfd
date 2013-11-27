@@ -20,10 +20,10 @@ Summary:        opsi pxe configuration daemon
 Source:         opsipxeconfd_4.0.4.1-2.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 %if 0%{?sles_version}
-BuildRequires: python-opsi >= 4.0.1
+BuildRequires: python-opsi >= 4.0.1 zypper
 %endif
 %if 0%{?suse_version}
-PreReq:         %insserv_prereq
+PreReq:         %insserv_prereq zypper
 %{py_requires}
 %endif
 %if 0%{?suse_version} != 1110
@@ -101,7 +101,7 @@ else
 	fi
 fi
 
-%if 0%{?suse_version}
+%if 0%{?suse_version} || 0%{?sles_version}
 LOGROTATE_VERSION="$(zypper info logrotate | grep -i "version" | awk '{print $2}' | cut -d '-' -f 1)"
 if [ "$(zypper --terse versioncmp $LOGROTATE_VERSION 3.8)" == "-1" ]; then
         LOGROTATE_TEMP=/tmp/opsi-logrotate_config
@@ -118,7 +118,6 @@ fi
                 mv $LOGROTATE_TEMP /etc/logrotate.d/opsipxeconfd
         %endif
 %endif
-
 
 # ===[ preun ]======================================
 %preun
