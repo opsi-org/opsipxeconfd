@@ -67,6 +67,27 @@ ln -sf /etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 	sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
 %endif
 
+
+%if 0%{?suse_version} || 0%{?sles_version}
+LOGROTATE_VERSION="$(zypper info logrotate | grep -i "version" | awk '{print $2}' | cut -d '-' -f 1)"
+if [ "$(zypper --terse versioncmp $LOGROTATE_VERSION 3.8)" == "-1" ]; then
+        LOGROTATE_TEMP=$RPM_BUILD_ROOT/opsi-logrotate_config.temp
+        LOGROTATE_CONFIG=$RPM_BUILD_ROOT/etc/logrotate.d/opsipxeconfd
+        grep -v "su root opsiadmin" $LOGROTATE_CONFIG > $LOGROTATE_TEMP
+        mv $LOGROTATE_TEMP $LOGROTATE_CONFIG
+fi
+%else
+        %if 0%{?rhel_version} || 0%{?centos_version}
+                # Currently neither RHEL nor CentOS ship an logrotate > 3.8
+                # Maybe some day in the future RHEL / CentOS will have a way for easy version comparison
+                # LOGROTATE_VERSION="$(yum list logrotate | grep "installed$" | awk '{ print $2 }' | cut -d '-' -f 1)"
+                LOGROTATE_TEMP=$RPM_BUILD_ROOT/opsi-logrotate_config.temp
+                grep -v "su root opsiadmin" $LOGROTATE_CONFIG > $LOGROTATE_TEMP
+                mv $LOGROTATE_TEMP $LOGROTATE_CONFIG
+        %endif
+%endif
+
+
 sed -i 's#/etc/init.d$##;s#/etc/logrotate.d$##' INSTALLED_FILES
 
 # ===[ clean ]======================================
@@ -102,24 +123,6 @@ else
 		/etc/init.d/opsipxeconfd restart || true
 	fi
 fi
-
-%if 0%{?suse_version} || 0%{?sles_version}
-LOGROTATE_VERSION="$(zypper info logrotate | grep -i "version" | awk '{print $2}' | cut -d '-' -f 1)"
-if [ "$(zypper --terse versioncmp $LOGROTATE_VERSION 3.8)" == "-1" ]; then
-        LOGROTATE_TEMP=/tmp/opsi-logrotate_config
-        grep -v "su root opsiadmin" /etc/logrotate.d/opsipxeconfd > $LOGROTATE_TEMP
-        mv $LOGROTATE_TEMP /etc/logrotate.d/opsipxeconfd
-fi
-%else
-        %if 0%{?rhel_version} || 0%{?centos_version}
-                # Currently neither RHEL nor CentOS ship an logrotate > 3.8
-                # Maybe some day in the future RHEL / CentOS will have a way for easy version comparison
-                # LOGROTATE_VERSION="$(yum list logrotate | grep "installed$" | awk '{ print $2 }' | cut -d '-' -f 1)"
-                LOGROTATE_TEMP=/tmp/opsi-logrotate_config
-                grep -v "su root opsiadmin" /etc/logrotate.d/opsipxeconfd > $LOGROTATE_TEMP
-                mv $LOGROTATE_TEMP /etc/logrotate.d/opsipxeconfd
-        %endif
-%endif
 
 # ===[ preun ]======================================
 %preun
