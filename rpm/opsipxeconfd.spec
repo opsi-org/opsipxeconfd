@@ -82,6 +82,7 @@ fi
                 # Maybe some day in the future RHEL / CentOS will have a way for easy version comparison
                 # LOGROTATE_VERSION="$(yum list logrotate | grep "installed$" | awk '{ print $2 }' | cut -d '-' -f 1)"
                 LOGROTATE_TEMP=$RPM_BUILD_ROOT/opsi-logrotate_config.temp
+                LOGROTATE_CONFIG=$RPM_BUILD_ROOT/etc/logrotate.d/opsipxeconfd
                 grep -v "su root opsiadmin" $LOGROTATE_CONFIG > $LOGROTATE_TEMP
                 mv $LOGROTATE_TEMP $LOGROTATE_CONFIG
         %endif
