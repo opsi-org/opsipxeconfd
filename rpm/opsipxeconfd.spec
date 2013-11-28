@@ -20,10 +20,11 @@ Summary:        opsi pxe configuration daemon
 Source:         opsipxeconfd_4.0.4.1-2.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 %if 0%{?sles_version}
-BuildRequires: python-opsi >= 4.0.1 zypper
+BuildRequires: python-opsi >= 4.0.1 zypper logrotate
 %endif
 %if 0%{?suse_version}
-PreReq:         %insserv_prereq zypper
+BuildRequires: zypper logrotate
+PreReq: %insserv_prereq zypper
 %{py_requires}
 %endif
 %if 0%{?suse_version} != 1110
