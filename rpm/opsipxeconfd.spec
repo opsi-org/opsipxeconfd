@@ -23,6 +23,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildRequires: python-opsi >= 4.0.1 zypper logrotate
 %endif
 %if 0%{?suse_version}
+Suggests: logrotate
 BuildRequires: zypper logrotate
 PreReq: %insserv_prereq zypper
 %{py_requires}
