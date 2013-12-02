@@ -32,13 +32,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 __version__ = '4.0'
 
+import codecs
 import getopt
 import os
 import socket
 import stat
 import sys
 import threading
-from signal import *
+import time
+from signal import SIGHUP, SIGINT, SIGTERM, signal
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
