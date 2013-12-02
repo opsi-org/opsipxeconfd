@@ -32,16 +32,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 __version__ = '4.0'
 
-# Imports
-import os, sys, socket, stat, threading, getopt
+import getopt
+import os
+import socket
+import stat
+import sys
+import threading
 from signal import *
 
-# OPSI imports
-from OPSI.Logger import *
+from OPSI.Backend.BackendManager import BackendManager
+from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
+from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
-from OPSI.Types import *
-from OPSI.Backend.BackendManager import BackendManager
+from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
+	forceUnicodeList)
+
 
 logger = Logger()
 
