@@ -88,7 +88,7 @@ class Opsipxeconfd(threading.Thread):
 			self._startupTask.join(10)
 		try:
 			self._socket.close()
-		except Exception, e:
+		except Exception as e:
 			logger.error(u"Failed to close socket: %s" % e)
 		self._running = False
 
@@ -127,7 +127,7 @@ class Opsipxeconfd(threading.Thread):
 		self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 		try:
 			self._socket.bind(self.config['port'])
-		except Exception, e:
+		except Exception as e:
 			raise Exception(u"Failed to bind to socket '%s': %s" % (self.config['port'], e))
 		self._socket.settimeout(0.1)
 		self._socket.listen(self.config['maxConnections'])
@@ -140,7 +140,7 @@ class Opsipxeconfd(threading.Thread):
 		(addr, sock) = (None, None)
 		try:
 			(sock, addr) = self._socket.accept()
-		except socket.error, e:
+		except socket.error as e:
 			if (e.args[0] == 'timed out' or e.args[0] == 11):
 				return
 			raise
@@ -154,7 +154,7 @@ class Opsipxeconfd(threading.Thread):
 			self._clientConnections.append(cc)
 			self._clientConnectionLock.release()
 			cc.start()
-		except Exception, e:
+		except Exception as e:
 			logger.error(u"Failed to create control connection: %s" % e)
 			logger.logException(e)
 			self._clientConnectionLock.acquire()
@@ -174,7 +174,7 @@ class Opsipxeconfd(threading.Thread):
 			while self._running:
 				self._getConnection()
 			logger.notice(u"Opsipxeconfd main thread exiting...")
-		except Exception, e:
+		except Exception as e:
 			logger.logException(e)
 		self._running = False
 
@@ -186,7 +186,7 @@ class Opsipxeconfd(threading.Thread):
 			if cc in self._clientConnections:
 				self._clientConnections.remove(cc)
 			logger.debug(u"ClientConnection removed")
-		except Exception, e:
+		except Exception as e:
 			logger.error(u"Failed to remove ClientConnection: %s" % e)
 		self._clientConnectionLock.release()
 
@@ -198,7 +198,7 @@ class Opsipxeconfd(threading.Thread):
 			if pcw in self._pxeConfigWriters:
 				self._pxeConfigWriters.remove(pcw)
 			logger.debug(u"PXE config writer removed")
-		except Exception, e:
+		except Exception as e:
 			logger.error(u"Failed to remove PXE config writer: %s" % e)
 		self._pxeConfigWritersLock.release()
 
@@ -406,14 +406,14 @@ class Opsipxeconfd(threading.Thread):
 				pcw.start()
 				logger.notice(u"PXE boot configuration for host %s is now set at '%s'" % (hostId, pxefile))
 				return u'Boot configuration updated'
-			except Exception, e:
+			except Exception as e:
 				logger.error(u"Failed to create pxe config writer: %s" % e)
 				self._pxeConfigWritersLock.acquire()
 				if pcw and pcw in self._pxeConfigWriters:
 					self._pxeConfigWriters.remove(pcw)
 				self._pxeConfigWritersLock.release()
 				raise
-		except Exception, e:
+		except Exception as e:
 			logger.logException(e)
 			raise
 
@@ -451,11 +451,11 @@ class StartupTask(threading.Thread):
 						return
 					try:
 						self._opsipxeconfd.updateBootConfiguration(clientId)
-					except Exception, e:
+					except Exception as e:
 						logger.error(u"Failed to update PXE boot config for client '%s': %s" % (clientId, e))
 
 			logger.notice(u"Finished setting needed boot configurations")
-		except Exception, e:
+		except Exception as e:
 			logger.logException(e)
 		self._running = False
 
@@ -538,7 +538,7 @@ class PXEConfigWriter(threading.Thread):
 			try:
 				self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
 				pipeOpenend = True
-			except Exception, e:
+			except Exception as e:
 				if (e.errno != 6):
 					raise
 				time.sleep(1)
@@ -579,7 +579,7 @@ class ClientConnection(threading.Thread):
 
 		try:
 			self._socket.send(result.encode('utf-8'))
-		except Exception, e:
+		except Exception as e:
 			logger.warning(e)
 
 		self._socket.close()
@@ -611,7 +611,7 @@ class ClientConnection(threading.Thread):
 				return self._opsipxeconfd.updateBootConfiguration(hostId)
 
 			raise Exception(u"Command '%s' not supported" % cmd)
-		except Exception, e:
+		except Exception as e:
 			logger.error(e)
 			return u"(ERROR): %s" % e
 
@@ -626,7 +626,7 @@ class ServerConnection:
 		self._socket.settimeout(5.0)
 		try:
 			self._socket.connect(self.port)
-		except Exception, e:
+		except Exception as e:
 			raise Exception(u"Failed to connect to socket '%s': %s" % (self.port, e))
 
 	def sendCommand(self, cmd):
@@ -635,7 +635,7 @@ class ServerConnection:
 		result = None
 		try:
 			result = forceUnicode(self._socket.recv(4096))
-		except Exception, e:
+		except Exception as e:
 			raise Exception(u"Failed to receive: %s" % e)
 		self._socket.close()
 		if result.startswith(u'(ERROR)'):
@@ -750,7 +750,7 @@ class OpsipxeconfdInit(object):
 						if (i == p):
 							running = True
 							break
-				except Exception, e:
+				except Exception as e:
 					logger.error(e)
 				if running:
 					raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % p )
@@ -766,7 +766,7 @@ class OpsipxeconfdInit(object):
 			if os.path.exists(self.config['pidFile']):
 				logger.info(u"Removing pid file '%s'" % self.config['pidFile'])
 				os.unlink(self.config['pidFile'])
-		except Exception, e:
+		except Exception as e:
 			logger.error(u"Failed to remove pid file '%s': %s" % (self.config['pidFile'], e))
 
 	def signalHandler(self, signo, stackFrame):
@@ -824,7 +824,7 @@ class OpsipxeconfdInit(object):
 				else:
 					logger.warning(u"Ignoring unknown option '%s' in config file: '%s'" % (option, self.config['configFile']))
 
-		except Exception, e:
+		except Exception as e:
 			# An error occured while trying to read the config file
 			logger.error(u"Failed to read config file '%s': %s" % (self.config['configFile'], e))
 			logger.logException(e)
@@ -853,7 +853,7 @@ class OpsipxeconfdInit(object):
 			if (self._pid > 0):
 				# Parent exits
 				sys.exit(0)
-		except OSError, e:
+		except OSError as e:
 			raise Exception(u"First fork failed: %e" % e)
 
 		# Do not hinder umounts
@@ -866,7 +866,7 @@ class OpsipxeconfdInit(object):
 			self._pid = os.fork()
 			if (self._pid > 0):
 				sys.exit(0)
-		except OSError, e:
+		except OSError as e:
 			raise Exception(u"Second fork failed: %e" % e)
 
 		logger.setConsoleLevel(LOG_NONE)
@@ -895,15 +895,11 @@ if (__name__ == "__main__"):
 
 	try:
 		OpsipxeconfdInit()
-
-	except SystemExit, e:
+	except SystemExit:
 		pass
-
-	except Exception, e:
-		exception = e
-
-	if exception:
+	except Exception as exception:
 		logger.logException(exception)
 		print >> sys.stderr, u"ERROR:", unicode(exception)
 		sys.exit(1)
+
 	sys.exit(0)
