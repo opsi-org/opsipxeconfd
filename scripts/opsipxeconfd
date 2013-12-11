@@ -475,6 +475,7 @@ class PXEConfigWriter(threading.Thread):
 		self.startTime = time.time()
 		self._callback = callback
 		self._pipe = None
+		self.eliloMode = False
 		logger.info(u"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s" \
 				% (self.templatefile, self.pxefile, self.hostId, self.append))
 
