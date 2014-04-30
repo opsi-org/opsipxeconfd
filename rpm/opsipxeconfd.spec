@@ -127,7 +127,13 @@ fi
 
 # ===[ preun ]======================================
 %preun
-%stop_on_removal opsipxeconfd
+%if 0%{?suse_version}
+        %stop_on_removal opsipxeconfd
+%else
+        if [ $1 = 0 ] ; then
+                /etc/init.d/opsipxeconfd stop >/dev/null 2>&1 || true
+        fi  
+%endif
 
 # ===[ postun ]=====================================
 %postun
