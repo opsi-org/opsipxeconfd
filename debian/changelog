@@ -1,8 +1,9 @@
-opsipxeconfd (4.0.5.0-1) UNRELEASED; urgency=low
+opsipxeconfd (4.0.5.1-1) UNRELEASED; urgency=low
 
   * Correctly stopping the service on non-SUSE machines on upgrade/uninstall 
+  * uefi support
 
- -- Niko Wenselowski <n.wenselowski@uib.de>  Wed, 30 Apr 2014 14:33:01 +0200
+ -- Erol Ueluekmen <e.ueluekmen@uib.de>  Tue, 08 Jul 2014 11:59:08 +0200
 
 opsipxeconfd (4.0.4.1-2) testing; urgency=low
 

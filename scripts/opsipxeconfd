@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 @license: GNU General Public License version 2
 """
 
-__version__ = '4.0'
+__version__ = '4.0.5.1'
 
 import codecs
 import getopt
@@ -326,8 +326,27 @@ class Opsipxeconfd(threading.Thread):
 						pxeConfigTemplate = product.pxeConfigTemplate
 						logger.notice(u"Special pxe config template '%s' will be used used for host '%s', product '%s'" \
 											% (pxeConfigTemplate, hostId, poc.productId))
+
+			# Try to detect elilo mode
+			elilo_mode = False
+			elilo_x86_mode = False
+			configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename",objectId=hostId)
+			if configStates:
+				val = configStates[0].getValues()
+				if val:
+					if val and 'elilo' in val[0]:
+						if 'x86' in val[0]:
+							elilo_x86_mode = True
+						else:
+							elilo_mode = True
+
 			if not pxeConfigTemplate:
-				pxeConfigTemplate = self.config['pxeConfTemplate']
+				if elilo_mode:
+					pxeConfigTemplate = self.config['uefiConfTemplate-x64']
+				elif elilo_x86_mode:
+					pxeConfigTemplate = self.config['uefiConfTemplate-x86']
+				else:
+					pxeConfigTemplate = self.config['pxeConfTemplate']
 
 			if not os.path.isabs(pxeConfigTemplate):
 				# Not an absolute path
@@ -399,7 +418,9 @@ class Opsipxeconfd(threading.Thread):
 			pcw = None
 			try:
 				logger.info(u"Creating thread for pxeconfig %s" % (len(self._pxeConfigWriters)+1))
-				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback)
+				backendinfo = self._backend.backend_info()
+				backendinfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
+				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback, backendinfo)
 				self._pxeConfigWritersLock.acquire()
 				self._pxeConfigWriters.append(pcw)
 				self._pxeConfigWritersLock.release()
@@ -464,7 +485,7 @@ class StartupTask(threading.Thread):
 
 
 class PXEConfigWriter(threading.Thread):
-	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback = None):
+	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback = None, backend_info = {}):
 		threading.Thread.__init__(self)
 		self.templatefile = templatefile
 		self.append = append
@@ -475,54 +496,97 @@ class PXEConfigWriter(threading.Thread):
 		self.startTime = time.time()
 		self._callback = callback
 		self._pipe = None
-		self.eliloMode = False
+		if not backend_info:
+			self._uefiModule = False
+		else:
+			modules = backendinfo['modules']
+			helpermodules = backendinfo['realmodules']
+			hostCount = backendinfo['hostCount']
+			
+
+			publicKey = keys.Key.fromString(data = base64.decodestring('AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDojY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDUlk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP')).keyObject
+			data = u''; mks = modules.keys(); mks.sort()
+			for module in mks:
+				if module in ('valid', 'signature'):
+					continue
+				if helpermodules.has_key(module):
+					val = helpermodules[module]
+					if module == 'uefi':
+						if int(val) + 50 <= hostCount:
+							logger.error(u"UNDERLICENSED: You have more Clients then licensed in modules file.  Disabling module: '%s'" % module)
+						elif int(val) <= hostCount:
+							logger.warning("UNDERLICENSED WARNING: You have more Clients then licensed in modules file.")
+					else:
+						if int(val) > 0:
+							modules[module] = True
+				else:
+					val = modules[module]
+					if (val == False): val = 'no'
+					if (val == True):  val = 'yes'
+				data += u'%s = %s\r\n' % (module.lower().strip(), val)
+			if not bool(publicKey.verify(md5(data).digest(), [ long(modules['signature']) ])):
+				logger.error(u"Failed to verify modules signature")
+				return
+			else:
+				if modules.get('uefi'):
+					self._uefiModule = True
+		
 		logger.info(u"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s" \
 				% (self.templatefile, self.pxefile, self.hostId, self.append))
 
 		if not os.path.exists(self.templatefile):
 			raise Exception(u"Template file '%s' not found" % self.templatefile)
+			
+		logger.debug(u"Reading Template")
+		with open(self.templatefile, 'r') as f:
+			templateLines = f.readlines()
+			
+		self.template = { 'pxelinux': [] }
 
 		# Set pxe config content
 		self.content = u''
-		f = codecs.open(self.templatefile, 'r', 'utf-8')
-		for line in f.readlines():
+		appendLineProperties = []
+			
+		for line in templateLines:
 			line = line.rstrip()
 
-			lineold = None
-			if line.lstrip().startswith(u'append'):
-				lineold = line
-
+			#lineold = None
+			#if line.lstrip().startswith(u'append'):
+			#	lineold = line
+				
 			for (propertyId, value) in self.productPropertyStates.items():
 				logger.debug("Property: '%s': value: '%s'" % (propertyId, value))
 				line = line.replace(u'%%%s%%' % propertyId, value)
-				if line.lstrip().startswith(u'append'):
-					lineold = line
-
+				
 			if line.lstrip().startswith(u'append'):
-				line = u'append'
-				append = { 'hn': hostId.split('.')[0] }
-				for value in line.strip().split()[1:]:
-					(k, v) = (u'', u'')
-					if (value.find(u'=') == -1):
-						k = value
-					else:
-						(k, v) = value.split(u'=', 1)
-					append[k] = v
-				for (k,v) in self.append.items():
-					append[k] = v
+				#logger.notice(">>>>>>>>>>>>>>>> line: %s" % line.lstrip())
+				if line.lstrip().startswith(u'append='):
+					logger.notice("elilo configuration detected")
+					uefi = True
+					appendLineProperties = ''.join(line.split('="')[1:])[:-1].split()
+					#logger.notice(">>>>>>>>>>> %s" % appendLineProperties)
+				else:
+					uefi = False
+					appendLineProperties = line.lstrip().split()[1:]
+				
+				appendLineProperties.append("hn=%s" % hostId.split('.')[0])
+				
+				#line = u'append'
+				#append = { 'hn': hostId.split('.')[0] }
+				appendLineProperties.append("hn=%s" % hostId.split('.')[0])
 
-				append[k] = v
-
-				line = line.split(u'append')[0] + u'append'
-				for (k,v) in append.items():
-					line += u' %s' % k
-					if v: line += u'=%s' % v
-
-			if lineold:
-				line = lineold + line.replace('append','')
-
-			self.content += line + u'\n'
-		f.close()
+			for (k,v) in self.append.items():
+				if v:
+					appendLineProperties.append("%s=%s" % (k,v))
+				else:
+					appendLineProperties.append("%s" % k)
+					
+			if self._uefiModule:
+				self.content = '%sappend="%s"\n' % (self.content, ' '.join(appendLineProperties))
+			else:
+				self.content = '%s  append %s\n' % (self.content, ' '.join(appendLineProperties))
+		else:
+			self.content = "%s%s\n" % (self.content, line)
 
 		if append.has_key('pckey'):
 			del self.append['pckey']
@@ -725,6 +789,8 @@ class OpsipxeconfdInit(object):
 			'port'                         : u'/var/run/opsipxeconfd/opsipxeconfd.socket',
 			'pxeDir'                       : u'/tftpboot/linux/pxelinux.cfg',
 			'pxeConfTemplate'              : u'/tftpboot/linux/pxelinux.cfg/install',
+			'uefiConfTemplate-x64'             : u'/tftpboot/linux/pxelinux.cfg/install-elilo-x64',
+			'uefiConfTemplate-x86'		: u'/tftpboot/linux/pxelinux.cfg/install-elilo-x86',
 			'maxConnections'               : 5,
 			'maxPxeConfigWriters'          : 100,
 			'backendConfigDir'             : u'/etc/opsi/backends',
