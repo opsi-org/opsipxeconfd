@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 __version__ = '4.0.5.1'
 
+import base64
 import codecs
 import getopt
 import os
@@ -41,6 +42,8 @@ import sys
 import threading
 import time
 from signal import SIGHUP, SIGINT, SIGTERM, signal
+from twisted.conch.ssh import keys
+from hashlib import md5
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
@@ -485,7 +488,7 @@ class StartupTask(threading.Thread):
 
 
 class PXEConfigWriter(threading.Thread):
-	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback = None, backend_info = {}):
+	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback = None, backendinfo = {}):
 		threading.Thread.__init__(self)
 		self.templatefile = templatefile
 		self.append = append
@@ -496,13 +499,13 @@ class PXEConfigWriter(threading.Thread):
 		self.startTime = time.time()
 		self._callback = callback
 		self._pipe = None
-		if not backend_info:
-			self._uefiModule = False
-		else:
+		self._uefiModule = False
+
+
+		if backendinfo:
 			modules = backendinfo['modules']
 			helpermodules = backendinfo['realmodules']
 			hostCount = backendinfo['hostCount']
-			
 
 			publicKey = keys.Key.fromString(data = base64.decodestring('AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDojY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDUlk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP')).keyObject
 			data = u''; mks = modules.keys(); mks.sort()
@@ -530,34 +533,34 @@ class PXEConfigWriter(threading.Thread):
 			else:
 				if modules.get('uefi'):
 					self._uefiModule = True
-		
+
 		logger.info(u"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s" \
 				% (self.templatefile, self.pxefile, self.hostId, self.append))
 
 		if not os.path.exists(self.templatefile):
 			raise Exception(u"Template file '%s' not found" % self.templatefile)
-			
+
 		logger.debug(u"Reading Template")
 		with open(self.templatefile, 'r') as f:
 			templateLines = f.readlines()
-			
+
 		self.template = { 'pxelinux': [] }
 
 		# Set pxe config content
 		self.content = u''
 		appendLineProperties = []
-			
+
 		for line in templateLines:
 			line = line.rstrip()
 
 			#lineold = None
 			#if line.lstrip().startswith(u'append'):
 			#	lineold = line
-				
+
 			for (propertyId, value) in self.productPropertyStates.items():
 				logger.debug("Property: '%s': value: '%s'" % (propertyId, value))
 				line = line.replace(u'%%%s%%' % propertyId, value)
-				
+
 			if line.lstrip().startswith(u'append'):
 				#logger.notice(">>>>>>>>>>>>>>>> line: %s" % line.lstrip())
 				if line.lstrip().startswith(u'append='):
