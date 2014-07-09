@@ -553,43 +553,33 @@ class PXEConfigWriter(threading.Thread):
 		for line in templateLines:
 			line = line.rstrip()
 
-			#lineold = None
-			#if line.lstrip().startswith(u'append'):
-			#	lineold = line
-
 			for (propertyId, value) in self.productPropertyStates.items():
 				logger.debug("Property: '%s': value: '%s'" % (propertyId, value))
 				line = line.replace(u'%%%s%%' % propertyId, value)
 
 			if line.lstrip().startswith(u'append'):
-				#logger.notice(">>>>>>>>>>>>>>>> line: %s" % line.lstrip())
+				logger.debug(">>>> line: %s" % line.lstrip())
 				if line.lstrip().startswith(u'append='):
 					logger.notice("elilo configuration detected")
 					uefi = True
 					appendLineProperties = ''.join(line.split('="')[1:])[:-1].split()
-					#logger.notice(">>>>>>>>>>> %s" % appendLineProperties)
 				else:
 					uefi = False
 					appendLineProperties = line.lstrip().split()[1:]
 				
-				appendLineProperties.append("hn=%s" % hostId.split('.')[0])
 				
-				#line = u'append'
-				#append = { 'hn': hostId.split('.')[0] }
-				appendLineProperties.append("hn=%s" % hostId.split('.')[0])
-
-			for (k,v) in self.append.items():
-				if v:
-					appendLineProperties.append("%s=%s" % (k,v))
-				else:
-					appendLineProperties.append("%s" % k)
+				for (k,v) in self.append.items():
+					if v:
+						appendLineProperties.append("%s=%s" % (k,v))
+					else:
+						appendLineProperties.append("%s" % k)
 					
-			if self._uefiModule:
-				self.content = '%sappend="%s"\n' % (self.content, ' '.join(appendLineProperties))
+				if self._uefiModule and uefi:
+					self.content = '%sappend="%s"\n' % (self.content, ' '.join(appendLineProperties))
+				else:
+					self.content = '%s  append %s\n' % (self.content, ' '.join(appendLineProperties))
 			else:
-				self.content = '%s  append %s\n' % (self.content, ' '.join(appendLineProperties))
-		else:
-			self.content = "%s%s\n" % (self.content, line)
+				self.content = "%s%s\n" % (self.content, line)
 
 		if append.has_key('pckey'):
 			del self.append['pckey']
