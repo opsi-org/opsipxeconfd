@@ -517,6 +517,7 @@ class PXEConfigWriter(threading.Thread):
 					if module == 'uefi':
 						if int(val) + 50 <= hostCount:
 							logger.error(u"UNDERLICENSED: You have more Clients then licensed in modules file.  Disabling module: '%s'" % module)
+							modules[module] = False
 						elif int(val) <= hostCount:
 							logger.warning("UNDERLICENSED WARNING: You have more Clients then licensed in modules file.")
 					else:
