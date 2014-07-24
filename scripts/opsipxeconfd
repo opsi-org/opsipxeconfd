@@ -370,6 +370,8 @@ class Opsipxeconfd(threading.Thread):
 			pxefile = os.path.join(self.config['pxeDir'], pxeConfigName)
 			if os.path.exists(pxefile):
 				for pcw in self._pxeConfigWriters:
+					if pcw.uefi and not pcw._uefiModule:
+						raise Exception(u"Should use uefi netboot, but uefi module is not licensed.")
 					if (pcw.pxefile == pxefile):
 						if (host.id == pcw.hostId):
 							logger.notice(u"PXE boot configuration '%s' for client '%s' already exists." % (pxefile, host.id))
@@ -500,6 +502,7 @@ class PXEConfigWriter(threading.Thread):
 		self._callback = callback
 		self._pipe = None
 		self._uefiModule = False
+		self.uefi = False
 
 
 		if backendinfo:
@@ -559,13 +562,12 @@ class PXEConfigWriter(threading.Thread):
 				line = line.replace(u'%%%s%%' % propertyId, value)
 
 			if line.lstrip().startswith(u'append'):
-				logger.debug(">>>> line: %s" % line.lstrip())
 				if line.lstrip().startswith(u'append='):
 					logger.notice("elilo configuration detected")
-					uefi = True
+					self.uefi = True
 					appendLineProperties = ''.join(line.split('="')[1:])[:-1].split()
 				else:
-					uefi = False
+					self.uefi = False
 					appendLineProperties = line.lstrip().split()[1:]
 				
 				
@@ -575,9 +577,10 @@ class PXEConfigWriter(threading.Thread):
 					else:
 						appendLineProperties.append("%s" % k)
 					
-				if self._uefiModule and uefi:
+				if self._uefiModule and self.uefi:
 					self.content = '%sappend="%s"\n' % (self.content, ' '.join(appendLineProperties))
-				elif not self._uefiModule and uefi:
+				elif not self._uefiModule and self.uefi:
+					self.contect = ""
 					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
 				else:
 					self.content = '%s  append %s\n' % (self.content, ' '.join(appendLineProperties))
