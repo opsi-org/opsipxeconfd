@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.5.2-1) experimental; urgency=low
+
+  * Fix in custom pxeConfTemplate-file handling.
+
+ -- Erol Ueluekmen <e.ueluekmen@uib.de>  Mon, 04 Aug 2014 16:09:14 +0200
+
 opsipxeconfd (4.0.5.1-3) experimental; urgency=low
 
   * Support for building with python-support added again.
