@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.5.3-1) experimental; urgency=low
+
+  * Fix in modules handling
+
+ -- Erol Ueluekmen <e.ueluekmen@uib.de>  Thu, 07 Aug 2014 01:45:00 +0200
+
 opsipxeconfd (4.0.5.2-1) experimental; urgency=low
 
   * Fix in custom pxeConfTemplate-file handling.
