@@ -6,31 +6,30 @@ opsi pxe configuration daemon (opsipxeconfd)
 opsiconfd is part of the desktop management solution opsi
 (open pc server integration) http://www.opsi.org
 
-Copyright (C) 2010-2013 uib GmbH
+Copyright (C) 2013-2014 uib GmbH
 
 http://www.uib.de/
 
 All rights reserved.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License, version 3
+as published by the Free Software Foundation.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Affero General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @copyright:	uib GmbH <info@uib.de>
 @author: Jan Schneider <j.schneider@uib.de>
-@license: GNU General Public License version 2
+@license: GNU Affero GPL version 3
 """
 
-__version__ = '4.0.5.2'
+__version__ = '4.0.5.3'
 
 import base64
 import codecs
@@ -513,34 +512,35 @@ class PXEConfigWriter(threading.Thread):
 			modules = backendinfo['modules']
 			helpermodules = backendinfo['realmodules']
 			hostCount = backendinfo['hostCount']
-
-			publicKey = keys.Key.fromString(data = base64.decodestring('AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDojY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDUlk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP')).keyObject
-			data = u''; mks = modules.keys(); mks.sort()
-			for module in mks:
-				if module in ('valid', 'signature'):
-					continue
-				if helpermodules.has_key(module):
-					val = helpermodules[module]
-					if module == 'uefi':
-						if int(val) + 50 <= hostCount:
-							logger.error(u"UNDERLICENSED: You have more Clients then licensed in modules file.  Disabling module: '%s'" % module)
-							modules[module] = False
-						elif int(val) <= hostCount:
-							logger.warning("UNDERLICENSED WARNING: You have more Clients then licensed in modules file.")
+			
+			if modules.get('customer'):
+				publicKey = keys.Key.fromString(data = base64.decodestring('AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDojY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDUlk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP')).keyObject
+				data = u''; mks = modules.keys(); mks.sort()
+				for module in mks:
+					if module in ('valid', 'signature'):
+						continue
+					if helpermodules.has_key(module):
+						val = helpermodules[module]
+						if module == 'uefi':
+							if int(val) + 50 <= hostCount:
+								logger.error(u"UNDERLICENSED: You have more Clients then licensed in modules file.  Disabling module: '%s'" % module)
+								modules[module] = False
+							elif int(val) <= hostCount:
+								logger.warning("UNDERLICENSED WARNING: You have more Clients then licensed in modules file.")
+						else:
+							if int(val) > 0:
+								modules[module] = True
 					else:
-						if int(val) > 0:
-							modules[module] = True
+						val = modules[module]
+						if (val == False): val = 'no'
+						if (val == True):  val = 'yes'
+					data += u'%s = %s\r\n' % (module.lower().strip(), val)
+				if not bool(publicKey.verify(md5(data).digest(), [ long(modules['signature']) ])):
+					logger.error(u"Failed to verify modules signature")
+					return
 				else:
-					val = modules[module]
-					if (val == False): val = 'no'
-					if (val == True):  val = 'yes'
-				data += u'%s = %s\r\n' % (module.lower().strip(), val)
-			if not bool(publicKey.verify(md5(data).digest(), [ long(modules['signature']) ])):
-				logger.error(u"Failed to verify modules signature")
-				return
-			else:
-				if modules.get('uefi'):
-					self._uefiModule = True
+					if modules.get('uefi'):
+						self._uefiModule = True
 
 		logger.info(u"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s" \
 				% (self.templatefile, self.pxefile, self.hostId, self.append))
