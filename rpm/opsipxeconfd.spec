@@ -67,8 +67,7 @@ ln -sf /etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 	sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
 %endif
 
-
-%if 0%{?suse_version} || 0%{?sles_version}
+%if 0%{?suse_version} > 1110
 LOGROTATE_VERSION="$(zypper info logrotate | grep -i "version" | awk '{print $2}' | cut -d '-' -f 1)"
 if [ "$(zypper --terse versioncmp $LOGROTATE_VERSION 3.8)" == "-1" ]; then
         LOGROTATE_TEMP=$RPM_BUILD_ROOT/opsi-logrotate_config.temp
@@ -106,19 +105,19 @@ fi
 if [ $1 -eq 1 ]; then
 	# Install
 	#%{fillup_and_insserv opsipxeconfd}
-	
+
 	%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora_version}
 	chkconfig --add opsipxeconfd
 	%else
 	insserv opsipxeconfd || true
 	%endif
-	
+
 	/etc/init.d/opsipxeconfd start || true
 else
 	# Upgrade
 	# Moved to /var/run/opsipxeconfd/opsipxeconfd.socket
 	rm /var/run/opsipxeconfd.socket >/dev/null 2>&1 || true
-	
+
 	if [ -e /var/run/opsipxeconfd.pid -o -e /var/run/opsipxeconfd/opsipxeconfd.pid ]; then
 		rm /var/run/opsipxeconfd.pid >/dev/null 2>&1 || true
 		/etc/init.d/opsipxeconfd restart || true
@@ -132,7 +131,7 @@ fi
 %else
         if [ $1 = 0 ] ; then
                 /etc/init.d/opsipxeconfd stop >/dev/null 2>&1 || true
-        fi  
+        fi
 %endif
 
 # ===[ postun ]=====================================
