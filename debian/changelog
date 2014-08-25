@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.5.3-2) experimental; urgency=low
+
+  * Fix for logrotate under SLES11SP3
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Mon, 25 Aug 2014 11:36:03 +0200
+
 opsipxeconfd (4.0.5.3-1) experimental; urgency=low
 
   * Fix in modules handling
