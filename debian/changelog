@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.5.3-3) experimental; urgency=low
+
+  * RHEL/CentOS: fixing problems on uninstall
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 09 Sep 2014 12:30:07 +0200
+
 opsipxeconfd (4.0.5.3-2) experimental; urgency=low
 
   * Fix for logrotate under SLES11SP3
@@ -30,7 +36,7 @@ opsipxeconfd (4.0.5.1-2) experimental; urgency=low
 
 opsipxeconfd (4.0.5.1-1) experimental; urgency=low
 
-  * Correctly stopping the service on non-SUSE machines on upgrade/uninstall 
+  * Correctly stopping the service on non-SUSE machines on upgrade/uninstall
   * uefi support
 
  -- Erol Ueluekmen <e.ueluekmen@uib.de>  Tue, 08 Jul 2014 11:59:08 +0200
@@ -74,7 +80,7 @@ opsipxeconfd (4.0.2.4-1) experimental; urgency=low
 
 opsipxeconfd (4.0.2.3-1) experimental; urgency=low
 
-  * when spaces are in append, does not shuffle productPropertyStates 
+  * when spaces are in append, does not shuffle productPropertyStates
 
  -- Jim Pizagno <j.pizagno@uib.de>  Wed, 05 Sep 2012 17:03:22 +0200
 
