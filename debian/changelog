@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.5.3-4) experimental; urgency=low
+
+  * RHEL/CentOS: Only removing the daemon in postun
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 09 Sep 2014 14:21:31 +0200
+
 opsipxeconfd (4.0.5.3-3) experimental; urgency=low
 
   * RHEL/CentOS: fixing problems on uninstall
