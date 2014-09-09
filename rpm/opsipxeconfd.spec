@@ -120,7 +120,7 @@ else
 
 	if [ -e /var/run/opsipxeconfd.pid -o -e /var/run/opsipxeconfd/opsipxeconfd.pid ]; then
 		rm /var/run/opsipxeconfd.pid >/dev/null 2>&1 || true
-		/etc/init.d/opsipxeconfd restart || true
+		/sbin/service opsipxeconfd restart || true
 	fi
 fi
 
@@ -129,15 +129,18 @@ fi
 %if 0%{?suse_version}
         %stop_on_removal opsipxeconfd
 %else
-        if [ $1 = 0 ] ; then
-                /etc/init.d/opsipxeconfd stop >/dev/null 2>&1 || true
-        fi
+	if [ $1 -eq 0 ]; then
+		# Removal
+		/sbin/service opsipxeconfd stop >/dev/null 2>&1
+		/sbin/chkconfig --del opsipxeconfd
+	fi
 %endif
 
 # ===[ postun ]=====================================
 %postun
 %restart_on_update opsipxeconfd
 if [ $1 -eq 0 ]; then
+	# Removal
 	%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora_version}
 		chkconfig --del opsipxeconfd
 	%else
