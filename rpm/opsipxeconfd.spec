@@ -127,7 +127,7 @@ fi
 # ===[ preun ]======================================
 %preun
 %if 0%{?suse_version}
-        %stop_on_removal opsipxeconfd
+	%stop_on_removal opsipxeconfd
 %else
 	if [ $1 -eq 0 ]; then
 		# Removal
