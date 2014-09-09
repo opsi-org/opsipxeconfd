@@ -132,7 +132,6 @@ fi
 	if [ $1 -eq 0 ]; then
 		# Removal
 		/sbin/service opsipxeconfd stop >/dev/null 2>&1
-		/sbin/chkconfig --del opsipxeconfd
 	fi
 %endif
 
