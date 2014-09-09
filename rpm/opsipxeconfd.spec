@@ -1,7 +1,7 @@
 #
 # spec file for package opsipxeconfd
 #
-# Copyright (c) 2010 uib GmbH.
+# Copyright (c) 2010-2014 uib GmbH.
 # This file and all modifications and additions to the pristine
 # package are under the same license as the package itself.
 #
