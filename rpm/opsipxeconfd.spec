@@ -141,7 +141,7 @@ fi
 if [ $1 -eq 0 ]; then
 	# Removal
 	%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora_version}
-		/sbin/chkconfig --del opsipxeconfd
+		/sbin/chkconfig --del opsipxeconfd >/dev/null 2>&1 || true
 	%else
 		%insserv_cleanup
 	%endif
