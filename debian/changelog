@@ -1,4 +1,4 @@
-opsipxeconfd (4.0.5.3-6) experimental; urgency=low
+opsipxeconfd (4.0.5.3-6) stable; urgency=low
 
   * Removal on RHEL/CentOS should not fail anymore. 
 
