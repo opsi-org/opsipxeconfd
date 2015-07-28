@@ -811,26 +811,26 @@ class OpsipxeconfdInit(object):
 	def createPidFile(self):
 		logger.info(u"Creating pid file '%s'" % self.config['pidFile'])
 		if os.path.exists(self.config['pidFile']):
-			pf = open(self.config['pidFile'], 'r')
-			p = pf.readline().strip()
-			pf.close()
-			if p:
+			with open(self.config['pidFile'], 'r') as pf:
+				oldPid = pf.readline().strip()
+
+			if oldPid:
 				running = False
 				try:
-					for i in execute("%s -x opsipxeconfd" % which("pidof"))[0].strip().split():
-						if (i == p):
+					pids = execute("%s -x opsipxeconfd" % which("pidof"))[0].strip().split()
+					for runningPid in pids:
+						if runningPid == oldPid:
 							running = True
 							break
 				except Exception as error:
 					logger.error(error)
 
 				if running:
-					raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % p )
+					raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % oldPid)
 
 		pid = os.getpid()
-		pf = open (self.config['pidFile'], "w")
-		print >> pf, str(pid)
-		pf.close()
+		with open(self.config['pidFile'], "w") as pf:
+			pf.write(str(pid))
 
 	def removePidFile(self):
 		try:
