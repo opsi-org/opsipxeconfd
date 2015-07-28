@@ -1,0 +1,8 @@
+#! /bin/sh -e
+
+if [ "$1" = purge ]; then
+	update-rc.d opsipxeconfd remove
+fi
+
+#DEBHELPER#
+
