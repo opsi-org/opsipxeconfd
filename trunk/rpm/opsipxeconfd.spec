@@ -50,10 +50,6 @@ This package contains the opsi pxe configuration daemon.
 # ===[ build ]======================================
 %build
 export CFLAGS="$RPM_OPT_FLAGS"
-%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
-# Fix for https://bugzilla.redhat.com/show_bug.cgi?id=1117878
-export PATH="/usr/bin:$PATH"
-%endif
 python setup.py build
 
 # ===[ install ]====================================
