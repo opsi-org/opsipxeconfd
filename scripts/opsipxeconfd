@@ -334,12 +334,12 @@ class Opsipxeconfd(threading.Thread):
 				if not product:
 					raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 				product = product[0]
-				
+
 				if elilo_mode:
 					pxeConfigTemplate = self.config['uefiConfTemplate-x64']
 				elif elilo_x86_mode:
 					pxeConfigTemplate = self.config['uefiConfTemplate-x86']
-				
+
 				if product.pxeConfigTemplate:
 					if not elilo_mode:
 						if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
@@ -351,7 +351,7 @@ class Opsipxeconfd(threading.Thread):
 											% (pxeConfigTemplate, hostId, poc.productId))
 					else:
 						logger.notice("Ignoring given pceConfigTemplate because uefi detected for the client.")
-			
+
 			if not pxeConfigTemplate:
 				pxeConfigTemplate = self.config['pxeConfTemplate']
 
@@ -513,7 +513,7 @@ class PXEConfigWriter(threading.Thread):
 			modules = backendinfo['modules']
 			helpermodules = backendinfo['realmodules']
 			hostCount = backendinfo['hostCount']
-			
+
 			if modules.get('customer'):
 				publicKey = keys.Key.fromString(data = base64.decodestring('AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDojY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDUlk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP')).keyObject
 				data = u''; mks = modules.keys(); mks.sort()
@@ -574,14 +574,14 @@ class PXEConfigWriter(threading.Thread):
 				else:
 					self.uefi = False
 					appendLineProperties = line.lstrip().split()[1:]
-				
-				
+
+
 				for (k,v) in self.append.items():
 					if v:
 						appendLineProperties.append("%s=%s" % (k,v))
 					else:
 						appendLineProperties.append("%s" % k)
-					
+
 				if self._uefiModule and self.uefi:
 					self.content = '%sappend="%s"\n' % (self.content, ' '.join(appendLineProperties))
 				elif not self._uefiModule and self.uefi:
