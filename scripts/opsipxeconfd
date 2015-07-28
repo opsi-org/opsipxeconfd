@@ -821,8 +821,9 @@ class OpsipxeconfdInit(object):
 						if (i == p):
 							running = True
 							break
-				except Exception as e:
-					logger.error(e)
+				except Exception as error:
+					logger.error(error)
+
 				if running:
 					raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % p )
 
