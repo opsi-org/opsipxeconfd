@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.5.4-3) experimental; urgency=medium
+
+  * Debian: updated postinst-script.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Wed, 29 Jul 2015 14:09:15 +0200
+
 opsipxeconfd (4.0.5.4-2) experimental; urgency=medium
 
   * Debian 8: fix lintian false positive.
