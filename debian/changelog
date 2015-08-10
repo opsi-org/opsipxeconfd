@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.5.4-4) testing; urgency=medium
+
+  * Debian: fix error in postinst.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Mon, 10 Aug 2015 13:38:11 +0200
+
 opsipxeconfd (4.0.5.4-3) experimental; urgency=medium
 
   * Debian: updated postinst-script.
