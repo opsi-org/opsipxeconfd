@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @license: GNU Affero GPL version 3
 """
 
-__version__ = '4.0.5.3'
+__version__ = '4.0.5.4'
 
 import base64
 import codecs
