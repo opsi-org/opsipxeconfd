@@ -1,8 +1,9 @@
 opsipxeconfd (4.0.5.4-5) UNRELEASED; urgency=medium
 
   * Adjusting __version__ of opsipxeconfd script.
+  * RPM: Making the license machine-parseable.
 
- -- Niko Wenselowski <n.wenselowski@uib.de>  Wed, 12 Aug 2015 16:48:48 +0200
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Thu, 20 Aug 2015 16:06:57 +0200
 
 opsipxeconfd (4.0.5.4-4) testing; urgency=medium
 
