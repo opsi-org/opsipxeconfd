@@ -750,9 +750,9 @@ class OpsipxeconfdInit(object):
 
 		elif self.args[0] == u'start':
 			# Call signalHandler on signal SIGHUP, SIGTERM, SIGINT
-			signal(SIGHUP,  self.signalHandler)
+			signal(SIGHUP, self.signalHandler)
 			signal(SIGTERM, self.signalHandler)
-			signal(SIGINT,  self.signalHandler)
+			signal(SIGINT, self.signalHandler)
 
 			if self.config['daemon']:
 				logger.setConsoleLevel(LOG_NONE)
