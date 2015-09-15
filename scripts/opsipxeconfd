@@ -33,7 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 __version__ = '4.0.5.4'
 
 import base64
-import codecs
 import getopt
 import os
 import socket
@@ -50,8 +49,7 @@ from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
-from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
-	forceUnicodeList)
+from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
 
 logger = Logger()
@@ -61,7 +59,7 @@ class Opsipxeconfd(threading.Thread):
 	def __init__(self, config):
 		threading.Thread.__init__(self)
 
-		self.config   = config
+		self.config = config
 		self._running = False
 
 		self._backend = None
@@ -104,7 +102,7 @@ class Opsipxeconfd(threading.Thread):
 	def _setOpsiLogging(self):
 		# Set logging options
 		if self.config['logFile']:
-			logger.setLogFile( self.config['logFile'] )
+			logger.setLogFile(self.config['logFile'])
 		if self.config['logFormat']:
 			logger.setLogFormat(self.config['logFormat'])
 		logger.setFileLevel(self.config['logLevel'])
@@ -113,12 +111,12 @@ class Opsipxeconfd(threading.Thread):
 		logger.info(u"Creating backend instance")
 		self._backend = BackendManager(
 			dispatchConfigFile    = self.config['dispatchConfigFile'],
-			# Avoid loops
+		# Avoid loops
 			dispatchIgnoreModules = ['OpsiPXEConfd'],
 			backendConfigDir      = self.config['backendConfigDir'],
 			extend                = True
 		)
-		self._backend.backend_setOptions({ 'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True })
+		self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
 
 	def _createSocket(self):
 		return self._createUnixSocket()
@@ -207,21 +205,21 @@ class Opsipxeconfd(threading.Thread):
 
 		gotAlways = False
 		for i in range(len(pcw.productOnClients)):
-			#renew objects and check if anythin changes on service since callback
+			# renew objects and check if anythin changes on service since callback
 			productOnClients = self._backend.productOnClient_getObjects(
-				productType        = u'NetbootProduct',
-				clientId                = pcw.productOnClients[i].clientId,
-				productId            = pcw.productOnClients[i].productId
-			)
+			productType = u'NetbootProduct',
+			clientId = pcw.productOnClients[i].clientId,
+			productId = pcw.productOnClients[i].productId
+				)
 			if productOnClients:
 				pcw.productOnClients[i] = productOnClients[0]
 			else:
 				del pcw.productOnClients[i]
 			if pcw.productOnClients:
 				pcw.productOnClients[i].setActionProgress(u'pxe boot configuration read')
-				if (pcw.productOnClients[i].getActionRequest() == u'always'):
+				if pcw.productOnClients[i].getActionRequest() == u'always':
 					gotAlways = True
-				if (pcw.templatefile != self.config['pxeConfTemplate'] and not gotAlways):
+				if pcw.templatefile != self.config['pxeConfTemplate'] and not gotAlways:
 					pcw.productOnClients[i].setActionRequest(u'none')
 		if pcw.productOnClients:
 			self._backend.productOnClient_updateObjects(pcw.productOnClients)
@@ -230,24 +228,24 @@ class Opsipxeconfd(threading.Thread):
 
 	def status(self):
 		logger.notice(u"Getting opsipxeconfd status")
-		result  = u'opsipxeconfd status:\n'
+		result = u'opsipxeconfd status:\n'
 
 		self._clientConnectionLock.acquire()
 		try:
 			result += u'%s control connection(s) established\n' % len(self._clientConnections)
 			for i in range(len(self._clientConnections)):
 				result += u'    Connection %s established at: %s\n' \
-					% (i+1, time.asctime(time.localtime(self._clientConnections[i].startTime)))
+					% (i + 1, time.asctime(time.localtime(self._clientConnections[i].startTime)))
 		finally:
 			self._clientConnectionLock.release()
 
 		result += u'\n%s boot configuration(s) set\n' % len(self._pxeConfigWriters)
 		for pcw in self._pxeConfigWriters:
-			result += u"    Boot config for client '%s', args %s, path '%s' set at: %s\n" \
+			result += u"Boot config for client '%s', args %s, path '%s' set at: %s\n" \
 				% (	pcw.hostId,
 					pcw.args,
 					pcw.pxefile,
-					time.asctime(time.localtime(pcw.startTime) ))
+					time.asctime(time.localtime(pcw.startTime)))
 		logger.notice(result)
 		return result
 
@@ -261,7 +259,7 @@ class Opsipxeconfd(threading.Thread):
 			self._pxeConfigWritersLock.acquire()
 			try:
 				for pcw in self._pxeConfigWriters:
-					if (pcw.hostId == hostId):
+					if pcw.hostId == hostId:
 						currentPcws.append(pcw)
 				for pcw in currentPcws:
 					self._pxeConfigWriters.remove(pcw)
@@ -278,7 +276,7 @@ class Opsipxeconfd(threading.Thread):
 			productOnClients = self._backend.productOnClient_getObjects(
 				productType        = u'NetbootProduct',
 				clientId           = hostId,
-				actionRequest      = [ 'setup', 'uninstall', 'update', 'always', 'once', 'custom' ]
+				actionRequest      = ['setup', 'uninstall', 'update', 'always', 'once', 'custom']
 			)
 
 			if not productOnClients:
@@ -307,20 +305,20 @@ class Opsipxeconfd(threading.Thread):
 			if not productOnClients:
 				return u'Boot configuration updated'
 
-			self._backend.backend_setOptions({ 'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True })
+			self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
 
 			# Try to detect elilo mode
-			elilo_mode = False
-			elilo_x86_mode = False
+			eliloMode = False
+			eliloX86Mode = False
 			configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename",objectId=hostId)
 			if configStates:
 				val = configStates[0].getValues()
 				if val:
 					if val and 'elilo' in val[0]:
 						if 'x86' in val[0]:
-							elilo_x86_mode = True
+							eliloX86Mode = True
 						else:
-							elilo_mode = True
+							eliloMode = True
 
 			# Get pxe config template
 			pxeConfigTemplate = None
@@ -335,13 +333,13 @@ class Opsipxeconfd(threading.Thread):
 					raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 				product = product[0]
 
-				if elilo_mode:
+				if eliloMode:
 					pxeConfigTemplate = self.config['uefiConfTemplate-x64']
-				elif elilo_x86_mode:
+				elif eliloX86Mode:
 					pxeConfigTemplate = self.config['uefiConfTemplate-x86']
 
 				if product.pxeConfigTemplate:
-					if not elilo_mode:
+					if not eliloMode:
 						if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
 							logger.error(u"Cannot use more than one pxe config template, got: %s, %s" \
 								% (pxeConfigTemplate, product.pxeConfigTemplate))
