@@ -102,7 +102,7 @@ class Opsipxeconfd(threading.Thread):
 	def _setOpsiLogging(self):
 		# Set logging options
 		if self.config['logFile']:
-			logger.setLogFile( self.config['logFile'] )
+			logger.setLogFile(self.config['logFile'])
 		if self.config['logFormat']:
 			logger.setLogFormat(self.config['logFormat'])
 		logger.setFileLevel(self.config['logLevel'])
@@ -111,7 +111,7 @@ class Opsipxeconfd(threading.Thread):
 		logger.info(u"Creating backend instance")
 		self._backend = BackendManager(
 			dispatchConfigFile    = self.config['dispatchConfigFile'],
-			# Avoid loops
+		# Avoid loops
 			dispatchIgnoreModules = ['OpsiPXEConfd'],
 			backendConfigDir      = self.config['backendConfigDir'],
 			extend                = True
@@ -205,7 +205,7 @@ class Opsipxeconfd(threading.Thread):
 
 		gotAlways = False
 		for i in range(len(pcw.productOnClients)):
-			#renew objects and check if anythin changes on service since callback
+			# renew objects and check if anythin changes on service since callback
 			productOnClients = self._backend.productOnClient_getObjects(
 			productType = u'NetbootProduct',
 			clientId = pcw.productOnClients[i].clientId,
@@ -217,9 +217,9 @@ class Opsipxeconfd(threading.Thread):
 				del pcw.productOnClients[i]
 			if pcw.productOnClients:
 				pcw.productOnClients[i].setActionProgress(u'pxe boot configuration read')
-				if (pcw.productOnClients[i].getActionRequest() == u'always'):
+				if pcw.productOnClients[i].getActionRequest() == u'always':
 					gotAlways = True
-				if (pcw.templatefile != self.config['pxeConfTemplate'] and not gotAlways):
+				if pcw.templatefile != self.config['pxeConfTemplate'] and not gotAlways:
 					pcw.productOnClients[i].setActionRequest(u'none')
 		if pcw.productOnClients:
 			self._backend.productOnClient_updateObjects(pcw.productOnClients)
@@ -241,7 +241,7 @@ class Opsipxeconfd(threading.Thread):
 
 		result += u'\n%s boot configuration(s) set\n' % len(self._pxeConfigWriters)
 		for pcw in self._pxeConfigWriters:
-			result += u"    Boot config for client '%s', args %s, path '%s' set at: %s\n" \
+			result += u"Boot config for client '%s', args %s, path '%s' set at: %s\n" \
 				% (	pcw.hostId,
 					pcw.args,
 					pcw.pxefile,
@@ -259,7 +259,7 @@ class Opsipxeconfd(threading.Thread):
 			self._pxeConfigWritersLock.acquire()
 			try:
 				for pcw in self._pxeConfigWriters:
-					if (pcw.hostId == hostId):
+					if pcw.hostId == hostId:
 						currentPcws.append(pcw)
 				for pcw in currentPcws:
 					self._pxeConfigWriters.remove(pcw)
@@ -305,20 +305,20 @@ class Opsipxeconfd(threading.Thread):
 			if not productOnClients:
 				return u'Boot configuration updated'
 
-			self._backend.backend_setOptions({ 'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True })
+			self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
 
 			# Try to detect elilo mode
-			elilo_mode = False
-			elilo_x86_mode = False
+			eliloMode = False
+			eliloX86Mode = False
 			configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename",objectId=hostId)
 			if configStates:
 				val = configStates[0].getValues()
 				if val:
 					if val and 'elilo' in val[0]:
 						if 'x86' in val[0]:
-							elilo_x86_mode = True
+							eliloX86Mode = True
 						else:
-							elilo_mode = True
+							eliloMode = True
 
 			# Get pxe config template
 			pxeConfigTemplate = None
