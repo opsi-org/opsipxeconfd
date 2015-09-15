@@ -149,7 +149,7 @@ class Opsipxeconfd(threading.Thread):
 
 		cc = None
 		try:
-			logger.info(u"Creating thread for connection %s" % (len(self._clientConnections)+1))
+			logger.info(u"Creating thread for connection %s" % (len(self._clientConnections) + 1))
 			cc = ClientConnection(self, sock, self.clientConnectionCallback)
 			self._clientConnectionLock.acquire()
 			self._clientConnections.append(cc)
@@ -283,7 +283,7 @@ class Opsipxeconfd(threading.Thread):
 				return u'Boot configuration updated'
 
 			# Get host
-			host = self._backend.host_getObjects(id = hostId)
+			host = self._backend.host_getObjects(id=hostId)
 			if not host:
 				raise Exception(u"Host '%s' not found" % hostId)
 			host = host[0]
@@ -311,7 +311,7 @@ class Opsipxeconfd(threading.Thread):
 			# Try to detect elilo mode
 			eliloMode = False
 			eliloX86Mode = False
-			configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename",objectId=hostId)
+			configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename", objectId=hostId)
 			if configStates:
 				val = configStates[0].getValues()
 				if val:
@@ -356,7 +356,7 @@ class Opsipxeconfd(threading.Thread):
 
 			if not os.path.isabs(pxeConfigTemplate):
 				# Not an absolute path
-				pxeConfigTemplate = os.path.join( os.path.dirname(self.config['pxeConfTemplate']), pxeConfigTemplate )
+				pxeConfigTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), pxeConfigTemplate)
 
 			logger.debug(u"Using pxe config template '%s'" % pxeConfigTemplate)
 
@@ -367,7 +367,7 @@ class Opsipxeconfd(threading.Thread):
 				pxeConfigName = u"01-%s" % host.getHardwareAddress().replace(u':', u'-')
 			elif host.getIpAddress():
 				logger.warning(u"Failed to get hardware address for host '%s', using ip address '%s'" % (hostId, host.getIpAddress()))
-				pxeConfigName = '%02X%02X%02X%02X' % tuple( map( lambda i:int(i), host.getIpAddress().split('.') ) )
+				pxeConfigName = '%02X%02X%02X%02X' % tuple(map(lambda i: int(i), host.getIpAddress().split('.')))
 			else:
 				raise Exception(u"Neither hardware address nor ip address known for host '%s'" % hostId)
 			pxefile = os.path.join(self.config['pxeDir'], pxeConfigName)
@@ -425,7 +425,7 @@ class Opsipxeconfd(threading.Thread):
 
 			pcw = None
 			try:
-				logger.info(u"Creating thread for pxeconfig %s" % (len(self._pxeConfigWriters)+1))
+				logger.info(u"Creating thread for pxeconfig %s" % (len(self._pxeConfigWriters) + 1))
 				backendinfo = self._backend.backend_info()
 				backendinfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
 				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback, backendinfo)
@@ -460,7 +460,7 @@ class StartupTask(threading.Thread):
 			logger.notice(u"Start setting needed boot configurations")
 
 			clientIds = []
-			for clientToDepot in self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds = [ self._opsipxeconfd.config['depotId'] ]):
+			for clientToDepot in self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds=[self._opsipxeconfd.config['depotId']]):
 				clientIds.append(clientToDepot['clientId'])
 
 			if clientIds:
@@ -494,7 +494,7 @@ class StartupTask(threading.Thread):
 
 
 class PXEConfigWriter(threading.Thread):
-	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback = None, backendinfo = {}):
+	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback=None, backendinfo={}):
 		threading.Thread.__init__(self)
 		self.templatefile = templatefile
 		self.append = append
@@ -508,14 +508,13 @@ class PXEConfigWriter(threading.Thread):
 		self._uefiModule = False
 		self.uefi = False
 
-
 		if backendinfo:
 			modules = backendinfo['modules']
 			helpermodules = backendinfo['realmodules']
 			hostCount = backendinfo['hostCount']
 
 			if modules.get('customer'):
-				publicKey = keys.Key.fromString(data = base64.decodestring('AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDojY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDUlk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP')).keyObject
+				publicKey = keys.Key.fromString(data=base64.decodestring('AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDojY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDUlk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP')).keyObject
 				data = u''
 				mks = modules.keys()
 				mks.sort()
@@ -579,10 +578,9 @@ class PXEConfigWriter(threading.Thread):
 					self.uefi = False
 					appendLineProperties = line.lstrip().split()[1:]
 
-
-				for (k,v) in self.append.items():
+				for (k, v) in self.append.items():
 					if v:
-						appendLineProperties.append("%s=%s" % (k,v))
+						appendLineProperties.append("%s=%s" % (k, v))
 					else:
 						appendLineProperties.append("%s" % k)
 
@@ -632,7 +630,7 @@ class PXEConfigWriter(threading.Thread):
 
 
 class ClientConnection(threading.Thread):
-	def __init__ (self, opsipxeconfd, socket, callback = None):
+	def __init__(self, opsipxeconfd, socket, callback=None):
 		threading.Thread.__init__(self)
 		self._opsipxeconfd = opsipxeconfd
 		self._socket = socket
@@ -676,7 +674,7 @@ class ClientConnection(threading.Thread):
 				return self._opsipxeconfd.status()
 			elif cp[0] == u'update':
 				if len(cp) != 2:
-					raise Exception (u"bad arguments for command 'update', needs <hostId>")
+					raise Exception(u"bad arguments for command 'update', needs <hostId>")
 				hostId = forceHostId(cp[1])
 				return self._opsipxeconfd.updateBootConfiguration(hostId)
 
@@ -701,7 +699,7 @@ class ServerConnection:
 
 	def sendCommand(self, cmd):
 		self.createUnixSocket()
-		self._socket.send( forceUnicode(cmd).encode('utf-8') )
+		self._socket.send(forceUnicode(cmd).encode('utf-8'))
 		result = None
 		try:
 			result = forceUnicode(self._socket.recv(4096))
@@ -721,7 +719,7 @@ class OpsipxeconfdInit(object):
 		self._pid = 0
 
 		try:
-			(self.opts, self.args) = getopt.getopt(sys.argv[1:], "vFl:c:", [ "no-fork", "loglevel=", "conffile=" ])
+			(self.opts, self.args) = getopt.getopt(sys.argv[1:], "vFl:c:", ["no-fork", "loglevel=", "conffile="])
 		except getopt.GetoptError:
 			self.usage()
 			sys.exit(1)
@@ -838,8 +836,8 @@ class OpsipxeconfdInit(object):
 			if os.path.exists(self.config['pidFile']):
 				logger.info(u"Removing pid file '%s'" % self.config['pidFile'])
 				os.unlink(self.config['pidFile'])
-		except Exception as e:
-			logger.error(u"Failed to remove pid file '%s': %s" % (self.config['pidFile'], e))
+		except Exception as error:
+			logger.error(u"Failed to remove pid file '%s': %s" % (self.config['pidFile'], error))
 
 	def signalHandler(self, signo, stackFrame):
 		for thread in threading.enumerate():
@@ -864,14 +862,14 @@ class OpsipxeconfdInit(object):
 		logger.notice(u"Trying to read config from file: '%s'" % self.config['configFile'])
 
 		try:
-			configFile = ConfigFile(filename = self.config['configFile'])
+			configFile = ConfigFile(filename=self.config['configFile'])
 			for line in configFile.parse():
 				if line.count('=') == 0:
 					logger.error(u"Parse error in config file: '%s', line '%s': '=' not found" % (self.config['configFile'], line))
 					continue
 				(option, value) = line.split(u'=', 1)
 				option = option.strip()
-				value  = value.strip()
+				value = value.strip()
 				if option == 'pid file':
 					self.config['pidFile'] = forceFilename(value)
 				elif option == 'log level':
