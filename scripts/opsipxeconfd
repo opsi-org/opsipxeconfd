@@ -835,7 +835,6 @@ class OpsipxeconfdInit(object):
 
 	def removePidFile(self):
 		try:
-			# if (self._pid == os.getpid())
 			if os.path.exists(self.config['pidFile']):
 				logger.info(u"Removing pid file '%s'" % self.config['pidFile'])
 				os.unlink(self.config['pidFile'])
