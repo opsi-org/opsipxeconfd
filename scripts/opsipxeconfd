@@ -71,9 +71,10 @@ class Opsipxeconfd(threading.Thread):
 		self._startupTask = None
 
 		self._setOpsiLogging()
-		logger.comment(	"\n==================================================================\n" \
-				+ "=           opsi pxe configuration service starting              =\n" \
-				+ "==================================================================\n")
+		logger.comment("""\
+==================================================================
+=           opsi pxe configuration service starting              =
+==================================================================""")
 
 	def setConfig(self, config):
 		logger.notice(u"Got new config")
