@@ -967,7 +967,6 @@ class OpsipxeconfdInit(object):
 
 if (__name__ == "__main__"):
 	logger.setConsoleLevel(LOG_WARNING)
-	exception = None
 
 	try:
 		OpsipxeconfdInit()
