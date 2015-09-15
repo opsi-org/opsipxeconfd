@@ -116,7 +116,7 @@ class Opsipxeconfd(threading.Thread):
 			backendConfigDir      = self.config['backendConfigDir'],
 			extend                = True
 		)
-		self._backend.backend_setOptions({ 'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True })
+		self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
 
 	def _createSocket(self):
 		return self._createUnixSocket()
@@ -207,10 +207,10 @@ class Opsipxeconfd(threading.Thread):
 		for i in range(len(pcw.productOnClients)):
 			#renew objects and check if anythin changes on service since callback
 			productOnClients = self._backend.productOnClient_getObjects(
-				productType        = u'NetbootProduct',
-				clientId                = pcw.productOnClients[i].clientId,
-				productId            = pcw.productOnClients[i].productId
-			)
+			productType = u'NetbootProduct',
+			clientId = pcw.productOnClients[i].clientId,
+			productId = pcw.productOnClients[i].productId
+				)
 			if productOnClients:
 				pcw.productOnClients[i] = productOnClients[0]
 			else:
