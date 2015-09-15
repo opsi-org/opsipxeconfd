@@ -375,8 +375,8 @@ class Opsipxeconfd(threading.Thread):
 				for pcw in self._pxeConfigWriters:
 					if pcw.uefi and not pcw._uefiModule:
 						raise Exception(u"Should use uefi netboot, but uefi module is not licensed.")
-					if (pcw.pxefile == pxefile):
-						if (host.id == pcw.hostId):
+					if pcw.pxefile == pxefile:
+						if host.id == pcw.hostId:
 							logger.notice(u"PXE boot configuration '%s' for client '%s' already exists." % (pxefile, host.id))
 							return
 						else:
@@ -409,7 +409,7 @@ class Opsipxeconfd(threading.Thread):
 				app = u' '.join(forceUnicodeList(configStates[0].getValues()))
 				for option in app.split():
 					keyValue = option.split(u"=")
-					if ( len(keyValue) < 2 ):
+					if len(keyValue) < 2:
 						append[keyValue[0].strip().lower()] = u''
 					else:
 						append[keyValue[0].strip().lower()] = keyValue[1].strip()
@@ -612,7 +612,7 @@ class PXEConfigWriter(threading.Thread):
 				self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
 				pipeOpenend = True
 			except Exception as error:
-				if (error.errno != 6):
+				if error.errno != 6:
 					raise
 				time.sleep(1)
 
@@ -729,7 +729,7 @@ class OpsipxeconfdInit(object):
 			self.usage()
 			sys.exit(1)
 
-		if (len(self.args) < 1):
+		if len(self.args) < 1:
 			self.usage()
 			sys.exit(1)
 
@@ -744,11 +744,11 @@ class OpsipxeconfdInit(object):
 		self.readConfigFile()
 		self.setCommandlineConfig()
 
-		if (self.args[0] == u'version'):
+		if self.args[0] == u'version':
 			print __version__
 			sys.exit(0)
 
-		elif (self.args[0] == u'start'):
+		elif self.args[0] == u'start':
 			# Call signalHandler on signal SIGHUP, SIGTERM, SIGINT
 			signal(SIGHUP,  self.signalHandler)
 			signal(SIGTERM, self.signalHandler)
@@ -849,7 +849,7 @@ class OpsipxeconfdInit(object):
 		for thread in threading.enumerate():
 			logger.debug(u"Running thread before signal: %s" % thread)
 
-		if (signo == SIGHUP):
+		if signo == SIGHUP:
 			if self._opsipxeconfd:
 				self.setDefaultConfig()
 				self.readConfigFile()
@@ -926,7 +926,7 @@ class OpsipxeconfdInit(object):
 		# Fork to allow the shell to return and to call setsid
 		try:
 			self._pid = os.fork()
-			if (self._pid > 0):
+			if self._pid > 0:
 				# Parent exits
 				sys.exit(0)
 		except OSError as error:
@@ -940,7 +940,7 @@ class OpsipxeconfdInit(object):
 		# Fork a second time to not remain session leader
 		try:
 			self._pid = os.fork()
-			if (self._pid > 0):
+			if self._pid > 0:
 				sys.exit(0)
 		except OSError as error:
 			raise Exception(u"Second fork failed: %e" % error)
@@ -965,7 +965,7 @@ class OpsipxeconfdInit(object):
 		sys.stderr = logger.getStderr()
 
 
-if (__name__ == "__main__"):
+if __name__ == "__main__":
 	logger.setConsoleLevel(LOG_WARNING)
 
 	try:
