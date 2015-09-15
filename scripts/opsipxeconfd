@@ -866,31 +866,31 @@ class OpsipxeconfdInit(object):
 		try:
 			configFile = ConfigFile(filename = self.config['configFile'])
 			for line in configFile.parse():
-				if (line.count('=') == 0):
+				if line.count('=') == 0:
 					logger.error(u"Parse error in config file: '%s', line '%s': '=' not found" % (self.config['configFile'], line))
 					continue
 				(option, value) = line.split(u'=', 1)
 				option = option.strip()
 				value  = value.strip()
-				if (option == 'pid file'):
+				if option == 'pid file':
 					self.config['pidFile'] = forceFilename(value)
-				elif (option == 'log level'):
+				elif option == 'log level':
 					self.config['logLevel'] = forceInt(value)
-				elif (option == 'log file'):
+				elif option == 'log file':
 					self.config['logFile'] = forceFilename(value)
-				elif (option == 'log format'):
+				elif option == 'log format':
 					self.config['logFormat'] = forceUnicode(value)
-				elif (option == 'pxe config dir'):
+				elif option == 'pxe config dir':
 					self.config['pxeDir'] = forceFilename(value)
-				elif (option == 'pxe config template'):
+				elif option == 'pxe config template':
 					self.config['pxeConfTemplate'] = forceFilename(value)
-				elif (option == 'max pxe config writers'):
+				elif option == 'max pxe config writers':
 					self.config['maxPxeConfigWriters'] = forceInt(value)
-				elif (option == 'max control connections'):
+				elif option == 'max control connections':
 					self.config['maxConnections'] = forceInt(value)
-				elif (option == 'backend config dir'):
+				elif option == 'backend config dir':
 					self.config['backendConfigDir'] = forceFilename(value)
-				elif (option == 'dispatch config file'):
+				elif option == 'dispatch config file':
 					self.config['dispatchConfigFile'] = forceFilename(value)
 				else:
 					logger.warning(u"Ignoring unknown option '%s' in config file: '%s'" % (option, self.config['configFile']))
