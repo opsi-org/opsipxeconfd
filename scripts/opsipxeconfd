@@ -228,14 +228,14 @@ class Opsipxeconfd(threading.Thread):
 
 	def status(self):
 		logger.notice(u"Getting opsipxeconfd status")
-		result  = u'opsipxeconfd status:\n'
+		result = u'opsipxeconfd status:\n'
 
 		self._clientConnectionLock.acquire()
 		try:
 			result += u'%s control connection(s) established\n' % len(self._clientConnections)
 			for i in range(len(self._clientConnections)):
 				result += u'    Connection %s established at: %s\n' \
-					% (i+1, time.asctime(time.localtime(self._clientConnections[i].startTime)))
+					% (i + 1, time.asctime(time.localtime(self._clientConnections[i].startTime)))
 		finally:
 			self._clientConnectionLock.release()
 
@@ -245,7 +245,7 @@ class Opsipxeconfd(threading.Thread):
 				% (	pcw.hostId,
 					pcw.args,
 					pcw.pxefile,
-					time.asctime(time.localtime(pcw.startTime) ))
+					time.asctime(time.localtime(pcw.startTime)))
 		logger.notice(result)
 		return result
 
@@ -276,7 +276,7 @@ class Opsipxeconfd(threading.Thread):
 			productOnClients = self._backend.productOnClient_getObjects(
 				productType        = u'NetbootProduct',
 				clientId           = hostId,
-				actionRequest      = [ 'setup', 'uninstall', 'update', 'always', 'once', 'custom' ]
+				actionRequest      = ['setup', 'uninstall', 'update', 'always', 'once', 'custom']
 			)
 
 			if not productOnClients:
