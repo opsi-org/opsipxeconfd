@@ -666,19 +666,16 @@ class ClientConnection(threading.Thread):
 			self._socket.close()
 
 	def _processCommand(self, cmd):
-
 		try:
 			cp = cmd.split()
 
-			if (cp[0] == u'stop'):
+			if cp[0] == u'stop':
 				self._opsipxeconfd.stop()
 				return u'opsipxeconfd is going down'
-
-			if (cp[0] == u'status'):
+			elif cp[0] == u'status':
 				return self._opsipxeconfd.status()
-
-			if (cp[0] == u'update'):
-				if (len(cp) != 2):
+			elif cp[0] == u'update':
+				if len(cp) != 2:
 					raise Exception (u"bad arguments for command 'update', needs <hostId>")
 				hostId = forceHostId(cp[1])
 				return self._opsipxeconfd.updateBootConfiguration(hostId)
@@ -738,7 +735,7 @@ class OpsipxeconfdInit(object):
 		for (opt, arg) in self.opts:
 			if opt in ("-c", '--conffile'):
 				self.config['configFile'] = forceFilename(arg)
-			if   (opt == "-v"):
+			elif opt == "-v":
 				print u"opsipxeconfd version %s" % __version__
 				sys.exit(0)
 		self.readConfigFile()
@@ -856,8 +853,7 @@ class OpsipxeconfdInit(object):
 				self.setCommandlineConfig()
 				self._opsipxeconfd.setConfig(self.config)
 				self._opsipxeconfd.reload()
-
-		if (signo == SIGTERM or signo == SIGINT):
+		elif signo in (SIGTERM, SIGINT):
 			if self._opsipxeconfd:
 				self._opsipxeconfd.stop()
 
