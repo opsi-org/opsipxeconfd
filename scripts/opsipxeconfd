@@ -33,7 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 __version__ = '4.0.5.4'
 
 import base64
-import codecs
 import getopt
 import os
 import socket
@@ -50,8 +49,7 @@ from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
-from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
-	forceUnicodeList)
+from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
 
 logger = Logger()
@@ -61,7 +59,7 @@ class Opsipxeconfd(threading.Thread):
 	def __init__(self, config):
 		threading.Thread.__init__(self)
 
-		self.config   = config
+		self.config = config
 		self._running = False
 
 		self._backend = None
