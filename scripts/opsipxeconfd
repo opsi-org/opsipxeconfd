@@ -333,13 +333,13 @@ class Opsipxeconfd(threading.Thread):
 					raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 				product = product[0]
 
-				if elilo_mode:
+				if eliloMode:
 					pxeConfigTemplate = self.config['uefiConfTemplate-x64']
-				elif elilo_x86_mode:
+				elif eliloX86Mode:
 					pxeConfigTemplate = self.config['uefiConfTemplate-x86']
 
 				if product.pxeConfigTemplate:
-					if not elilo_mode:
+					if not eliloMode:
 						if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
 							logger.error(u"Cannot use more than one pxe config template, got: %s, %s" \
 								% (pxeConfigTemplate, product.pxeConfigTemplate))
