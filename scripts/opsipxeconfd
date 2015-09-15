@@ -175,8 +175,8 @@ class Opsipxeconfd(threading.Thread):
 			while self._running:
 				self._getConnection()
 			logger.notice(u"Opsipxeconfd main thread exiting...")
-		except Exception as e:
-			logger.logException(e)
+		except Exception as error:
+			logger.logException(error)
 		self._running = False
 
 	def clientConnectionCallback(self, cc):
