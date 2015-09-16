@@ -30,19 +30,15 @@ from setuptools import setup
 
 cmdclass = {}
 
-try:
-	from opsidistutils.commands.osc_cmd import osc_publish as osc
-	cmdclass['osc'] = osc
-except ImportError:
-	print "osc integration is not available on this machine. please install ospi-distutils."
 
-version = None
-f = open("scripts/opsipxeconfd")
-for line in f.readlines():
-	if (line.find('__version__') != -1):
-		version = line.split('=')[1].strip()
-		break
-f.close()
+
+with open("scripts/opsipxeconfd") as f:
+	for line in f.readlines():
+		if line.startswith('__version__'):
+			version = line.split('=')[1].strip()
+			break
+	else:
+		version = None
 
 setup(
 	name='opsipxeconfd',
