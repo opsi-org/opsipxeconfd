@@ -28,9 +28,6 @@ opsi pxe configuration daemon (opsipxeconfd) setup file
 
 from setuptools import setup
 
-cmdclass = {}
-
-
 
 with open("scripts/opsipxeconfd") as f:
 	for line in f.readlines():
@@ -52,5 +49,4 @@ setup(
 		('/etc/init.d', ['data/etc/init.d/opsipxeconfd']),
 		('/etc/logrotate.d', ['data/etc/logrotate.d/opsipxeconfd']),
 	],
-	cmdclass=cmdclass
 )
