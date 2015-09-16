@@ -46,12 +46,11 @@ setup(
 	license='AGPL-3',
 	url="http://www.opsi.org",
 	description='The opsi pxe configiration management daemon',
-	#long-description='Long description goes here',
 	scripts=['scripts/opsipxeconfd'],
-	data_files=[('/etc/opsi', ['data/etc/opsi/opsipxeconfd.conf']),
-		    ('/etc/init.d', ['data/etc/init.d/opsipxeconfd']),
-		    ('/etc/logrotate.d', ['data/etc/logrotate.d/opsipxeconfd']),
-		   ],
+	data_files=[
+		('/etc/opsi', ['data/etc/opsi/opsipxeconfd.conf']),
+		('/etc/init.d', ['data/etc/init.d/opsipxeconfd']),
+		('/etc/logrotate.d', ['data/etc/logrotate.d/opsipxeconfd']),
+	],
 	cmdclass=cmdclass
 )
-
