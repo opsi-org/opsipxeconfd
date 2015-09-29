@@ -553,8 +553,8 @@ class PXEConfigWriter(threading.Thread):
 			raise Exception(u"Template file '%s' not found" % self.templatefile)
 
 		logger.debug(u"Reading Template")
-		with open(self.templatefile, 'r') as f:
-			templateLines = f.readlines()
+		with open(self.templatefile, 'r') as infile:
+			templateLines = infile.readlines()
 
 		self.template = {'pxelinux': []}
 
@@ -578,11 +578,11 @@ class PXEConfigWriter(threading.Thread):
 					self.uefi = False
 					appendLineProperties = line.lstrip().split()[1:]
 
-				for (k, v) in self.append.items():
-					if v:
-						appendLineProperties.append("%s=%s" % (k, v))
+				for key, value in self.append.items():
+					if value:
+						appendLineProperties.append("%s=%s" % (key, value))
 					else:
-						appendLineProperties.append("%s" % k)
+						appendLineProperties.append(str(key))
 
 				if self._uefiModule and self.uefi:
 					self.content = '%sappend="%s"\n' % (self.content, ' '.join(appendLineProperties))
