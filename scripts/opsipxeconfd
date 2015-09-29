@@ -367,7 +367,7 @@ class Opsipxeconfd(threading.Thread):
 				pxeConfigName = u"01-%s" % host.getHardwareAddress().replace(u':', u'-')
 			elif host.getIpAddress():
 				logger.warning(u"Failed to get hardware address for host '%s', using ip address '%s'" % (hostId, host.getIpAddress()))
-				pxeConfigName = '%02X%02X%02X%02X' % tuple(map(lambda i: int(i), host.getIpAddress().split('.')))
+				pxeConfigName = '%02X%02X%02X%02X' % tuple([int(i) for i in host.getIpAddress().split('.')])
 			else:
 				raise Exception(u"Neither hardware address nor ip address known for host '%s'" % hostId)
 			pxefile = os.path.join(self.config['pxeDir'], pxeConfigName)
