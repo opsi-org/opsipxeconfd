@@ -594,7 +594,7 @@ class PXEConfigWriter(threading.Thread):
 			else:
 				self.content = "%s%s\n" % (self.content, line)
 
-		if append.has_key('pckey'):
+		if 'pckey' in append:
 			del self.append['pckey']
 
 		if os.path.exists(self.pxefile):
