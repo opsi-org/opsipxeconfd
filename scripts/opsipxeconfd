@@ -900,6 +900,7 @@ class OpsipxeconfdInit(object):
 			raise
 		logger.notice(u"Config read")
 
+	@staticmethod
 	def usage(self):
 		print u"\nUsage: %s [options] <command> [clientId] [args]..." % os.path.basename(sys.argv[0])
 		print u"Commands:"
