@@ -67,7 +67,7 @@ mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
 ln -sf /etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 
-%if 0%{?suse_version}
+%if 0%{?suse_version} == 1110 || 0%{?suse_version} == 1315
 	sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
 %endif
 
