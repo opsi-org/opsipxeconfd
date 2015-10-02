@@ -1,9 +1,13 @@
-opsipxeconfd (4.0.5.4-5) UNRELEASED; urgency=medium
+opsipxeconfd (4.0.5.5-1) experimental; urgency=medium
 
+  [ Niko Wenselowski ]
   * Adjusting __version__ of opsipxeconfd script.
   * RPM: Making the license machine-parseable.
 
- -- Niko Wenselowski <n.wenselowski@uib.de>  Thu, 20 Aug 2015 16:06:57 +0200
+  [ Mathias Radtke ]
+  * ajusted suse version check to ensure correct paths for SLES12 
+
+ -- Mathias Radtke <m.radtke@uib.de>  Fri, 02 Oct 2015 11:49:59 +0200
 
 opsipxeconfd (4.0.5.4-4) testing; urgency=medium
 

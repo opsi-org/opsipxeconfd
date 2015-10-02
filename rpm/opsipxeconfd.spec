@@ -13,11 +13,11 @@ Url:            http://www.opsi.org
 License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        4.0.5.2
+Version:        4.0.5.5
 Release:        1
 Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
-Source:         opsipxeconfd_4.0.5.2-1.tar.gz
+Source:         opsipxeconfd_4.0.5.5-1.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 %if 0%{?sles_version}
 BuildRequires: python-opsi >= 4.0.1 zypper logrotate
