@@ -947,7 +947,7 @@ class OpsipxeconfdInit(object):
 		os.close(2)
 
 		# Open standard input (0)
-		if (hasattr(os, "devnull")):
+		if hasattr(os, "devnull"):
 			os.open(os.devnull, os.O_RDWR)
 		else:
 			os.open("/dev/null", os.O_RDWR)
