@@ -31,8 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @license: GNU Affero GPL version 3
 """
 
-__version__ = '4.0.7.1'
-
 import base64
 import getopt
 import os
@@ -52,6 +50,7 @@ from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
+__version__ = '4.0.7.1'
 
 logger = Logger()
 
