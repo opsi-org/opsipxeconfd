@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/python
 # -*- coding: utf-8 -*-
 """
 opsi pxe configuration daemon (opsipxeconfd)
@@ -6,7 +6,7 @@ opsi pxe configuration daemon (opsipxeconfd)
 opsiconfd is part of the desktop management solution opsi
 (open pc server integration) http://www.opsi.org
 
-Copyright (C) 2013-2014 uib GmbH
+Copyright (C) 2013-2016 uib GmbH
 
 http://www.uib.de/
 
@@ -27,10 +27,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @copyright:	uib GmbH <info@uib.de>
 @author: Erol Ueluekmen <e.ueluekmen@uib.de>
 @author: Jan Schneider <j.schneider@uib.de>
+@author: Niko Wenselowski <n.wenselowski@uib.de>
 @license: GNU Affero GPL version 3
 """
-
-__version__ = '4.0.5.4'
 
 import base64
 import getopt
@@ -51,6 +50,7 @@ from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
+__version__ = '4.0.7.1'
 
 logger = Logger()
 
@@ -151,17 +151,18 @@ class Opsipxeconfd(threading.Thread):
 		try:
 			logger.info(u"Creating thread for connection %s" % (len(self._clientConnections) + 1))
 			cc = ClientConnection(self, sock, self.clientConnectionCallback)
-			self._clientConnectionLock.acquire()
-			self._clientConnections.append(cc)
-			self._clientConnectionLock.release()
+			with self._clientConnectionLock:
+				self._clientConnections.append(cc)
 			cc.start()
 		except Exception as error:
 			logger.error(u"Failed to create control connection: %s" % error)
 			logger.logException(error)
-			self._clientConnectionLock.acquire()
-			if cc and cc in self._clientConnections:
-				self._clientConnections.remove(cc)
-			self._clientConnectionLock.release()
+
+			with self._clientConnectionLock:
+				try:
+					self._clientConnections.remove(cc)
+				except ValueError:
+					pass  # Element not in list
 
 	def run(self):
 		self._running = True
@@ -182,45 +183,50 @@ class Opsipxeconfd(threading.Thread):
 	def clientConnectionCallback(self, cc):
 		logger.info(u"ClientConnection '%s' finished (took %0.3f seconds)" % (cc.getName(), (time.time() - cc.startTime)))
 
-		self._clientConnectionLock.acquire()
 		try:
-			if cc in self._clientConnections:
-				self._clientConnections.remove(cc)
+			with self._clientConnectionLock:
+				try:
+					self._clientConnections.remove(cc)
+				except ValueError:
+					pass  # Connection not in list
+
 			logger.debug(u"ClientConnection removed")
 		except Exception as error:
 			logger.error(u"Failed to remove ClientConnection: %s" % error)
-		self._clientConnectionLock.release()
 
 	def pxeConfigWriterCallback(self, pcw):
 		logger.info(u"PXEConfigWriter '%s' finished (took %0.3f seconds)" % (pcw.getName(), (time.time() - pcw.startTime)))
 
-		self._pxeConfigWritersLock.acquire()
 		try:
-			if pcw in self._pxeConfigWriters:
-				self._pxeConfigWriters.remove(pcw)
+			with self._pxeConfigWritersLock:
+				try:
+					self._pxeConfigWriters.remove(pcw)
+				except ValueError:
+					pass  # Writer not in list
 			logger.debug(u"PXE config writer removed")
 		except Exception as error:
 			logger.error(u"Failed to remove PXE config writer: %s" % error)
-		self._pxeConfigWritersLock.release()
 
 		gotAlways = False
-		for i in range(len(pcw.productOnClients)):
+		for i, poc in enumerate(pcw.productOnClients):
 			# renew objects and check if anythin changes on service since callback
 			productOnClients = self._backend.productOnClient_getObjects(
 				productType=u'NetbootProduct',
-				clientId=pcw.productOnClients[i].clientId,
-				productId=pcw.productOnClients[i].productId
+				clientId=poc.clientId,
+				productId=poc.productId
 			)
 			if productOnClients:
 				pcw.productOnClients[i] = productOnClients[0]
 			else:
 				del pcw.productOnClients[i]
+
 			if pcw.productOnClients:
 				pcw.productOnClients[i].setActionProgress(u'pxe boot configuration read')
 				if pcw.productOnClients[i].getActionRequest() == u'always':
 					gotAlways = True
 				if pcw.templatefile != self.config['pxeConfTemplate'] and not gotAlways:
 					pcw.productOnClients[i].setActionRequest(u'none')
+
 		if pcw.productOnClients:
 			self._backend.productOnClient_updateObjects(pcw.productOnClients)
 		if gotAlways:
@@ -230,14 +236,11 @@ class Opsipxeconfd(threading.Thread):
 		logger.notice(u"Getting opsipxeconfd status")
 		result = u'opsipxeconfd status:\n'
 
-		self._clientConnectionLock.acquire()
-		try:
+		with self._clientConnectionLock:
 			result += u'%s control connection(s) established\n' % len(self._clientConnections)
-			for i in range(len(self._clientConnections)):
+			for i, connection in enumerate(self._clientConnections, start=1):
 				result += u'    Connection %s established at: %s\n' \
-					% (i + 1, time.asctime(time.localtime(self._clientConnections[i].startTime)))
-		finally:
-			self._clientConnectionLock.release()
+					% (i, time.asctime(time.localtime(connection.startTime)))
 
 		result += u'\n%s boot configuration(s) set\n' % len(self._pxeConfigWriters)
 		for pcw in self._pxeConfigWriters:
@@ -256,15 +259,13 @@ class Opsipxeconfd(threading.Thread):
 
 			# Remove current pxe config for host
 			currentPcws = []
-			self._pxeConfigWritersLock.acquire()
-			try:
+			with self._pxeConfigWritersLock:
 				for pcw in self._pxeConfigWriters:
 					if pcw.hostId == hostId:
 						currentPcws.append(pcw)
+
 				for pcw in currentPcws:
 					self._pxeConfigWriters.remove(pcw)
-			finally:
-				self._pxeConfigWritersLock.release()
 
 			for pcw in currentPcws:
 				pcw.stop()
@@ -429,18 +430,20 @@ class Opsipxeconfd(threading.Thread):
 				backendinfo = self._backend.backend_info()
 				backendinfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
 				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback, backendinfo)
-				self._pxeConfigWritersLock.acquire()
-				self._pxeConfigWriters.append(pcw)
-				self._pxeConfigWritersLock.release()
+				with self._pxeConfigWritersLock:
+					self._pxeConfigWriters.append(pcw)
 				pcw.start()
 				logger.notice(u"PXE boot configuration for host %s is now set at '%s'" % (hostId, pxefile))
 				return u'Boot configuration updated'
 			except Exception as error:
 				logger.error(u"Failed to create pxe config writer: %s" % error)
-				self._pxeConfigWritersLock.acquire()
-				if pcw and pcw in self._pxeConfigWriters:
-					self._pxeConfigWriters.remove(pcw)
-				self._pxeConfigWritersLock.release()
+
+				with self._pxeConfigWritersLock:
+					try:
+						self._pxeConfigWriters.remove(pcw)
+					except ValueError:
+						pass  # Writer not in list
+
 				raise
 		except Exception as error:
 			logger.logException(error)
