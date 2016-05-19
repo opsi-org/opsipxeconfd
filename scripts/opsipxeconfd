@@ -204,23 +204,25 @@ class Opsipxeconfd(threading.Thread):
 		self._pxeConfigWritersLock.release()
 
 		gotAlways = False
-		for i in range(len(pcw.productOnClients)):
+		for i, poc in enumerate(pcw.productOnClients):
 			# renew objects and check if anythin changes on service since callback
 			productOnClients = self._backend.productOnClient_getObjects(
 				productType=u'NetbootProduct',
-				clientId=pcw.productOnClients[i].clientId,
-				productId=pcw.productOnClients[i].productId
+				clientId=poc.clientId,
+				productId=poc.productId
 			)
 			if productOnClients:
 				pcw.productOnClients[i] = productOnClients[0]
 			else:
 				del pcw.productOnClients[i]
+
 			if pcw.productOnClients:
 				pcw.productOnClients[i].setActionProgress(u'pxe boot configuration read')
 				if pcw.productOnClients[i].getActionRequest() == u'always':
 					gotAlways = True
 				if pcw.templatefile != self.config['pxeConfTemplate'] and not gotAlways:
 					pcw.productOnClients[i].setActionRequest(u'none')
+
 		if pcw.productOnClients:
 			self._backend.productOnClient_updateObjects(pcw.productOnClients)
 		if gotAlways:
@@ -233,9 +235,9 @@ class Opsipxeconfd(threading.Thread):
 		self._clientConnectionLock.acquire()
 		try:
 			result += u'%s control connection(s) established\n' % len(self._clientConnections)
-			for i in range(len(self._clientConnections)):
+			for i, connection in enumerate(self._clientConnections, start=1):
 				result += u'    Connection %s established at: %s\n' \
-					% (i + 1, time.asctime(time.localtime(self._clientConnections[i].startTime)))
+					% (i, time.asctime(time.localtime(connection.startTime)))
 		finally:
 			self._clientConnectionLock.release()
 
