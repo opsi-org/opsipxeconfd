@@ -259,11 +259,8 @@ class Opsipxeconfd(threading.Thread):
 			logger.info(u"Updating PXE boot configuration for host '%s'" % hostId)
 
 			# Remove current pxe config for host
-			currentPcws = []
 			with self._pxeConfigWritersLock:
-				for pcw in self._pxeConfigWriters:
-					if pcw.hostId == hostId:
-						currentPcws.append(pcw)
+				currentPcws = [pcw for pcw in self._pxeConfigWriters if pcw.hostId == hostId]
 
 				for pcw in currentPcws:
 					self._pxeConfigWriters.remove(pcw)
