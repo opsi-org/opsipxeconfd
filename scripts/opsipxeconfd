@@ -314,12 +314,11 @@ class Opsipxeconfd(threading.Thread):
 			configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename", objectId=hostId)
 			if configStates:
 				val = configStates[0].getValues()
-				if val:
-					if val and 'elilo' in val[0]:
-						if 'x86' in val[0]:
-							eliloX86Mode = True
-						else:
-							eliloMode = True
+				if val and 'elilo' in val[0]:
+					if 'x86' in val[0]:
+						eliloX86Mode = True
+					else:
+						eliloMode = True
 
 			# Get pxe config template
 			pxeConfigTemplate = None
