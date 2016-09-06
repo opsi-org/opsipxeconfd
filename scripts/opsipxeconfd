@@ -283,9 +283,10 @@ class Opsipxeconfd(threading.Thread):
 
 			# Get host
 			host = self._backend.host_getObjects(id=hostId)
-			if not host:
+			try:
+				host = host[0]
+			except IndexError:
 				raise Exception(u"Host '%s' not found" % hostId)
-			host = host[0]
 
 			newProductOnClients = []
 			for poc in productOnClients:
