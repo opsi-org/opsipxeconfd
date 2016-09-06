@@ -469,10 +469,9 @@ class StartupTask(threading.Thread):
 					actionRequest=['setup', 'uninstall', 'update', 'always', 'once', 'custom']
 				)
 
-				clientIds = []
+				clientIds = set()
 				for poc in productOnClients:
-					if not poc.clientId in clientIds:
-						clientIds.append(poc.clientId)
+					clientIds.add(poc.clientId)
 
 				for clientId in clientIds:
 					if self._stop:
