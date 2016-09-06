@@ -489,7 +489,7 @@ class StartupTask(threading.Thread):
 					try:
 						self._opsipxeconfd.updateBootConfiguration(clientId)
 					except Exception as error:
-						logger.error(u"Failed to update PXE boot config for client '%s': %s" % (clientId, error))
+						logger.error(u"Failed to update PXE boot config for client {0!r}: {1}", clientId, error)
 
 			logger.notice(u"Finished setting needed boot configurations")
 		except Exception as error:
