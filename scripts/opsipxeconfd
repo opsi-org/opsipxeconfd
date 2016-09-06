@@ -178,7 +178,8 @@ class Opsipxeconfd(threading.Thread):
 			logger.notice(u"Opsipxeconfd main thread exiting...")
 		except Exception as error:
 			logger.logException(error)
-		self._running = False
+		finally:
+			self._running = False
 
 	def clientConnectionCallback(self, cc):
 		logger.info(u"ClientConnection '%s' finished (took %0.3f seconds)" % (cc.getName(), (time.time() - cc.startTime)))
@@ -490,7 +491,8 @@ class StartupTask(threading.Thread):
 			logger.notice(u"Finished setting needed boot configurations")
 		except Exception as error:
 			logger.logException(error)
-		self._running = False
+		finally:
+			self._running = False
 
 	def stop(self):
 		self._stop = True
