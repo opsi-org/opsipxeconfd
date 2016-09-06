@@ -603,7 +603,7 @@ class PXEConfigWriter(threading.Thread):
 		if os.path.exists(self.pxefile):
 			os.unlink(self.pxefile)
 		os.mkfifo(self.pxefile)
-		os.chmod(self.pxefile, 0644)
+		os.chmod(self.pxefile, 0o644)
 
 	def run(self):
 		self._running = True
@@ -718,7 +718,7 @@ class OpsipxeconfdInit(object):
 	def __init__(self):
 		logger.debug(u"OpsiPXEConfdInit")
 		# Set umask
-		os.umask(0077)
+		os.umask(0o077)
 		self._pid = 0
 
 		try:
