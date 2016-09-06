@@ -138,9 +138,8 @@ class Opsipxeconfd(threading.Thread):
 
 	def _getConnection(self):
 		logger.debug2(u"_getConnection()")
-		(addr, sock) = (None, None)
 		try:
-			(sock, addr) = self._socket.accept()
+			sock, _ = self._socket.accept()
 		except socket.error as error:
 			if error.args[0] == 'timed out' or error.args[0] == 11:
 				return
