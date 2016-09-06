@@ -863,9 +863,10 @@ class OpsipxeconfdInit(object):
 		try:
 			configFile = ConfigFile(filename=self.config['configFile'])
 			for line in configFile.parse():
-				if line.count('=') == 0:
+				if '=' not in line:
 					logger.error(u"Parse error in config file: '%s', line '%s': '=' not found" % (self.config['configFile'], line))
 					continue
+
 				(option, value) = line.split(u'=', 1)
 				option = option.strip()
 				value = value.strip()
