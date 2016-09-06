@@ -180,13 +180,13 @@ class Opsipxeconfd(threading.Thread):
 		finally:
 			self._running = False
 
-	def clientConnectionCallback(self, cc):
-		logger.info(u"ClientConnection '%s' finished (took %0.3f seconds)" % (cc.getName(), (time.time() - cc.startTime)))
+	def clientConnectionCallback(self, connection):
+		logger.info(u"ClientConnection '%s' finished (took %0.3f seconds)" % (connection.getName(), (time.time() - connection.startTime)))
 
 		try:
 			with self._clientConnectionLock:
 				try:
-					self._clientConnections.remove(cc)
+					self._clientConnections.remove(connection)
 				except ValueError:
 					pass  # Connection not in list
 
