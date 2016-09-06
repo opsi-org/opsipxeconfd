@@ -505,6 +505,7 @@ class PXEConfigWriter(threading.Thread):
 		self._pipe = None
 		self._uefiModule = False
 		self.uefi = False
+		self._running = False
 
 		if backendinfo:
 			modules = backendinfo['modules']
