@@ -970,5 +970,3 @@ if __name__ == "__main__":
 		logger.logException(exception)
 		print >> sys.stderr, u"ERROR:", unicode(exception)
 		sys.exit(1)
-
-	sys.exit(0)
