@@ -139,9 +139,8 @@ class Opsipxeconfd(threading.Thread):
 
 	def _getConnection(self):
 		logger.debug2(u"_getConnection()")
-		(addr, sock) = (None, None)
 		try:
-			(sock, addr) = self._socket.accept()
+			sock, _ = self._socket.accept()
 		except socket.error as error:
 			if error.args[0] == 'timed out' or error.args[0] == 11:
 				return
@@ -179,15 +178,16 @@ class Opsipxeconfd(threading.Thread):
 			logger.notice(u"Opsipxeconfd main thread exiting...")
 		except Exception as error:
 			logger.logException(error)
-		self._running = False
+		finally:
+			self._running = False
 
-	def clientConnectionCallback(self, cc):
-		logger.info(u"ClientConnection '%s' finished (took %0.3f seconds)" % (cc.getName(), (time.time() - cc.startTime)))
+	def clientConnectionCallback(self, connection):
+		logger.info(u"ClientConnection '%s' finished (took %0.3f seconds)" % (connection.getName(), (time.time() - connection.startTime)))
 
 		try:
 			with self._clientConnectionLock:
 				try:
-					self._clientConnections.remove(cc)
+					self._clientConnections.remove(connection)
 				except ValueError:
 					pass  # Connection not in list
 
@@ -259,11 +259,8 @@ class Opsipxeconfd(threading.Thread):
 			logger.info(u"Updating PXE boot configuration for host '%s'" % hostId)
 
 			# Remove current pxe config for host
-			currentPcws = []
 			with self._pxeConfigWritersLock:
-				for pcw in self._pxeConfigWriters:
-					if pcw.hostId == hostId:
-						currentPcws.append(pcw)
+				currentPcws = [pcw for pcw in self._pxeConfigWriters if pcw.hostId == hostId]
 
 				for pcw in currentPcws:
 					self._pxeConfigWriters.remove(pcw)
@@ -286,9 +283,10 @@ class Opsipxeconfd(threading.Thread):
 
 			# Get host
 			host = self._backend.host_getObjects(id=hostId)
-			if not host:
+			try:
+				host = host[0]
+			except IndexError:
 				raise Exception(u"Host '%s' not found" % hostId)
-			host = host[0]
 
 			newProductOnClients = []
 			for poc in productOnClients:
@@ -316,12 +314,11 @@ class Opsipxeconfd(threading.Thread):
 			configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename", objectId=hostId)
 			if configStates:
 				val = configStates[0].getValues()
-				if val:
-					if val and 'elilo' in val[0]:
-						if 'x86' in val[0]:
-							eliloX86Mode = True
-						else:
-							eliloMode = True
+				if val and 'elilo' in val[0]:
+					if 'x86' in val[0]:
+						eliloX86Mode = True
+					else:
+						eliloMode = True
 
 			# Get pxe config template
 			pxeConfigTemplate = None
@@ -460,12 +457,10 @@ class StartupTask(threading.Thread):
 
 	def run(self):
 		self._running = True
+		logger.notice(u"Start setting needed boot configurations")
 		try:
-			logger.notice(u"Start setting needed boot configurations")
-
-			clientIds = []
-			for clientToDepot in self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds=[self._opsipxeconfd.config['depotId']]):
-				clientIds.append(clientToDepot['clientId'])
+			clientIds = [clientToDepot['clientId'] for clientToDepot in
+						 self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds=[self._opsipxeconfd.config['depotId']])]
 
 			if clientIds:
 				productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(
@@ -474,10 +469,9 @@ class StartupTask(threading.Thread):
 					actionRequest=['setup', 'uninstall', 'update', 'always', 'once', 'custom']
 				)
 
-				clientIds = []
+				clientIds = set()
 				for poc in productOnClients:
-					if not poc.clientId in clientIds:
-						clientIds.append(poc.clientId)
+					clientIds.add(poc.clientId)
 
 				for clientId in clientIds:
 					if self._stop:
@@ -491,7 +485,8 @@ class StartupTask(threading.Thread):
 			logger.notice(u"Finished setting needed boot configurations")
 		except Exception as error:
 			logger.logException(error)
-		self._running = False
+		finally:
+			self._running = False
 
 	def stop(self):
 		self._stop = True
@@ -511,6 +506,7 @@ class PXEConfigWriter(threading.Thread):
 		self._pipe = None
 		self._uefiModule = False
 		self.uefi = False
+		self._running = False
 
 		if backendinfo:
 			modules = backendinfo['modules']
@@ -538,9 +534,9 @@ class PXEConfigWriter(threading.Thread):
 								modules[module] = True
 					else:
 						val = modules[module]
-						if val == False:
+						if val is False:
 							val = 'no'
-						if val == True:
+						if val is True:
 							val = 'yes'
 					data += u'%s = %s\r\n' % (module.lower().strip(), val)
 				if not bool(publicKey.verify(md5(data).digest(), [long(modules['signature'])])):
@@ -873,9 +869,10 @@ class OpsipxeconfdInit(object):
 		try:
 			configFile = ConfigFile(filename=self.config['configFile'])
 			for line in configFile.parse():
-				if line.count('=') == 0:
+				if '=' not in line:
 					logger.error(u"Parse error in config file: '%s', line '%s': '=' not found" % (self.config['configFile'], line))
 					continue
+
 				(option, value) = line.split(u'=', 1)
 				option = option.strip()
 				value = value.strip()
@@ -910,7 +907,7 @@ class OpsipxeconfdInit(object):
 		logger.notice(u"Config read")
 
 	@staticmethod
-	def usage(self):
+	def usage():
 		print u"\nUsage: %s [options] <command> [clientId] [args]..." % os.path.basename(sys.argv[0])
 		print u"Commands:"
 		print u"  version         Show version information and exit"
@@ -979,5 +976,3 @@ if __name__ == "__main__":
 		logger.logException(exception)
 		print >> sys.stderr, u"ERROR:", unicode(exception)
 		sys.exit(1)
-
-	sys.exit(0)
