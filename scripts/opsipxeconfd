@@ -383,8 +383,8 @@ class Opsipxeconfd(threading.Thread):
 							logger.notice(u"PXE boot configuration {0!r} for client {1!r} already exists.", pxefile, host.id)
 							return
 						else:
-							raise Exception(u"PXE boot configuration '%s' already exists. Clients '%s' and '%s' using same address?" \
-									% (pxefile, host.id, pcw.hostId))
+							raise Exception(u"PXE boot configuration '%s' already exists. Clients '%s' and '%s' using same address?"
+											% (pxefile, host.id, pcw.hostId))
 				logger.debug(u"PXE boot configuration {0!r} already exists, removing.", pxefile)
 				os.unlink(pxefile)
 
