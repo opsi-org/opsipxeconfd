@@ -260,18 +260,7 @@ class Opsipxeconfd(threading.Thread):
 			hostId = forceHostId(hostId)
 			logger.info(u"Updating PXE boot configuration for host {0!r}", hostId)
 
-			# Remove current pxe config for host
-			with self._pxeConfigWritersLock:
-				currentPcws = [pcw for pcw in self._pxeConfigWriters if pcw.hostId == hostId]
-
-				for pcw in currentPcws:
-					self._pxeConfigWriters.remove(pcw)
-
-			for pcw in currentPcws:
-				pcw.stop()
-				while pcw.isAlive():
-					time.sleep(0.1)
-				logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
+			self._removeCurrentConfigWriters(hostId)
 
 			# Get product actions
 			productOnClients = self._backend.productOnClient_getObjects(
@@ -311,17 +300,7 @@ class Opsipxeconfd(threading.Thread):
 
 			self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
 
-			# Try to detect elilo mode
-			eliloMode = False
-			eliloX86Mode = False
-			configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename", objectId=hostId)
-			if configStates:
-				val = configStates[0].getValues()
-				if val and 'elilo' in val[0]:
-					if 'x86' in val[0]:
-						eliloX86Mode = True
-					else:
-						eliloMode = True
+			eliloMode, eliloX86Mode = self._detectEliloMode(hostId)
 
 			# Get pxe config template
 			pxeConfigTemplate = None
@@ -362,16 +341,7 @@ class Opsipxeconfd(threading.Thread):
 
 			logger.debug(u"Using pxe config template {0!r}", pxeConfigTemplate)
 
-			# Get name for PXE config file
-			pxeConfigName = ''
-			if host.getHardwareAddress():
-				logger.debug(u"Got hardware address {0!r} for host {1!r}", host.getHardwareAddress(), hostId)
-				pxeConfigName = u"01-%s" % host.getHardwareAddress().replace(u':', u'-')
-			elif host.getIpAddress():
-				logger.warning(u"Failed to get hardware address for host {0!r}, using ip address {1!r}", hostId, host.getIpAddress())
-				pxeConfigName = '%02X%02X%02X%02X' % tuple([int(i) for i in host.getIpAddress().split('.')])
-			else:
-				raise Exception(u"Neither hardware address nor ip address known for host '%s'" % hostId)
+			pxeConfigName = self._getNameForPXEConfigFile(host)
 
 			pxefile = os.path.join(self.config['pxeDir'], pxeConfigName)
 			if os.path.exists(pxefile):
@@ -450,6 +420,46 @@ class Opsipxeconfd(threading.Thread):
 		except Exception as error:
 			logger.logException(error)
 			raise
+
+	def _removeCurrentConfigWriters(self, hostId):
+		with self._pxeConfigWritersLock:
+			currentPcws = [pcw for pcw in self._pxeConfigWriters if pcw.hostId == hostId]
+
+			for pcw in currentPcws:
+				self._pxeConfigWriters.remove(pcw)
+
+		for pcw in currentPcws:
+			pcw.stop()
+			while pcw.isAlive():
+				time.sleep(0.1)
+			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
+
+	def _detectEliloMode(self, hostId):
+		# Try to detect elilo mode
+		eliloMode = False
+		eliloX86Mode = False
+		configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename", objectId=hostId)
+		if configStates:
+			val = configStates[0].getValues()
+			if val and 'elilo' in val[0]:
+				if 'x86' in val[0]:
+					eliloX86Mode = True
+				else:
+					eliloMode = True
+
+		return eliloMode, eliloX86Mode
+
+	@staticmethod
+	def _getNameForPXEConfigFile(host):
+		if host.getHardwareAddress():
+			logger.debug(u"Got hardware address {0!r} for host {1!r}", host.getHardwareAddress(), host.id)
+			return u"01-%s" % host.getHardwareAddress().replace(u':', u'-')
+		elif host.getIpAddress():
+			logger.warning(u"Failed to get hardware address for host {0!r}, using ip address {1!r}", host.id, host.getIpAddress())
+			return '%02X%02X%02X%02X' % tuple([int(i) for i in host.getIpAddress().split('.')])
+		else:
+			raise Exception(u"Neither hardware address nor ip address known for host '%s'" % host.id)
+
 
 
 class StartupTask(threading.Thread):
