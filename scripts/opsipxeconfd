@@ -350,7 +350,7 @@ class Opsipxeconfd(threading.Thread):
 							logger.notice(u"Special pxe config template '%s' will be used used for host '%s', product '%s'" \
 											% (pxeConfigTemplate, hostId, poc.productId))
 					else:
-						logger.notice("Ignoring given pceConfigTemplate because uefi detected for the client.")
+						logger.notice("Ignoring given pxeConfigTemplate because uefi detected for the client.")
 
 			if not pxeConfigTemplate:
 				pxeConfigTemplate = self.config['pxeConfTemplate']
