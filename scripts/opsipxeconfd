@@ -39,6 +39,7 @@ import stat
 import sys
 import threading
 import time
+from contextlib import closing, contextmanager
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from twisted.conch.ssh import keys
 from hashlib import md5
@@ -691,27 +692,32 @@ class ServerConnection:
 	def __init__(self, port):
 		self.port = port
 
-	def createUnixSocket(self):
-		logger.notice(u"Creating unix socket '%s'" % self.port)
-		self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-		self._socket.settimeout(5.0)
-		try:
-			self._socket.connect(self.port)
-		except Exception as error:
-			raise Exception(u"Failed to connect to socket '%s': %s" % (self.port, error))
-
 	def sendCommand(self, cmd):
-		self.createUnixSocket()
-		self._socket.send(forceUnicode(cmd).encode('utf-8'))
-		result = None
-		try:
-			result = forceUnicode(self._socket.recv(4096))
-		except Exception as error:
-			raise Exception(u"Failed to receive: %s" % error)
-		self._socket.close()
+		with createUnixSocket(self.port) as unixSocket:
+			unixSocket.send(forceUnicode(cmd).encode('utf-8'))
+
+			try:
+				result = forceUnicode(unixSocket.recv(4096))
+			except Exception as error:
+				raise Exception(u"Failed to receive: %s" % error)
+
 		if result.startswith(u'(ERROR)'):
 			raise Exception(u"Command '%s' failed: %s" % (cmd, result))
+
 		return result
+
+
+@contextmanager
+def createUnixSocket(port):
+	logger.notice(u"Creating unix socket '%s'" % port)
+	_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	_socket.settimeout(5.0)
+	try:
+		with closing(_socket) as unixSocket:
+			unixSocket.connect(port)
+			yield unixSocket
+	except Exception as error:
+		raise Exception(u"Failed to connect to socket '%s': %s" % (port, error))
 
 
 class OpsipxeconfdInit(object):
