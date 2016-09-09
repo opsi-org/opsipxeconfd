@@ -39,7 +39,7 @@ import stat
 import sys
 import threading
 import time
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from twisted.conch.ssh import keys
 from hashlib import md5
@@ -713,15 +713,11 @@ def createUnixSocket(port):
 	_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 	_socket.settimeout(5.0)
 	try:
-		_socket.connect(port)
-		yield
+		with closing(_socket) as unixSocket:
+			unixSocket.connect(port)
+			yield unixSocket
 	except Exception as error:
 		raise Exception(u"Failed to connect to socket '%s': %s" % (port, error))
-	finally:
-		try:
-			_socket.close()
-		except Exception:
-			pass
 
 
 class OpsipxeconfdInit(object):
