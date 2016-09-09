@@ -639,6 +639,7 @@ class ClientConnection(threading.Thread):
 		self._opsipxeconfd = opsipxeconfd
 		self._socket = socket
 		self._callback = callback
+		self._running = False
 		self.startTime = time.time()
 
 	def run(self):
@@ -737,6 +738,7 @@ class OpsipxeconfdInit(object):
 			self.usage()
 			sys.exit(1)
 
+		self.config = {}
 		self.setDefaultConfig()
 		# Process command line arguments
 		for (opt, arg) in self.opts:
