@@ -464,7 +464,7 @@ class StartupTask(threading.Thread):
 		logger.notice(u"Start setting needed boot configurations")
 		try:
 			clientIds = [clientToDepot['clientId'] for clientToDepot in
-						 self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds=[self._opsipxeconfd.config['depotId']])]
+						self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds=[self._opsipxeconfd.config['depotId']])]
 
 			if clientIds:
 				productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(
