@@ -1,7 +1,7 @@
 #
 # spec file for package opsipxeconfd
 #
-# Copyright (c) 2010-2014 uib GmbH.
+# Copyright (c) 2010-2016 uib GmbH.
 # This file and all modifications and additions to the pristine
 # package are under the same license as the package itself.
 #
@@ -13,7 +13,7 @@ Url:            http://www.opsi.org
 License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        4.0.5.5
+Version:        4.0.7.2
 Release:        1
 Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
