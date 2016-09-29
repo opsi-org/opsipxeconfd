@@ -249,7 +249,7 @@ class Opsipxeconfd(threading.Thread):
 		for pcw in self._pxeConfigWriters:
 			result += u"Boot config for client '%s', args %s, path '%s' set at: %s\n" \
 				% (	pcw.hostId,
-					pcw.args,
+					pcw.append,
 					pcw.pxefile,
 					time.asctime(time.localtime(pcw.startTime)))
 		logger.notice(result)
