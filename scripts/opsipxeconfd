@@ -102,7 +102,6 @@ class Opsipxeconfd(threading.Thread):
 		self._createSocket()
 
 	def _setOpsiLogging(self):
-		# Set logging options
 		if self.config['logFile']:
 			logger.setLogFile(self.config['logFile'])
 		if self.config['logFormat']:
