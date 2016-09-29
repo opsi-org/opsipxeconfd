@@ -326,16 +326,8 @@ class Opsipxeconfd(threading.Thread):
 			if append['pckey']:
 				logger.addConfidentialString(append['pckey'])
 
-			# Get additional bootimage append params
-			configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'opsi-linux-bootimage.append')
-			if configStates:
-				app = u' '.join(forceUnicodeList(configStates[0].getValues()))
-				for option in app.split():
-					keyValue = option.split(u"=")
-					if len(keyValue) < 2:
-						append[keyValue[0].strip().lower()] = u''
-					else:
-						append[keyValue[0].strip().lower()] = keyValue[1].strip()
+			for key, value in self._getAdditionalBootimageParameters(hostId):
+				append[key] = value
 
 			# Get product property states
 			productPropertyStates = {}
@@ -470,6 +462,18 @@ class Opsipxeconfd(threading.Thread):
 			address += u'/rpc'
 
 		return address
+
+	def _getAdditionalBootimageParameters(self, hostId):
+		configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'opsi-linux-bootimage.append')
+
+		if configStates:
+			app = u' '.join(forceUnicodeList(configStates[0].getValues()))
+			for option in app.split():
+				keyValue = option.split(u"=")
+				if len(keyValue) < 2:
+					yield keyValue[0].strip().lower(), u''
+				else:
+					yield keyValue[0].strip().lower(), keyValue[1].strip()
 
 
 class StartupTask(threading.Thread):
