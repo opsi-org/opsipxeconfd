@@ -361,6 +361,9 @@ class Opsipxeconfd(threading.Thread):
 			raise
 
 	def _removeCurrentConfigWriters(self, hostId):
+		"""
+		Remove eventually running PXE config writers for the given `hostId`.
+		"""
 		with self._pxeConfigWritersLock:
 			currentPcws = [pcw for pcw in self._pxeConfigWriters if pcw.hostId == hostId]
 
@@ -374,6 +377,9 @@ class Opsipxeconfd(threading.Thread):
 			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
 
 	def _getHostObject(self, hostId):
+		"""
+		Get the object for `hostId`.
+		"""
 		host = self._backend.host_getObjects(id=hostId)
 		try:
 			return host[0]
@@ -451,6 +457,9 @@ class Opsipxeconfd(threading.Thread):
 			raise Exception(u"Neither hardware address nor ip address known for host '%s'" % host.id)
 
 	def _getConfigServiceAddress(self, hostId):
+		"""
+		Returns the config serive address for `hostId`.
+		"""
 		address = u''
 
 		configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'clientconfig.configserver.url')
@@ -463,6 +472,9 @@ class Opsipxeconfd(threading.Thread):
 		return address
 
 	def _getAdditionalBootimageParameters(self, hostId):
+		"""
+		Returns any additional bootimage parameters that may be set for `hostId`.
+		"""
 		configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'opsi-linux-bootimage.append')
 
 		if configStates:
@@ -960,6 +972,10 @@ class OpsipxeconfdInit(object):
 
 @contextmanager
 def pidFile(self, filepath):
+	'''
+	Create a file containing the current pid for 'opsipxeconfd' at `filepath`.
+	Leaving the context will remove the file.
+	'''
 	pidFile = filepath
 
 	logger.debug("Reading old pidFile {0!r}...", pidFile)
