@@ -1,3 +1,10 @@
+opsipxeconfd (4.0.7.3-1) stable; urgency=medium
+
+  * Do not fail when reading configuration of writer for status.
+  * Do not truncate output of 'status' command.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Thu, 29 Sep 2016 11:18:34 +0200
+
 opsipxeconfd (4.0.7.2-1) testing; urgency=medium
 
   * Making oct values Python 3 compatible.
