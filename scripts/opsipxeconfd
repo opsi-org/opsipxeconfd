@@ -295,45 +295,7 @@ class Opsipxeconfd(threading.Thread):
 
 			self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
 
-			eliloMode, eliloX86Mode = self._detectEliloMode(hostId)
-
-			# Get pxe config template
-			pxeConfigTemplate = None
-			for poc in productOnClients:
-				product = self._backend.product_getObjects(
-					type=u'NetbootProduct',
-					id=poc.productId,
-					productVersion=poc.productVersion,
-					packageVersion=poc.packageVersion
-				)
-				if not product:
-					raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
-				product = product[0]
-
-				if eliloMode:
-					pxeConfigTemplate = self.config['uefiConfTemplate-x64']
-				elif eliloX86Mode:
-					pxeConfigTemplate = self.config['uefiConfTemplate-x86']
-
-				if product.pxeConfigTemplate:
-					if not eliloMode:
-						if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
-							logger.error(u"Cannot use more than one pxe config template, got: {0}, {1}",
-										pxeConfigTemplate, product.pxeConfigTemplate)
-						else:
-							pxeConfigTemplate = product.pxeConfigTemplate
-							logger.notice(u"Special pxe config template {0!r} will be used used for host {1!r}, product {2!r}",
-										pxeConfigTemplate, hostId, poc.productId)
-					else:
-						logger.notice("Ignoring given pxeConfigTemplate because uefi detected for the client.")
-
-			if not pxeConfigTemplate:
-				pxeConfigTemplate = self.config['pxeConfTemplate']
-
-			if not os.path.isabs(pxeConfigTemplate):
-				# Not an absolute path
-				pxeConfigTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), pxeConfigTemplate)
-
+			pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients)
 			logger.debug(u"Using pxe config template {0!r}", pxeConfigTemplate)
 
 			pxeConfigName = self._getNameForPXEConfigFile(host)
@@ -433,6 +395,50 @@ class Opsipxeconfd(threading.Thread):
 			return host[0]
 		except IndexError:
 			raise ValueError(u"Host '%s' not found" % hostId)
+
+	def _getPxeConfigTemplate(self, hostId, productOnClients):
+		eliloMode, eliloX86Mode = self._detectEliloMode(hostId)
+
+		pxeConfigTemplate = None
+		for poc in productOnClients:
+			product = self._backend.product_getObjects(
+				type=u'NetbootProduct',
+				id=poc.productId,
+				productVersion=poc.productVersion,
+				packageVersion=poc.packageVersion
+			)
+			if not product:
+				raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
+			product = product[0]
+
+			if eliloMode:
+				pxeConfigTemplate = self.config['uefiConfTemplate-x64']
+			elif eliloX86Mode:
+				pxeConfigTemplate = self.config['uefiConfTemplate-x86']
+
+			if product.pxeConfigTemplate:
+				if not eliloMode:
+					if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
+						logger.error(
+							u"Cannot use more than one pxe config template, got: {0}, {1}",
+							pxeConfigTemplate, product.pxeConfigTemplate
+						)
+					else:
+						pxeConfigTemplate = product.pxeConfigTemplate
+						logger.notice(
+							u"Special pxe config template {0!r} will be used used for host {1!r}, product {2!r}",
+							pxeConfigTemplate, hostId, poc.productId
+						)
+				else:
+					logger.notice("Ignoring given pxeConfigTemplate because uefi detected for the client.")
+
+		if not pxeConfigTemplate:
+			pxeConfigTemplate = self.config['pxeConfTemplate']
+
+		if not os.path.isabs(pxeConfigTemplate):  # Not an absolute path
+			pxeConfigTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), pxeConfigTemplate)
+
+		return pxeConfigTemplate, product
 
 	def _detectEliloMode(self, hostId):
 		# Try to detect elilo mode
