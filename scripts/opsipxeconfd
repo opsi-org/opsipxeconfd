@@ -697,8 +697,10 @@ class ServerConnection:
 		with createUnixSocket(self.port) as unixSocket:
 			unixSocket.send(forceUnicode(cmd).encode('utf-8'))
 
+			result = ''
 			try:
-				result = forceUnicode(unixSocket.recv(4096))
+				for part in iter(lambda: unixSocket.recv(4096), ''):
+					result += forceUnicode(part)
 			except Exception as error:
 				raise Exception(u"Failed to receive: %s" % error)
 
