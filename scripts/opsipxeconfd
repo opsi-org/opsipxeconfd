@@ -389,9 +389,7 @@ class Opsipxeconfd(threading.Thread):
 
 			# Get product property states
 			productPropertyStates = {}
-			productIds = []
-			for poc in productOnClients:
-				productIds.append(poc.productId)
+			productIds = [poc.productId for poc in productOnClients]
 			if productIds:
 				for pps in self._backend.productPropertyState_getObjects(objectId=hostId, productId=productIds):
 					productPropertyStates[pps.propertyId] = u','.join(forceUnicodeList(pps.getValues()))
