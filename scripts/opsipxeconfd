@@ -842,9 +842,10 @@ class OpsipxeconfdInit(object):
 				self.config['logLevel'] = forceInt(arg)
 
 	def createPidFile(self):
-		logger.info(u"Creating pid file {0!r}", self.config['pidFile'])
-		if os.path.exists(self.config['pidFile']):
-			with open(self.config['pidFile'], 'r') as pf:
+		pidFile = self.config['pidFile']
+		logger.info(u"Creating pid file {0!r}", pidFile)
+		if os.path.exists(pidFile):
+			with open(pidFile, 'r') as pf:
 				oldPid = pf.readline().strip()
 
 			if oldPid:
@@ -862,16 +863,18 @@ class OpsipxeconfdInit(object):
 					raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % oldPid)
 
 		pid = os.getpid()
-		with open(self.config['pidFile'], "w") as pf:
+		with open(pidFile, "w") as pf:
 			pf.write(str(pid))
 
 	def removePidFile(self):
+		pidFile = self.config['pidFile']
+
 		try:
-			if os.path.exists(self.config['pidFile']):
-				logger.info(u"Removing pid file {0!r}", self.config['pidFile'])
-				os.unlink(self.config['pidFile'])
+			if os.path.exists(pidFile):
+				logger.info(u"Removing pid file {0!r}", pidFile)
+				os.unlink(pidFile)
 		except Exception as error:
-			logger.error(u"Failed to remove pid file {0!r}: {1}", self.config['pidFile'], error)
+			logger.error(u"Failed to remove pid file {0!r}: {1}", pidFile, error)
 
 	def signalHandler(self, signo, stackFrame):
 		for thread in threading.enumerate():
