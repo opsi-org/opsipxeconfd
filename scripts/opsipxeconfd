@@ -978,7 +978,7 @@ class OpsipxeconfdInit(object):
 
 
 @contextmanager
-def temporaryPidFile(self, filepath):
+def temporaryPidFile(filepath):
 	'''
 	Create a file containing the current pid for 'opsipxeconfd' at `filepath`.
 	Leaving the context will remove the file.
