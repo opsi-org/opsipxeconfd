@@ -272,12 +272,7 @@ class Opsipxeconfd(threading.Thread):
 			if not productOnClients:
 				return u'Boot configuration updated'
 
-			# Get host
-			host = self._backend.host_getObjects(id=hostId)
-			try:
-				host = host[0]
-			except IndexError:
-				raise Exception(u"Host '%s' not found" % hostId)
+			host = self._getHostObject(hostId)
 
 			newProductOnClients = []
 			for poc in productOnClients:
@@ -431,6 +426,13 @@ class Opsipxeconfd(threading.Thread):
 			while pcw.isAlive():
 				time.sleep(0.1)
 			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
+
+	def _getHostObject(self, hostId):
+		host = self._backend.host_getObjects(id=hostId)
+		try:
+			return host[0]
+		except IndexError:
+			raise ValueError(u"Host '%s' not found" % hostId)
 
 	def _detectEliloMode(self, hostId):
 		# Try to detect elilo mode
