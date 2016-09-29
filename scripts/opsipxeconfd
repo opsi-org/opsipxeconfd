@@ -804,7 +804,7 @@ class OpsipxeconfdInit(object):
 				logger.setConsoleLevel(self.config['logLevel'])
 				logger.setConsoleColor(True)
 
-			with pidFile(self.config['pidFile']):
+			with temporaryPidFile(self.config['pidFile']):
 				self._opsipxeconfd = Opsipxeconfd(self.config)
 				self._opsipxeconfd.start()
 				time.sleep(3)
@@ -973,7 +973,7 @@ class OpsipxeconfdInit(object):
 
 
 @contextmanager
-def pidFile(self, filepath):
+def temporaryPidFile(self, filepath):
 	'''
 	Create a file containing the current pid for 'opsipxeconfd' at `filepath`.
 	Leaving the context will remove the file.
