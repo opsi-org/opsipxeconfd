@@ -637,7 +637,6 @@ class PXEConfigWriter(threading.Thread):
 				if self._uefiModule and self.uefi:
 					content = '%sappend="%s"\n' % (content, ' '.join(appendLineProperties))
 				elif not self._uefiModule and self.uefi:
-					content = u""
 					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
 				else:
 					content = '%s  append %s\n' % (content, ' '.join(appendLineProperties))
