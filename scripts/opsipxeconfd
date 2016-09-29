@@ -597,8 +597,10 @@ class PXEConfigWriter(threading.Thread):
 		# Set pxe config content
 		self.content = self._getPXEConfigContent(self.templatefile)
 
-		if 'pckey' in append:
+		try:
 			del self.append['pckey']
+		except KeyError:
+			pass  # My be non-existing
 
 		if os.path.exists(self.pxefile):
 			os.unlink(self.pxefile)
