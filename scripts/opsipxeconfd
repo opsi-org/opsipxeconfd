@@ -790,17 +790,13 @@ class OpsipxeconfdInit(object):
 				logger.setConsoleLevel(self.config['logLevel'])
 				logger.setConsoleColor(True)
 
-			self.createPidFile()
-			try:
-				# Start opsiconfd
+			with pidFile(self.config['pidFile']):
 				self._opsipxeconfd = Opsipxeconfd(self.config)
 				self._opsipxeconfd.start()
 				time.sleep(3)
 				while self._opsipxeconfd.isRunning():
 					time.sleep(1)
 				self._opsipxeconfd.join(30)
-			finally:
-				self.removePidFile()
 
 		else:
 			con = ServerConnection(self.config['port'])
@@ -840,41 +836,6 @@ class OpsipxeconfdInit(object):
 				self.config['daemon'] = False
 			if opt in ("-l", "--loglevel"):
 				self.config['logLevel'] = forceInt(arg)
-
-	def createPidFile(self):
-		pidFile = self.config['pidFile']
-		logger.info(u"Creating pid file {0!r}", pidFile)
-		if os.path.exists(pidFile):
-			with open(pidFile, 'r') as pf:
-				oldPid = pf.readline().strip()
-
-			if oldPid:
-				running = False
-				try:
-					pids = execute("%s -x opsipxeconfd" % which("pidof"))[0].strip().split()
-					for runningPid in pids:
-						if runningPid == oldPid:
-							running = True
-							break
-				except Exception as error:
-					logger.error(error)
-
-				if running:
-					raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % oldPid)
-
-		pid = os.getpid()
-		with open(pidFile, "w") as pf:
-			pf.write(str(pid))
-
-	def removePidFile(self):
-		pidFile = self.config['pidFile']
-
-		try:
-			if os.path.exists(pidFile):
-				logger.info(u"Removing pid file {0!r}", pidFile)
-				os.unlink(pidFile)
-		except Exception as error:
-			logger.error(u"Failed to remove pid file {0!r}: {1}", pidFile, error)
 
 	def signalHandler(self, signo, stackFrame):
 		for thread in threading.enumerate():
@@ -995,6 +956,51 @@ class OpsipxeconfdInit(object):
 		os.dup2(0, 2)
 		sys.stdout = logger.getStdout()
 		sys.stderr = logger.getStderr()
+
+
+@contextmanager
+def pidFile(self, filepath):
+	pidFile = filepath
+
+	logger.debug("Reading old pidFile {0!r}...", pidFile)
+	try:
+		with open(pidFile, 'r') as pf:
+			oldPid = pf.readline().strip()
+
+		if oldPid:
+			running = False
+			try:
+				pids = execute("%s -x opsipxeconfd" % which("pidof"))[0].strip().split()
+				for runningPid in pids:
+					if runningPid == oldPid:
+						running = True
+						break
+			except Exception as error:
+				logger.error(error)
+
+			if running:
+				raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % oldPid)
+	except IOError as ioerr:
+		if ioerr.errno != 2:  # errno 2 == no such file
+			raise ioerr
+
+	logger.info(u"Creating pid file {0!r}", pidFile)
+	pid = os.getpid()
+	with open(pidFile, "w") as pf:
+		pf.write(str(pid))
+
+	try:
+		yield
+	finally:
+		try:
+			logger.debug(u"Removing pid file {0!r}...")
+			os.unlink(pidFile)
+			logger.info(u"Removed pid file {0!r}", pidFile)
+		except OSError as oserr:
+			if oserr.errno != 2:
+				logger.error(u"Failed to remove pid file {0!r}: {1}", pidFile, oserr)
+		except Exception as error:
+			logger.error(u"Failed to remove pid file {0!r}: {1}", pidFile, error)
 
 
 if __name__ == "__main__":
