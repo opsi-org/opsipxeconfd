@@ -320,18 +320,11 @@ class Opsipxeconfd(threading.Thread):
 				'pckey': host.getOpsiHostKey(),
 				'hn': hostId.split('.')[0],
 				'dn': u'.'.join(hostId.split('.')[1:]),
-				'product': product.id
+				'product': product.id,
+				'service': self._getConfigServiceAddress(hostId),
 			}
 			if append['pckey']:
 				logger.addConfidentialString(append['pckey'])
-
-			# Get config service id
-			append['service'] = u''
-			configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'clientconfig.configserver.url')
-			if configStates:
-				append['service'] = configStates[0].getValues()[0]
-			if not append['service'].endswith(u'/rpc'):
-				append['service'] += u'/rpc'
 
 			# Get additional bootimage append params
 			configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'opsi-linux-bootimage.append')
@@ -466,6 +459,17 @@ class Opsipxeconfd(threading.Thread):
 		else:
 			raise Exception(u"Neither hardware address nor ip address known for host '%s'" % host.id)
 
+	def _getConfigServiceAddress(self, hostId):
+		address = u''
+
+		configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'clientconfig.configserver.url')
+		if configStates:
+			address = configStates[0].getValues()[0]
+
+		if not address.endswith(u'/rpc'):
+			address += u'/rpc'
+
+		return address
 
 
 class StartupTask(threading.Thread):
