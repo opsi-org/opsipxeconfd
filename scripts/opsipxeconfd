@@ -657,10 +657,10 @@ class PXEConfigWriter(threading.Thread):
 
 
 class ClientConnection(threading.Thread):
-	def __init__(self, opsipxeconfd, socket, callback=None):
+	def __init__(self, opsipxeconfd, connectionSocket, callback=None):
 		threading.Thread.__init__(self)
 		self._opsipxeconfd = opsipxeconfd
-		self._socket = socket
+		self._socket = connectionSocket
 		self._callback = callback
 		self._running = False
 		self.startTime = time.time()
