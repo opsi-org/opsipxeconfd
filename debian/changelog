@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.7.3-2) stable; urgency=medium
+
+  * RPM postinst: only remove "su" from logrotate config on RHEL 6 / CentOS 6.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 04 Oct 2016 15:48:24 +0200
+
 opsipxeconfd (4.0.7.3-1) stable; urgency=medium
 
   * Do not fail when reading configuration of writer for status.
