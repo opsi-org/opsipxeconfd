@@ -35,6 +35,21 @@ case "$1" in
 			grep -v "su root opsiadmin" /etc/logrotate.d/opsipxeconfd > $LOGROTATE_TEMP
 			mv $LOGROTATE_TEMP /etc/logrotate.d/opsipxeconfd
 		fi
+
+		set +e
+		SYSTEMDUNITDIR=$(pkg-config systemd --variable=systemdsystemunitdir)
+		set -e
+		if [ ! -z "$SYSTEMDUNITDIR" -a -d "$SYSTEMDUNITDIR" -a -d "/etc/opsi/systemdTemplates/" ]; then
+			echo "Copying opsipxeconfd.service to $SYSTEMDUNITDIR"
+			cp "/etc/opsi/systemdTemplates/opsipxeconfd.service" "$SYSTEMDUNITDIR" || echo "Copying service file failed."
+
+			systemctl=`which systemctl 2>/dev/null`
+			if [ ! -z "$systemctl" -a -x "$systemctl" ]; then
+				echo "Reloading unit-files"
+				$systemctl daemon-reload || echo "Reloading unit-files failed!"
+				$systemctl enable opsipxeconfd.service && echo "Enabled opsipxeconfd.service" || echo "Enabling opsipxeconfd.service failed!"
+			fi
+		fi
 	;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)
