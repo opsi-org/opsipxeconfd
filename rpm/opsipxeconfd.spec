@@ -19,15 +19,25 @@ Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
 Source:         opsipxeconfd_4.0.5.5-1.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-%if 0%{?sles_version}
+
+%if 0%{?sles_version} || 0%{?suse_version} == 1110 || 0%{?suse_version} == 1315
+# SLES
+Requires:      pkg-config
+BuildRequires: pkg-config
 BuildRequires: python-opsi >= 4.0.1 zypper logrotate
 %endif
+
 %if 0%{?suse_version}
 Suggests: logrotate
+Requires:      pkg-config
+BuildRequires: pkg-config
 BuildRequires: zypper logrotate
 PreReq: %insserv_prereq zypper
 %{py_requires}
+%else
+Requires:       pkgconfig
 %endif
+
 %if 0%{?suse_version} != 1110
 BuildArch:      noarch
 %endif
@@ -58,6 +68,8 @@ python setup.py build
 
 # ===[ install ]====================================
 %install
+mkdir -p $RPM_BUILD_ROOT/etc/opsi/systemdTemplates
+
 %if 0%{?suse_version}
 python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
 %else
@@ -107,10 +119,36 @@ if [ -e "/etc/init.d/opsipxeconfd" ]; then
 	sed -i "s/2 3 4 5/2 3 5/g; s/2345/235/g" /etc/init.d/opsipxeconfd
 fi
 
+set +e
+SYSTEMDUNITDIR=$(pkg-config systemd --variable=systemdsystemunitdir)
+set -e
+if [ ! -z "$SYSTEMDUNITDIR" -a -d "$SYSTEMDUNITDIR" -a -d "/etc/opsi/systemdTemplates/" ]; then
+    echo "Copying opsipxeconfd.service to $SYSTEMDUNITDIR"
+    cp "/etc/opsi/systemdTemplates/opsipxeconfd.service" "$SYSTEMDUNITDIR" || echo "Copying opsipxeconfd.service failed"
+
+    %if 0%{?suse_version} >= 1315 || 0%{?centos_version} >= 700 || 0%{?rhel_version} >= 700
+        # Adjusting to the correct service names
+        sed --in-place "s/=smbd.service/=smb.service/" "$SYSTEMDUNITDIR/opsipxeconfd.service" || True
+        sed --in-place "s/=isc-dhcp-server.service/=dhcpd.service/" "$SYSTEMDUNITDIR/opsipxeconfd.service" || True
+    %endif
+
+    %if 0%{?suse_version} || 0%{?centos_version} || 0%{?rhel_version}
+        MKDIR_PATH=$(which mkdir)
+        CHOWN_PATH=$(which chown)
+        sed --in-place "s!=-/bin/mkdir!=-$MKDIR_PATH!" "$SYSTEMDUNITDIR/opsipxeconfd.service" || True
+        sed --in-place "s!=-/bin/chown!=-$CHOWN_PATH!" "$SYSTEMDUNITDIR/opsipxeconfd.service" || True
+    %endif
+
+    systemctl=`which systemctl 2>/dev/null` || true
+    if [ ! -z "$systemctl" -a -x "$systemctl" ]; then
+        echo "Reloading unit-files"
+        $systemctl daemon-reload || echo "Reloading unit-files failed!"
+        $systemctl enable opsipxeconfd.service && echo "Enabled opsipxeconfd.service" || echo "Enabling opsipxeconfd.service failed!"
+    fi
+fi
+
 if [ $1 -eq 1 ]; then
 	# Install
-	#%{fillup_and_insserv opsipxeconfd}
-
 	%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora_version}
 	chkconfig --add opsipxeconfd
 	%else
@@ -150,6 +188,17 @@ if [ $1 -eq 0 ]; then
 	%else
 		%insserv_cleanup
 	%endif
+
+    SYSTEMDUNITDIR=$(pkg-config systemd --variable=systemdsystemunitdir)
+    if [ ! -z "$SYSTEMDUNITDIR" -a -d "$SYSTEMDUNITDIR" -a -e "$SYSTEMDUNITDIR/opsipxeconfd.service" ]; then
+        systemctl=`which systemctl 2>/dev/null` || true
+        if [ ! -z "$systemctl" -a -x "$systemctl" ]; then
+            $systemctl disable opsipxeconfd.service && echo "Disabled opsipxeconfd.service" || echo "Disabling opsipxeconfd.service failed!"
+            $systemctl daemon-reload || echo "Reloading unit-files failed!"
+        fi
+
+        rm "$SYSTEMDUNITDIR/opsipxeconfd.service" || echo "Removing opsipxeconfd.service failed"
+    fi
 fi
 
 
@@ -157,9 +206,6 @@ fi
 %files -f INSTALLED_FILES
 # default attributes
 %defattr(-,root,root)
-
-# documentation
-#%doc LICENSE README RELNOTES doc
 
 # configfiles
 %config(noreplace) /etc/opsi/opsipxeconfd.conf

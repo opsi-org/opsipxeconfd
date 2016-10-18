@@ -3,7 +3,7 @@
 
 # This file is part of the desktop management solution opsi
 # (open pc server integration) http://www.opsi.org
-# Copyright (C) 2010-2015 uib GmbH <info@uib.de>
+# Copyright (C) 2010-2016 uib GmbH <info@uib.de>
 # All rights reserved.
 
 # This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@ from setuptools import setup
 
 
 with open("scripts/opsipxeconfd") as f:
-	for line in f.readlines():
+	for line in f:
 		if line.startswith('__version__'):
 			version = line.split('=')[1].strip()
 			break
@@ -46,6 +46,7 @@ setup(
 	scripts=['scripts/opsipxeconfd'],
 	data_files=[
 		('/etc/opsi', ['data/etc/opsi/opsipxeconfd.conf']),
+		('/etc/opsi/systemdTemplates', ['data/etc/opsi/systemdTemplates/opsipxeconfd.service']),
 		('/etc/init.d', ['data/etc/init.d/opsipxeconfd']),
 		('/etc/logrotate.d', ['data/etc/logrotate.d/opsipxeconfd']),
 	],
