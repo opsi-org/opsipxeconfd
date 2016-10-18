@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.7.4-2) experimental; urgency=medium
+
+  * Integrating with systemd.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 18 Oct 2016 17:14:34 +0200
+
 opsipxeconfd (4.0.7.4-1) testing; urgency=medium
 
   * Internal refactoring to have many small methods instead of a few
