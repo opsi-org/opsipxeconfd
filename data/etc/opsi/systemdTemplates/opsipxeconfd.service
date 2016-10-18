@@ -1,0 +1,19 @@
+[Unit]
+Description=Opsi PXE Configuration Service
+After=mysql.service
+After=smbd.service
+Requires=smbd.service
+Wants=isc-dhcp-server.service
+Wants=mysql.service
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/opsipxeconfd start
+RestartSec=10
+KillMode=process
+TimeoutStopSec=10
+PIDFile=/var/run/opsipxeconfd/opsipxeconfd.pid
+ExecStartPre=-/bin/mkdir /var/run/opsipxeconfd
+
+[Install]
+WantedBy=multi-user.target

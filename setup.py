@@ -46,6 +46,7 @@ setup(
 	scripts=['scripts/opsipxeconfd'],
 	data_files=[
 		('/etc/opsi', ['data/etc/opsi/opsipxeconfd.conf']),
+		('/etc/opsi/systemdTemplates', ['data/etc/opsi/systemdTemplates/opsipxeconfd.service']),
 		('/etc/init.d', ['data/etc/init.d/opsipxeconfd']),
 		('/etc/logrotate.d', ['data/etc/logrotate.d/opsipxeconfd']),
 	],
