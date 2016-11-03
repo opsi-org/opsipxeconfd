@@ -427,7 +427,9 @@ class Opsipxeconfd(threading.Thread):
 			pxeConfigTemplate = self.config['pxeConfTemplate']
 
 		if not os.path.isabs(pxeConfigTemplate):  # Not an absolute path
+			logger.debug("pxeConfigTemplate is not an absolute path.")
 			pxeConfigTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), pxeConfigTemplate)
+			logger.debug("pxeConfigTemplate changed to {0}", pxeConfigTemplate)
 
 		return pxeConfigTemplate, product
 
