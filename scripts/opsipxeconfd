@@ -752,10 +752,10 @@ class ServerConnection:
 
 
 @contextmanager
-def createUnixSocket(port):
+def createUnixSocket(port, timeout=5.0):
 	logger.notice(u"Creating unix socket '%s'" % port)
 	_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-	_socket.settimeout(5.0)
+	_socket.settimeout(timeout)
 	try:
 		with closing(_socket) as unixSocket:
 			unixSocket.connect(port)
