@@ -8,7 +8,7 @@
 
 Name:           opsipxeconfd
 BuildRequires:  python-devel python-setuptools
-Requires:       opsi-atftp python-opsi >= 4.0 opsi-linux-bootimage
+Requires:       opsi-atftp python-opsi >= 4.1 opsi-linux-bootimage
 Url:            http://www.opsi.org
 License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
@@ -24,7 +24,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 # SLES
 Requires:      pkg-config
 BuildRequires: pkg-config
-BuildRequires: python-opsi >= 4.0.1 zypper logrotate
+BuildRequires: python-opsi >= 4.1 zypper logrotate
 %endif
 
 %if 0%{?suse_version}

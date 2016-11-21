@@ -39,19 +39,20 @@ import stat
 import sys
 import threading
 import time
-from contextlib import closing, contextmanager
+from contextlib import contextmanager
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from twisted.conch.ssh import keys
 from hashlib import md5
 
 from OPSI.Backend.BackendManager import BackendManager
+from OPSI.Backend.OpsiPXEConfd import ServerConnection
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
-__version__ = '4.0.7.4'
+__version__ = '4.1.1'
 
 logger = Logger()
 
@@ -730,40 +731,6 @@ class ClientConnection(threading.Thread):
 			return u"(ERROR): %s" % error
 
 
-class ServerConnection:
-	def __init__(self, port):
-		self.port = port
-
-	def sendCommand(self, cmd):
-		with createUnixSocket(self.port) as unixSocket:
-			unixSocket.send(forceUnicode(cmd).encode('utf-8'))
-
-			result = ''
-			try:
-				for part in iter(lambda: unixSocket.recv(4096), ''):
-					result += forceUnicode(part)
-			except Exception as error:
-				raise Exception(u"Failed to receive: %s" % error)
-
-		if result.startswith(u'(ERROR)'):
-			raise Exception(u"Command '%s' failed: %s" % (cmd, result))
-
-		return result
-
-
-@contextmanager
-def createUnixSocket(port, timeout=5.0):
-	logger.notice(u"Creating unix socket '%s'" % port)
-	_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-	_socket.settimeout(timeout)
-	try:
-		with closing(_socket) as unixSocket:
-			unixSocket.connect(port)
-			yield unixSocket
-	except Exception as error:
-		raise Exception(u"Failed to connect to socket '%s': %s" % (port, error))
-
-
 class OpsipxeconfdInit(object):
 	def __init__(self):
 		logger.debug(u"OpsiPXEConfdInit")
@@ -819,7 +786,7 @@ class OpsipxeconfdInit(object):
 				self._opsipxeconfd.join(30)
 
 		else:
-			con = ServerConnection(self.config['port'])
+			con = ServerConnection(self.config['port'], timeout=5.0)
 			result = con.sendCommand(u' '.join(forceUnicodeList(self.args)))
 			if result:
 				if result.startswith(u'(ERROR)'):
