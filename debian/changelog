@@ -1,4 +1,10 @@
-opsipxeconfd (4.0.7.5-2) stable; urgency=medium
+opsipxeconfd (4.0.7.5-3) stable; urgency=medium
+
+  * debian/ubuntu: added missing esac in postrm
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 08 Dec 2016 13:39:34 +0100
+
+opsipxeconfd (4.0.7.5-2) experimental; urgency=medium
 
   * opsipxeconfd.spec: deactivated removing su line from logrotate on SLES11SP4
 
