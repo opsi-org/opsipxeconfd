@@ -1,3 +1,21 @@
+opsipxeconfd (4.0.7.5-3) stable; urgency=medium
+
+  * debian/ubuntu: added missing esac in postrm
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 08 Dec 2016 13:39:34 +0100
+
+opsipxeconfd (4.0.7.5-2) experimental; urgency=medium
+
+  * opsipxeconfd.spec: deactivated removing su line from logrotate on SLES11SP4
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 08 Dec 2016 10:33:37 +0100
+
+opsipxeconfd (4.0.7.5-1) stable; urgency=medium
+
+  * opsipxeconfd.spec: added detection of SLES12SP2 & OpenSUSE Leap42.2 
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 07 Dec 2016 10:45:36 +0100
+
 opsipxeconfd (4.0.7.4-2) experimental; urgency=medium
 
   * Integrating with systemd.
