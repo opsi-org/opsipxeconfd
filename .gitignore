@@ -1,0 +1,4 @@
+# Some temp files we do not want to carry with us
+*.swp
+*~
+
