@@ -16,7 +16,7 @@ To avoid daemonizing you can use `--no-fork`. Along with setting a high log leve
 
 ### Commandline Interface
 
-opsipxeconfd has a limited CLI that can be used for inter-process communication.
+opsipxeconfd has a simple CLI.
 
 To check the version of opsipxeconfd:
 
