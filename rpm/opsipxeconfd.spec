@@ -14,10 +14,10 @@ License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
 Version:        4.1.1.1
-Release:        3
+Release:        4
 Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
-Source:         opsipxeconfd_4.1.1.1-3.tar.gz
+Source:         opsipxeconfd_4.1.1.1-4.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1110 || 0%{?suse_version} == 1315
@@ -82,26 +82,13 @@ ln -sf /etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 %if 0%{?suse_version} == 1110 || 0%{?suse_version} == 1315
 	sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
 %endif
-
-%if 0%{?suse_version} > 1110
-LOGROTATE_VERSION="$(zypper info logrotate | grep -i "version" | awk '{print $2}' | cut -d '-' -f 1)"
-if [ "$(zypper --terse versioncmp $LOGROTATE_VERSION 3.8)" == "-1" ]; then
-        LOGROTATE_TEMP=$RPM_BUILD_ROOT/opsi-logrotate_config.temp
-        LOGROTATE_CONFIG=$RPM_BUILD_ROOT/etc/logrotate.d/opsipxeconfd
-        grep -v "su root opsiadmin" $LOGROTATE_CONFIG > $LOGROTATE_TEMP
-        mv $LOGROTATE_TEMP $LOGROTATE_CONFIG
-fi
-%else
-        %if 0%{?rhel_version} || 0%{?centos_version}
-            echo "Detected RHEL / CentOS / Fedora"
-            %if 0%{?rhel_version} == 600 || 0%{?centos_version} == 600
-                echo "Fixing logrotate configuration"
-                LOGROTATE_TEMP=$RPM_BUILD_ROOT/opsi-logrotate_config.temp
-                LOGROTATE_CONFIG=$RPM_BUILD_ROOT/etc/logrotate.d/opsipxeconfd
-                grep -v "su root opsiadmin" $LOGROTATE_CONFIG > $LOGROTATE_TEMP
-                mv $LOGROTATE_TEMP $LOGROTATE_CONFIG
-            %endif
-        %endif
+        
+%if 0%{?rhel_version} == 600 || 0%{?centos_version} == 600
+	echo "Fixing logrotate configuration"
+	LOGROTATE_TEMP=$RPM_BUILD_ROOT/opsi-logrotate_config.temp
+	LOGROTATE_CONFIG=$RPM_BUILD_ROOT/etc/logrotate.d/opsipxeconfd
+	grep -v "su root opsiadmin" $LOGROTATE_CONFIG > $LOGROTATE_TEMP
+	mv $LOGROTATE_TEMP $LOGROTATE_CONFIG
 %endif
 
 
