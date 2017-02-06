@@ -8,6 +8,17 @@ The named pipes are empty and will be filled on-the-fly once a read is requested
 ## Usage
 
 opsipxeconfd is usually running as a service.
+For general usage we recommend using the `service` command to manage it.
+
+    # Starting the service
+    service opsiconfd start
+    # Stopping the service.
+    service opsiconfd stop
+
+Manual control is also possible.
+
+    opsipxeconfd start
+
 The configuration is made through a configuration file. This file usually resides at `/etc/opsi/opsipxeconfd.conf`. Starting with a different configuration file is possible with:
 
     opsipxeconfd --conffile /path/to/configfile start
