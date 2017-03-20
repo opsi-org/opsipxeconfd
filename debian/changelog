@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.1-5) experimental; urgency=medium
+
+  * spec: tftp-hpa-server -> opsi-tftp-hpa-server
+
+ -- Mathias Radtke <m.radtke@uib.de>  Mon, 20 Mar 2017 16:12:51 +0100
+
 opsipxeconfd (4.1.1.1-4) experimental; urgency=medium
 
   * opsipxeconfd.spec: tftpd-hpa -> tftp-hpa-server

@@ -8,7 +8,7 @@
 
 Name:           opsipxeconfd
 BuildRequires:  python-devel python-setuptools
-Requires:       tftp-hpa-server python-opsi >= 4.1 opsi-linux-bootimage
+Requires:       opsi-tftp-hpa-server python-opsi >= 4.1 opsi-linux-bootimage
 Url:            http://www.opsi.org
 License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
