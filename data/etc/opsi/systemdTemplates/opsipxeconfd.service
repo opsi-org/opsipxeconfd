@@ -9,6 +9,7 @@ Wants=mysql.service
 [Service]
 Type=forking
 ExecStart=/usr/bin/opsipxeconfd start
+Restart=on-failure
 RestartSec=10
 KillMode=process
 TimeoutStopSec=10
