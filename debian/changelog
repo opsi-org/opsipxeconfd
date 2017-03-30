@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.1-6) testing; urgency=medium
+
+  * systemd service file: added automatic restart on failure.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Thu, 30 Mar 2017 09:56:11 +0200
+
 opsipxeconfd (4.1.1.1-5) experimental; urgency=medium
 
   * spec: tftp-hpa-server -> opsi-tftp-hpa-server
