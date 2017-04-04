@@ -1,7 +1,7 @@
 #
 # spec file for package opsipxeconfd
 #
-# Copyright (c) 2010-2016 uib GmbH.
+# Copyright (c) 2010-2017 uib GmbH.
 # This file and all modifications and additions to the pristine
 # package are under the same license as the package itself.
 #
@@ -82,7 +82,7 @@ ln -sf /etc/init.d/opsipxeconfd $RPM_BUILD_ROOT/usr/sbin/rcopsipxeconfd
 %if 0%{?suse_version} == 1110 || 0%{?suse_version} == 1315
 	sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
 %endif
-        
+
 %if 0%{?rhel_version} == 600 || 0%{?centos_version} == 600
 	echo "Fixing logrotate configuration"
 	LOGROTATE_TEMP=$RPM_BUILD_ROOT/opsi-logrotate_config.temp

@@ -3,7 +3,7 @@
 
 # This file is part of the desktop management solution opsi
 # (open pc server integration) http://www.opsi.org
-# Copyright (C) 2010-2016 uib GmbH <info@uib.de>
+# Copyright (C) 2010-2017 uib GmbH <info@uib.de>
 # All rights reserved.
 
 # This program is free software: you can redistribute it and/or modify
