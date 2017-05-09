@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.7.6-1) experimental; urgency=medium
+
+  * depends: opsi-tftpd
+
+ -- Mathias Radtke <m.radtke@uib.de>  Tue, 09 May 2017 16:21:21 +0200
+
 opsipxeconfd (4.0.7.5-3) stable; urgency=medium
 
   * debian/ubuntu: added missing esac in postrm
