@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.1-7) experimental; urgency=medium
+
+  * depends on opsi-tftpd
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 10 May 2017 10:13:31 +0200
+
 opsipxeconfd (4.1.1.1-6) testing; urgency=medium
 
   * systemd service file: added automatic restart on failure.
