@@ -8,16 +8,16 @@
 
 Name:           opsipxeconfd
 BuildRequires:  python-devel python-setuptools
-Requires:       opsi-atftp python-opsi >= 4.0 opsi-linux-bootimage
+Requires:       opsi-tftpd python-opsi >= 4.0 opsi-linux-bootimage
 Url:            http://www.opsi.org
 License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        4.0.7.5
-Release:        3
+Version:        4.0.7.6
+Release:        1
 Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
-Source:         opsipxeconfd_4.0.7.5-3.tar.gz
+Source:         opsipxeconfd_4.0.7.6-1.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1110 || 0%{?suse_version} == 1315
