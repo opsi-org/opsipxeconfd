@@ -2,13 +2,13 @@ Source: opsipxeconfd
 Section: opsi
 Priority: optional
 Maintainer: uib GmbH <info@uib.de>
-Build-Depends: debhelper (>= 7), python (>=2.6), dh-python | python-support, python-setuptools, opsi-tftpd
+Build-Depends: debhelper (>= 7), python (>=2.6), dh-python | python-support, python-setuptools
 X-Python-Version: >= 2.6
 Standards-Version: 3.9.4
 
 Package: opsipxeconfd
 Section: opsi
 Architecture: all
-Depends: python-opsi (>=4.1), python (>= 2.6), pkg-config, ${misc:Depends}, ${python:Depends}
+Depends: python-opsi (>=4.1), opsi-tftpd, python (>= 2.6), pkg-config, ${misc:Depends}, ${python:Depends}
 Description: opsi pxe configuration daemon
  This package contains the opsi pxe configuration daemon.
