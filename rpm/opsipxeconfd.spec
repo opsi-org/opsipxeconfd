@@ -14,10 +14,10 @@ License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
 Version:        4.1.1.1
-Release:        5
+Release:        7
 Summary:        opsi pxe configuration daemon
 %define tarname opsipxeconfd
-Source:         opsipxeconfd_4.1.1.1-5.tar.gz
+Source:         opsipxeconfd_4.1.1.1-7.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1110 || 0%{?suse_version} == 1315
