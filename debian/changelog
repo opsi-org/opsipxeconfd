@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.1-10) testing; urgency=medium
+
+  * RPM: remove obsolete listing of initscript.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 19 May 2017 12:28:03 +0200
+
 opsipxeconfd (4.1.1.1-9) testing; urgency=medium
 
   * RPM: Reference correct path.
