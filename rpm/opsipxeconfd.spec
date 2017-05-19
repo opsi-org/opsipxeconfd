@@ -111,19 +111,14 @@ rm -rf $RPM_BUILD_ROOT
 systemctl=`which systemctl 2>/dev/null` || true
 if [ ! -z "$systemctl" -a -x "$systemctl" ]; then
     $systemctl enable opsipxeconfd.service && echo "Enabled opsipxeconfd.service" || echo "Enabling opsipxeconfd.service failed!"
-fi
 
-if [ $1 -eq 1 ]; then
-	# Install
-else
-	# Upgrade
-	# Moved to /var/run/opsipxeconfd/opsipxeconfd.socket
-	rm /var/run/opsipxeconfd.socket >/dev/null 2>&1 || true
-
-	if [ -e /var/run/opsipxeconfd.pid -o -e /var/run/opsipxeconfd/opsipxeconfd.pid ]; then
-		rm /var/run/opsipxeconfd.pid >/dev/null 2>&1 || true
-		/sbin/service opsipxeconfd restart || true
-	fi
+    if [ $arg0 -eq 1 ]; then
+        # Install
+        $systemctl start opsipxeconfd.service || true
+    else
+        # Upgrade
+        $systemctl restart opsipxeconfd.service || true
+    fi
 fi
 
 # ===[ preun ]======================================
