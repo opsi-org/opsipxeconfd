@@ -1,3 +1,33 @@
+opsipxeconfd (4.1.1.1-12) testing; urgency=medium
+
+  * RPM: Capitalize summary.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 19 May 2017 13:16:10 +0200
+
+opsipxeconfd (4.1.1.1-11) testing; urgency=medium
+
+  * RPM: refactor start / restart of service in postinst.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 19 May 2017 12:37:54 +0200
+
+opsipxeconfd (4.1.1.1-10) testing; urgency=medium
+
+  * RPM: remove obsolete listing of initscript.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 19 May 2017 12:28:03 +0200
+
+opsipxeconfd (4.1.1.1-9) testing; urgency=medium
+
+  * RPM: Reference correct path.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 19 May 2017 12:15:24 +0200
+
+opsipxeconfd (4.1.1.1-8) testing; urgency=medium
+
+  * Switch to systemd for providing the service.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 19 May 2017 12:06:53 +0200
+
 opsipxeconfd (4.1.1.1-7) experimental; urgency=medium
 
   * depends on opsi-tftpd
