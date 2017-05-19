@@ -1,33 +1,9 @@
 #! /bin/sh -e
 
-case "$1" in
-	upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-	;;
-	remove)
-		systemctl=`which systemctl 2>/dev/null` || true
-		if [ ! -z "$systemctl" -a -x "$systemctl" ]; then
-			$systemctl disable opsipxeconfd.service && echo "Disabled opsipxeconfd.service" || echo "Disabling opsipxeconfd.service failed!"
-		fi
-	;;
-	purge)
-		update-rc.d opsipxeconfd remove
-
-		SYSTEMDUNITDIR=$(pkg-config systemd --variable=systemdsystemunitdir)
-		if [ ! -z "$SYSTEMDUNITDIR" -a -d "$SYSTEMDUNITDIR" -a -e "$SYSTEMDUNITDIR/opsipxeconfd.service" ]; then
-			systemctl=`which systemctl 2>/dev/null` || true
-			if [ ! -z "$systemctl" -a -x "$systemctl" ]; then
-				$systemctl disable opsipxeconfd.service && echo "Disabled opsipxeconfd.service" || echo "Disabling opsipxeconfd.service failed!"
-				$systemctl daemon-reload || echo "Reloading unit-files failed!"
-			fi
-
-			rm -f "$SYSTEMDUNITDIR/opsipxeconfd.service" || echo "Removing opsipxeconfd.service failed"
-		fi
-	;;
-	*)
-		echo "postrm called with unknown argument \`$1'" >&2
-		exit 1
-	;;
-
-esac
+# = = = = = = = = = = = = = = = = = = = = = = =
+# =     Copyright (C) 2010-2017 uib GmbH      =
+# =           http://www.uib.de               =
+# =          All rights reserved.             =
+# = = = = = = = = = = = = = = = = = = = = = = =
 
 #DEBHELPER#
