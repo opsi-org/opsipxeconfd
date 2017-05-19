@@ -17,7 +17,7 @@ Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
 Version:        4.1.1.1
 Release:        7
-Summary:        opsi pxe configuration daemon
+Summary:        This is the opsi pxe configuration daemon
 Source:         opsipxeconfd_4.1.1.1-7.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
