@@ -151,12 +151,10 @@ fi
 
 # configfiles
 %config(noreplace) /etc/opsi/opsipxeconfd.conf
-%attr(0755,root,root) %config /etc/init.d/opsipxeconfd
 %config /etc/logrotate.d/opsipxeconfd
 
 # other files
 %attr(0755,root,root) /usr/bin/opsipxeconfd
-%attr(0755,root,root) /usr/sbin/rcopsipxeconfd
 
 # directories
 %attr(0755,pcpatch,root) %dir /etc/opsi
