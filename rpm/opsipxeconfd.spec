@@ -83,16 +83,15 @@ mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 sed -i 's#/etc/logrotate.d$##' INSTALLED_FILES
 
 %if 0%{?suse_version} >= 1315 || 0%{?centos_version} >= 700 || 0%{?rhel_version} >= 700
-# TODO: DEBIAN PATH
     # Adjusting to the correct service names
-    sed --in-place "s/=smbd.service/=smb.service/" "$SYSTEMDUNITDIR/opsipxeconfd.service" || True
-    sed --in-place "s/=isc-dhcp-server.service/=dhcpd.service/" "$SYSTEMDUNITDIR/opsipxeconfd.service" || True
+    sed --in-place "s/=smbd.service/=smb.service/" "debian/opsipxeconfd.service" || true
+    sed --in-place "s/=isc-dhcp-server.service/=dhcpd.service/" "debian/opsipxeconfd.service" || true
 %endif
 
 MKDIR_PATH=$(which mkdir)
 CHOWN_PATH=$(which chown)
-sed --in-place "s!=-/bin/mkdir!=-$MKDIR_PATH!" "$SYSTEMDUNITDIR/opsipxeconfd.service" || true
-sed --in-place "s!=-/bin/chown!=-$CHOWN_PATH!" "$SYSTEMDUNITDIR/opsipxeconfd.service" || true
+sed --in-place "s!=-/bin/mkdir!=-$MKDIR_PATH!" "debian/opsipxeconfd.service" || true
+sed --in-place "s!=-/bin/chown!=-$CHOWN_PATH!" "debian/opsipxeconfd.service" || true
 
 install -D -m 644 debian/opsipxeconfd.service %{buildroot}%{_unitdir}/opsipxeconfd.service
 
