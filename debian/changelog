@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.1-8) testing; urgency=medium
+
+  * Switch to systemd for providing the service.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 19 May 2017 12:06:53 +0200
+
 opsipxeconfd (4.1.1.1-7) experimental; urgency=medium
 
   * depends on opsi-tftpd
