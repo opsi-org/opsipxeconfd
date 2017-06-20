@@ -408,7 +408,7 @@ class Opsipxeconfd(threading.Thread):
 				pxeConfigTemplate = self.config['uefiConfTemplate-x86']
 
 			if product.pxeConfigTemplate:
-				if not eliloMode:
+				if not (eliloMode or eliloX86Mode):
 					if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
 						logger.error(
 							u"Cannot use more than one pxe config template, got: {0}, {1}",
