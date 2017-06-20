@@ -901,6 +901,10 @@ class OpsipxeconfdInit(object):
 					self.config['pxeDir'] = forceFilename(value)
 				elif option == 'pxe config template':
 					self.config['pxeConfTemplate'] = forceFilename(value)
+				elif option == 'uefi netboot config template x86':
+					self.config['uefiConfTemplate-x86'] = forceFilename(value)
+				elif option == 'uefi netboot config template x64':
+					self.config['uefiConfTemplate-x64'] = forceFilename(value)
 				elif option == 'max pxe config writers':
 					self.config['maxPxeConfigWriters'] = forceInt(value)
 				elif option == 'max control connections':
