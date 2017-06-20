@@ -1,3 +1,10 @@
+opsipxeconfd (4.1.1.2-1) testing; urgency=medium
+
+  * Added configuration options "uefi netboot config template x86" and
+    "uefi netboot config template x64" to config file.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 20 Jun 2017 10:33:01 +0200
+
 opsipxeconfd (4.1.1.1-12) testing; urgency=medium
 
   * RPM: Capitalize summary.
