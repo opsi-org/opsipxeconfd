@@ -70,6 +70,26 @@ opsipxeconfd (4.1.1.1-1) experimental; urgency=medium
 
  -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 02 Dec 2016 11:04:06 +0100
 
+opsipxeconfd (4.0.7.8-1) testing; urgency=medium
+
+  * Do not override custom PXE config templates on 32bit UEFI.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 20 Jun 2017 10:19:17 +0200
+
+opsipxeconfd (4.0.7.7-1) testing; urgency=medium
+
+  * Allow configuration of the template files used for UEFI netboot.
+    The values from "uefi netboot config template x86" and
+    "uefi netboot config template x86" are responsible for this setting.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 20 Jun 2017 09:50:52 +0200
+
+opsipxeconfd (4.0.7.6-1) experimental; urgency=medium
+
+  * depends: opsi-tftpd
+
+ -- Mathias Radtke <m.radtke@uib.de>  Tue, 09 May 2017 16:21:21 +0200
+
 opsipxeconfd (4.0.7.5-3) stable; urgency=medium
 
   * debian/ubuntu: added missing esac in postrm
