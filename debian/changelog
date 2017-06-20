@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.7.8-1) testing; urgency=medium
+
+  * Do not override custom PXE config templates on 32bit UEFI.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 20 Jun 2017 10:19:17 +0200
+
 opsipxeconfd (4.0.7.7-1) testing; urgency=medium
 
   * Allow configuration of the template files used for UEFI netboot.
