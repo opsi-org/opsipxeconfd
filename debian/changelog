@@ -1,3 +1,10 @@
+opsipxeconfd (4.0.7.8-2) stable; urgency=medium
+
+  * systemd: always restart once the service exits.
+  * systemd: Dependency to smbd is now soft.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 18 Jul 2017 13:47:23 +0200
+
 opsipxeconfd (4.0.7.8-1) testing; urgency=medium
 
   * Do not override custom PXE config templates on 32bit UEFI.
