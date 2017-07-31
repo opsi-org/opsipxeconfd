@@ -1,3 +1,9 @@
+opsipxeconfd (4.0.7.8-3) stable; urgency=medium
+
+  * Always using the version from the changelog.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Mon, 31 Jul 2017 10:24:38 +0200
+
 opsipxeconfd (4.0.7.8-2) stable; urgency=medium
 
   * systemd: always restart once the service exits.
