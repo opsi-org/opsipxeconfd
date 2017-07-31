@@ -3,7 +3,7 @@
 
 # This file is part of the desktop management solution opsi
 # (open pc server integration) http://www.opsi.org
-# Copyright (C) 2010-2016 uib GmbH <info@uib.de>
+# Copyright (C) 2010-2017 uib GmbH <info@uib.de>
 # All rights reserved.
 
 # This program is free software: you can redistribute it and/or modify
@@ -26,20 +26,38 @@ opsi pxe configuration daemon (opsipxeconfd) setup file
 :license: GNU Affero General Public License version 3
 """
 
+import codecs
+import os.path
 from setuptools import setup
 
 
-with open("scripts/opsipxeconfd") as f:
-	for line in f:
+with codecs.open(os.path.join("debian", "changelog"), 'r', 'utf-8') as changelog:
+	VERSION = changelog.readline().split('(')[1].split('-')[0]
+
+if not VERSION:
+	raise ValueError(u"Failed to get version info")
+
+# Always set __version__ to the version found in the changelog to make
+# sure the version is always up-to-date  and nobody needs to manually
+# update it.
+initFilePath = os.path.join('scripts', 'opsipxeconfd')
+newInitLines = []
+with open(initFilePath) as originalFile:
+	for line in originalFile:
 		if line.startswith('__version__'):
-			version = line.split('=')[1].strip()
-			break
-	else:
-		version = None
+			newInitLines.append("__version__ = '{0}'\n".format(VERSION))
+			continue
+
+		newInitLines.append(line)
+
+with open(initFilePath, 'w') as newInitFile:
+	newInitFile.writelines(newInitLines)
+print("Patched version {1!r} from changelog into {0}".format(initFilePath, VERSION))
+
 
 setup(
 	name='opsipxeconfd',
-	version=version,
+	version=VERSION,
 	license='AGPL-3',
 	url="http://www.opsi.org",
 	description='The opsi pxe configiration management daemon',
