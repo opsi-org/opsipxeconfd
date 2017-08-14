@@ -508,7 +508,7 @@ class StartupTask(threading.Thread):
 
 	def run(self):
 		self._running = True
-		logger.notice(u"Start setting needed boot configurations")
+		logger.notice(u"Start setting initial boot configurations")
 		try:
 			clientIds = [clientToDepot['clientId'] for clientToDepot in
 						self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds=[self._opsipxeconfd.config['depotId']])]
@@ -533,7 +533,7 @@ class StartupTask(threading.Thread):
 					except Exception as error:
 						logger.error(u"Failed to update PXE boot config for client {0!r}: {1}", clientId, error)
 
-			logger.notice(u"Finished setting needed boot configurations")
+			logger.notice(u"Finished setting initial boot configurations")
 		except Exception as error:
 			logger.logException(error)
 		finally:
