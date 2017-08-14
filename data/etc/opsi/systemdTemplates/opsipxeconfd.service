@@ -12,9 +12,9 @@ ExecStart=/usr/bin/opsipxeconfd start
 Restart=always
 RestartSec=10
 KillMode=process
-TimeoutStopSec=10
+TimeoutStopSec=15
 PIDFile=/var/run/opsipxeconfd/opsipxeconfd.pid
-ExecStartPre=-/bin/mkdir /var/run/opsipxeconfd
+ExecStartPre=-/bin/mkdir -p /var/run/opsipxeconfd
 
 [Install]
 WantedBy=multi-user.target
