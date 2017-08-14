@@ -86,13 +86,22 @@ class Opsipxeconfd(threading.Thread):
 
 	def stop(self):
 		logger.notice(u"Stopping opsipxeconfd main thread")
-		if self._startupTask:
+
+		try:
 			self._startupTask.stop()
 			self._startupTask.join(10)
+		except AttributeError:
+			pass  # Probably still set to None.
+		except RuntimeError:
+			pass  # Probably not yet started
+		except Exception as error:
+			logger.debug("Unhandled error during stop: {0!r}", error)
+
 		try:
 			self._socket.close()
 		except Exception as error:
 			logger.error(u"Failed to close socket: {0}", error)
+
 		self._running = False
 
 	def reload(self):
@@ -708,8 +717,10 @@ class ClientConnection(threading.Thread):
 
 	def stop(self):
 		self._running = False
-		if self._socket:
+		try:
 			self._socket.close()
+		except AttributeError:
+			pass  # Probably none
 
 	def _processCommand(self, cmd):
 		try:
@@ -863,16 +874,22 @@ class OpsipxeconfdInit(object):
 		for thread in threading.enumerate():
 			logger.debug(u"Running thread before signal: {0}", thread)
 
+		logger.debug(u"Processing signal {0!r}", signo)
 		if signo == SIGHUP:
-			if self._opsipxeconfd:
-				self.setDefaultConfig()
-				self.readConfigFile()
-				self.setCommandlineConfig()
+			self.setDefaultConfig()
+			self.readConfigFile()
+			self.setCommandlineConfig()
+
+			try:
 				self._opsipxeconfd.setConfig(self.config)
 				self._opsipxeconfd.reload()
+			except AttributeError:
+				pass  # probably set to None
 		elif signo in (SIGTERM, SIGINT):
-			if self._opsipxeconfd:
+			try:
 				self._opsipxeconfd.stop()
+			except AttributeError:
+				pass  # probably set to None
 
 		for thread in threading.enumerate():
 			logger.debug(u"Running thread after signal: {0}", thread)
