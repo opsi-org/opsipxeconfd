@@ -6,7 +6,7 @@ opsi pxe configuration daemon (opsipxeconfd)
 opsiconfd is part of the desktop management solution opsi
 (open pc server integration) http://www.opsi.org
 
-Copyright (C) 2013-2016 uib GmbH
+Copyright (C) 2013-2017 uib GmbH
 
 http://www.uib.de/
 
@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import base64
 import getopt
+import grp
 import os
 import socket
 import stat
@@ -51,7 +52,9 @@ from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
-__version__ = '4.0.7.4'
+__version__ = '4.0.7.8'
+
+OPSI_ADMIN_GROUP_ID = grp.getgrnam('opsiadmin')[2]
 
 logger = Logger()
 
@@ -133,8 +136,16 @@ class Opsipxeconfd(threading.Thread):
 		self._socket.settimeout(0.1)
 		self._socket.listen(self.config['maxConnections'])
 
-		mode = os.stat(self.config['port'])[0]
-		os.chmod(self.config['port'], mode | stat.S_IROTH | stat.S_IWOTH)
+		self._setAccessRightsForSocket(self.config['port'])
+
+	@classmethod
+	def _setAccessRightsForSocket(self, path):
+		logger.debug("Setting rights on socket {0!r}", path)
+		mode = os.stat(path)[0]
+		# Adding read + write access for group and other.
+		os.chmod(path, mode | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
+		os.chown(path, -1, OPSI_ADMIN_GROUP_ID)
+		logger.debug("Done setting rights on socket {0!r}", path)
 
 	def _getConnection(self):
 		logger.debug2(u"_getConnection()")
