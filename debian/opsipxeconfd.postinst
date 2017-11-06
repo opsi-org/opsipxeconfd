@@ -7,3 +7,23 @@
 # = = = = = = = = = = = = = = = = = = = = = = =
 
 #DEBHELPER#
+
+case "$1" in
+	configure)
+		systemctl=`which systemctl 2>/dev/null`
+		if [ ! -z "$systemctl" -a -x "$systemctl" ]; then
+			echo "Reloading unit-files"
+			$systemctl daemon-reload || echo "Reloading unit-files failed!"
+			$systemctl enable opsipxeconfd.service && echo "Enabled opsipxeconfd.service" || echo "Enabling opsipxeconfd.service failed!"
+		fi
+	;;
+
+	abort-upgrade|abort-remove|abort-deconfigure)
+
+	;;
+
+	*)
+		echo "postinst called with unknown argument \`$1'" >&2
+		exit 1
+	;;
+esac

@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import base64
 import getopt
+import grp
 import os
 import socket
 import stat
@@ -46,13 +47,16 @@ from hashlib import md5
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ServerConnection
+from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
-__version__ = '4.1.1'
+__version__ = '4.1.1.4'
+
+OPSI_ADMIN_GROUP_ID = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
 
 logger = Logger()
 
@@ -87,13 +91,22 @@ class Opsipxeconfd(threading.Thread):
 
 	def stop(self):
 		logger.notice(u"Stopping opsipxeconfd main thread")
-		if self._startupTask:
+
+		try:
 			self._startupTask.stop()
 			self._startupTask.join(10)
+		except AttributeError:
+			pass  # Probably still set to None.
+		except RuntimeError:
+			pass  # Probably not yet started
+		except Exception as error:
+			logger.debug("Unhandled error during stop: {0!r}", error)
+
 		try:
 			self._socket.close()
 		except Exception as error:
 			logger.error(u"Failed to close socket: {0}", error)
+
 		self._running = False
 
 	def reload(self):
@@ -134,8 +147,16 @@ class Opsipxeconfd(threading.Thread):
 		self._socket.settimeout(0.1)
 		self._socket.listen(self.config['maxConnections'])
 
-		mode = os.stat(self.config['port'])[0]
-		os.chmod(self.config['port'], mode | stat.S_IROTH | stat.S_IWOTH)
+		self._setAccessRightsForSocket(self.config['port'])
+
+	@classmethod
+	def _setAccessRightsForSocket(self, path):
+		logger.debug("Setting rights on socket {0!r}", path)
+		mode = os.stat(path)[0]
+		# Adding read + write access for group and other.
+		os.chmod(path, mode | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
+		os.chown(path, -1, OPSI_ADMIN_GROUP_ID)
+		logger.debug("Done setting rights on socket {0!r}", path)
 
 	def _getConnection(self):
 		logger.debug2(u"_getConnection()")
@@ -428,7 +449,9 @@ class Opsipxeconfd(threading.Thread):
 			pxeConfigTemplate = self.config['pxeConfTemplate']
 
 		if not os.path.isabs(pxeConfigTemplate):  # Not an absolute path
+			logger.debug("pxeConfigTemplate is not an absolute path.")
 			pxeConfigTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), pxeConfigTemplate)
+			logger.debug("pxeConfigTemplate changed to {0}", pxeConfigTemplate)
 
 		return pxeConfigTemplate, product
 
@@ -498,7 +521,7 @@ class StartupTask(threading.Thread):
 
 	def run(self):
 		self._running = True
-		logger.notice(u"Start setting needed boot configurations")
+		logger.notice(u"Start setting initial boot configurations")
 		try:
 			clientIds = [clientToDepot['clientId'] for clientToDepot in
 						self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds=[self._opsipxeconfd.config['depotId']])]
@@ -523,7 +546,7 @@ class StartupTask(threading.Thread):
 					except Exception as error:
 						logger.error(u"Failed to update PXE boot config for client {0!r}: {1}", clientId, error)
 
-			logger.notice(u"Finished setting needed boot configurations")
+			logger.notice(u"Finished setting initial boot configurations")
 		except Exception as error:
 			logger.logException(error)
 		finally:
@@ -707,8 +730,10 @@ class ClientConnection(threading.Thread):
 
 	def stop(self):
 		self._running = False
-		if self._socket:
+		try:
 			self._socket.close()
+		except AttributeError:
+			pass  # Probably none
 
 	def _processCommand(self, cmd):
 		try:
@@ -828,16 +853,22 @@ class OpsipxeconfdInit(object):
 		for thread in threading.enumerate():
 			logger.debug(u"Running thread before signal: {0}", thread)
 
+		logger.debug(u"Processing signal {0!r}", signo)
 		if signo == SIGHUP:
-			if self._opsipxeconfd:
-				self.setDefaultConfig()
-				self.readConfigFile()
-				self.setCommandlineConfig()
+			self.setDefaultConfig()
+			self.readConfigFile()
+			self.setCommandlineConfig()
+
+			try:
 				self._opsipxeconfd.setConfig(self.config)
 				self._opsipxeconfd.reload()
+			except AttributeError:
+				pass  # probably set to None
 		elif signo in (SIGTERM, SIGINT):
-			if self._opsipxeconfd:
+			try:
 				self._opsipxeconfd.stop()
+			except AttributeError:
+				pass  # probably set to None
 
 		for thread in threading.enumerate():
 			logger.debug(u"Running thread after signal: {0}", thread)
