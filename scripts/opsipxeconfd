@@ -47,6 +47,7 @@ from hashlib import md5
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ServerConnection
+from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
@@ -55,7 +56,7 @@ from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forc
 
 __version__ = '4.1.1'
 
-OPSI_ADMIN_GROUP_ID = grp.getgrnam('opsiadmin')[2]
+OPSI_ADMIN_GROUP_ID = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
 
 logger = Logger()
 
