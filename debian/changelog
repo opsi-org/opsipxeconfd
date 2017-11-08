@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.4-2) experimental; urgency=medium
+
+  * .deb postinst: patching directories of opsipxeconfd.conf on UCS system
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 08 Nov 2017 08:20:13 +0100
+
 opsipxeconfd (4.1.1.4-1) stable; urgency=medium
 
   * Base code on 4.0.7.9-1.
