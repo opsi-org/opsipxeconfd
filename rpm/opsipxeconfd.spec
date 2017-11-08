@@ -15,10 +15,10 @@ Url:            http://www.opsi.org
 License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        4.1.1.1
-Release:        7
+Version:        4.1.1.4
+Release:        2
 Summary:        This is the opsi pxe configuration daemon
-Source:         opsipxeconfd_4.1.1.1-7.tar.gz
+Source:         opsipxeconfd_4.1.1.4-2.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1315
