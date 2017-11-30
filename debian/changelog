@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.4-3) stable; urgency=medium
+
+  * RPM: fix syntax error on upgrading.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Thu, 30 Nov 2017 09:26:57 +0100
+
 opsipxeconfd (4.1.1.4-2) experimental; urgency=medium
 
   * .deb postinst: patching directories of opsipxeconfd.conf on UCS system
