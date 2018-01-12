@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.4-4) stable; urgency=medium
+
+  * opsipxeconfd.conf: Make sure comment and actual value of log level match.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 12 Jan 2018 10:02:07 +0100
+
 opsipxeconfd (4.1.1.4-3) stable; urgency=medium
 
   * RPM: fix syntax error on upgrading.
