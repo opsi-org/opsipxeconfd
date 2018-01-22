@@ -112,7 +112,7 @@ systemctl=`which systemctl 2>/dev/null` || true
 if [ ! -z "$systemctl" -a -x "$systemctl" ]; then
     $systemctl enable opsipxeconfd.service && echo "Enabled opsipxeconfd.service" || echo "Enabling opsipxeconfd.service failed!"
 
-    if [ "$arg0" -eq 1 ]; then
+    if [ "$1" -eq 1 ]; then
         # Install
         $systemctl start opsipxeconfd.service || true
     else

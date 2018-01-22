@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.4-5) stable; urgency=medium
+
+  * RPM: postinst: fix variable reference
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Mon, 22 Jan 2018 13:23:25 +0100
+
 opsipxeconfd (4.1.1.4-4) stable; urgency=medium
 
   * opsipxeconfd.conf: Make sure comment and actual value of log level match.
