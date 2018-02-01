@@ -6,7 +6,7 @@ opsi pxe configuration daemon (opsipxeconfd)
 opsipxeconfd is part of the desktop management solution opsi
 (open pc server integration) http://www.opsi.org
 
-Copyright (C) 2013-2017 uib GmbH
+Copyright (C) 2013-2018 uib GmbH
 
 http://www.uib.de/
 
@@ -46,7 +46,7 @@ from twisted.conch.ssh import keys
 from hashlib import md5
 
 from OPSI.Backend.BackendManager import BackendManager
-from OPSI.Backend.OpsiPXEConfd import ServerConnection
+from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
@@ -54,7 +54,7 @@ from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
-__version__ = '4.1.1.4'
+__version__ = '4.1.1.5'
 
 OPSI_ADMIN_GROUP_ID = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
 
@@ -159,13 +159,14 @@ class Opsipxeconfd(threading.Thread):
 		logger.debug("Done setting rights on socket {0!r}", path)
 
 	def _getConnection(self):
-		logger.debug2(u"_getConnection()")
 		try:
 			sock, _ = self._socket.accept()
 		except socket.error as error:
 			if error.args[0] == 'timed out' or error.args[0] == 11:
 				return
-			raise
+
+			logger.debug("Socket error: {!r}".format(error))
+			raise error
 		logger.notice(u"Got connection from client")
 
 		cc = None
@@ -175,6 +176,7 @@ class Opsipxeconfd(threading.Thread):
 			with self._clientConnectionLock:
 				self._clientConnections.append(cc)
 			cc.start()
+			logger.debug(u"Connection {} started.".format(cc.name))
 		except Exception as error:
 			logger.error(u"Failed to create control connection: {0}", error)
 			logger.logException(error)
@@ -203,8 +205,13 @@ class Opsipxeconfd(threading.Thread):
 			self._running = False
 
 	def clientConnectionCallback(self, connection):
-		logger.info(u"ClientConnection {0!r} finished (took {1:0.3f} seconds)",
-					connection.getName(), (time.time() - connection.startTime))
+		"""
+		:type connection: ClientConnection
+		"""
+		logger.info(
+			u"ClientConnection {!r} finished (took {:0.3f} seconds)",
+			connection.name, (time.time() - connection.startTime)
+		)
 
 		try:
 			with self._clientConnectionLock:
@@ -218,8 +225,13 @@ class Opsipxeconfd(threading.Thread):
 			logger.error(u"Failed to remove ClientConnection: {0}", error)
 
 	def pxeConfigWriterCallback(self, pcw):
-		logger.info(u"PXEConfigWriter {0!r} finished (took {1:0.3f} seconds)",
-					pcw.getName(), (time.time() - pcw.startTime))
+		"""
+		:type pcw: PXEConfigWriter
+		"""
+		logger.info(
+			u"PXEConfigWriter {!r} (for {!r}) finished (took {:0.3f} seconds)",
+			pcw.name, pcw.hostId, (time.time() - pcw.startTime)
+		)
 
 		try:
 			with self._pxeConfigWritersLock:
@@ -292,6 +304,7 @@ class Opsipxeconfd(threading.Thread):
 			)
 
 			if not productOnClients:
+				logger.info("No netboot products with action requests for client {0!r} found.", hostId)
 				return u'Boot configuration updated'
 
 			host = self._getHostObject(hostId)
@@ -313,6 +326,7 @@ class Opsipxeconfd(threading.Thread):
 			productOnClients = newProductOnClients
 
 			if not productOnClients:
+				logger.info("No matching netboot product found on depot {0!r}.", self.config['depotId'])
 				return u'Boot configuration updated'
 
 			self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
@@ -632,7 +646,7 @@ class PXEConfigWriter(threading.Thread):
 		os.chmod(self.pxefile, 0o644)
 
 	def _getPXEConfigContent(self, templateFile):
-		logger.debug(u"Reading Template")
+		logger.debug(u"Reading template {!r}", templateFile)
 		with open(templateFile, 'r') as infile:
 			templateLines = infile.readlines()
 
@@ -642,12 +656,12 @@ class PXEConfigWriter(threading.Thread):
 			line = line.rstrip()
 
 			for (propertyId, value) in self.productPropertyStates.items():
-				logger.debug("Property: {0!r}: value: {1!r}", propertyId, value)
+				logger.debug2("Property: {0!r}: value: {1!r}", propertyId, value)
 				line = line.replace(u'%%%s%%' % propertyId, value)
 
 			if line.lstrip().startswith(u'append'):
 				if line.lstrip().startswith(u'append='):
-					logger.notice("elilo configuration detected")
+					logger.notice("elilo configuration detected for {}", self.hostId)
 					self.uefi = True
 					appendLineProperties = ''.join(line.split('="')[1:])[:-1].split()
 				else:
@@ -753,7 +767,7 @@ class ClientConnection(threading.Thread):
 			raise Exception(u"Command '%s' not supported" % cmd)
 		except Exception as error:
 			logger.error(error)
-			return u"(ERROR): %s" % error
+			return u'%s: %s' % (ERROR_MARKER, error)
 
 
 class OpsipxeconfdInit(object):

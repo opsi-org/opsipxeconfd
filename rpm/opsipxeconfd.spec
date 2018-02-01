@@ -1,21 +1,21 @@
 #
 # spec file for package opsipxeconfd
 #
-# Copyright (c) 2010-2017 uib GmbH.
+# Copyright (c) 2010-2018 uib GmbH.
 # This file and all modifications and additions to the pristine
 # package are under the same license as the package itself.
 #
 
 Name:           opsipxeconfd
 BuildRequires:  python-devel python-setuptools systemd
-Requires:       opsi-tftpd python-opsi >= 4.1 opsi-linux-bootimage systemd
+Requires:       opsi-tftpd python-opsi >= 4.1.1.23 opsi-linux-bootimage systemd
 %{?systemd_requires}
 BuildArch:      noarch
 Url:            http://www.opsi.org
 License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        4.1.1.4
+Version:        4.1.1.5
 Release:        2
 Summary:        This is the opsi pxe configuration daemon
 Source:         opsipxeconfd_4.1.1.4-2.tar.gz
@@ -76,16 +76,21 @@ python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INST
 %endif
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 
-%if 0%{?suse_version} == 1315
-	sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
-%endif
-
 sed -i 's#/etc/logrotate.d$##' INSTALLED_FILES
 
 %if 0%{?suse_version} >= 1315 || 0%{?centos_version} >= 700 || 0%{?rhel_version} >= 700
     # Adjusting to the correct service names
     sed --in-place "s/=smbd.service/=smb.service/" "debian/opsipxeconfd.service" || true
     sed --in-place "s/=isc-dhcp-server.service/=dhcpd.service/" "debian/opsipxeconfd.service" || true
+%endif
+
+%if 0%{?suse_version}
+    # Adjust the path for the PXE netboot template
+    sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
+
+    # Adjust the path for uefi netboot templates on SUSE.
+    sed -i 's#^uefi netboot config template x86 = /tftpboot/linux/pxelinux.cfg/install-elilo-x86#uefi netboot config template x86 = /var/lib/tftpboot/opsi/pxelinux.cfg/install-elilo-x86#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
+    sed -i 's#^uefi netboot config template x64 = /tftpboot/linux/pxelinux.cfg/install-elilo-x64#uefi netboot config template x64 = /var/lib/tftpboot/opsi/pxelinux.cfg/install-elilo-x64#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
 %endif
 
 MKDIR_PATH=$(which mkdir)
