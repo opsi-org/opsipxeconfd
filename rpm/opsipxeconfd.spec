@@ -88,6 +88,12 @@ sed -i 's#/etc/logrotate.d$##' INSTALLED_FILES
     sed --in-place "s/=isc-dhcp-server.service/=dhcpd.service/" "debian/opsipxeconfd.service" || true
 %endif
 
+%if 0%{?suse_version}
+    # Adjust the path for uefi netboot templates on SUSE.
+    sed -i 's#^uefi netboot config template x86 = /tftpboot/linux/pxelinux.cfg/install-elilo-x86#uefi netboot config template x86 = /var/lib/tftpboot/opsi/pxelinux.cfg/install-elilo-x86#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
+    sed -i 's#^uefi netboot config template x64 = /tftpboot/linux/pxelinux.cfg/install-elilo-x64#uefi netboot config template x64 = /var/lib/tftpboot/opsi/pxelinux.cfg/install-elilo-x64#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
+%endif
+
 MKDIR_PATH=$(which mkdir)
 CHOWN_PATH=$(which chown)
 sed --in-place "s!=-/bin/mkdir!=-$MKDIR_PATH!" "debian/opsipxeconfd.service" || true
