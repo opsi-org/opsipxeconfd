@@ -203,8 +203,13 @@ class Opsipxeconfd(threading.Thread):
 			self._running = False
 
 	def clientConnectionCallback(self, connection):
-		logger.info(u"ClientConnection {0!r} finished (took {1:0.3f} seconds)",
-					connection.getName(), (time.time() - connection.startTime))
+		"""
+		:type connection: ClientConnection
+		"""
+		logger.info(
+			u"ClientConnection {!r} finished (took {:0.3f} seconds)",
+			connection.name, (time.time() - connection.startTime)
+		)
 
 		try:
 			with self._clientConnectionLock:
@@ -218,8 +223,13 @@ class Opsipxeconfd(threading.Thread):
 			logger.error(u"Failed to remove ClientConnection: {0}", error)
 
 	def pxeConfigWriterCallback(self, pcw):
-		logger.info(u"PXEConfigWriter {0!r} finished (took {1:0.3f} seconds)",
-					pcw.getName(), (time.time() - pcw.startTime))
+		"""
+		:type pcw: PXEConfigWriter
+		"""
+		logger.info(
+			u"PXEConfigWriter {!r} (for {!r}) finished (took {:0.3f} seconds)",
+			pcw.name, pcw.hostId, (time.time() - pcw.startTime)
+		)
 
 		try:
 			with self._pxeConfigWritersLock:
