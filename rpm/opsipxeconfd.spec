@@ -76,10 +76,6 @@ python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INST
 %endif
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 
-%if 0%{?suse_version} == 1315
-	sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
-%endif
-
 sed -i 's#/etc/logrotate.d$##' INSTALLED_FILES
 
 %if 0%{?suse_version} >= 1315 || 0%{?centos_version} >= 700 || 0%{?rhel_version} >= 700
@@ -89,6 +85,9 @@ sed -i 's#/etc/logrotate.d$##' INSTALLED_FILES
 %endif
 
 %if 0%{?suse_version}
+    # Adjust the path for the PXE netboot template
+    sed -i 's#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /var/lib/tftpboot/opsi/pxelinux.cfg/install#;s#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /var/lib/tftpboot/opsi/pxelinux.cfg#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
+
     # Adjust the path for uefi netboot templates on SUSE.
     sed -i 's#^uefi netboot config template x86 = /tftpboot/linux/pxelinux.cfg/install-elilo-x86#uefi netboot config template x86 = /var/lib/tftpboot/opsi/pxelinux.cfg/install-elilo-x86#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
     sed -i 's#^uefi netboot config template x64 = /tftpboot/linux/pxelinux.cfg/install-elilo-x64#uefi netboot config template x64 = /var/lib/tftpboot/opsi/pxelinux.cfg/install-elilo-x64#' $RPM_BUILD_ROOT/etc/opsi/opsipxeconfd.conf
