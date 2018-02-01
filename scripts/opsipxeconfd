@@ -657,7 +657,7 @@ class PXEConfigWriter(threading.Thread):
 
 			if line.lstrip().startswith(u'append'):
 				if line.lstrip().startswith(u'append='):
-					logger.notice("elilo configuration detected")
+					logger.notice("elilo configuration detected for {}", self.hostId)
 					self.uefi = True
 					appendLineProperties = ''.join(line.split('="')[1:])[:-1].split()
 				else:
