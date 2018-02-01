@@ -8,7 +8,7 @@
 
 Name:           opsipxeconfd
 BuildRequires:  python-devel python-setuptools systemd
-Requires:       opsi-tftpd python-opsi >= 4.1 opsi-linux-bootimage systemd
+Requires:       opsi-tftpd python-opsi >= 4.1.1.23 opsi-linux-bootimage systemd
 %{?systemd_requires}
 BuildArch:      noarch
 Url:            http://www.opsi.org

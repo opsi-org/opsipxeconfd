@@ -46,7 +46,7 @@ from twisted.conch.ssh import keys
 from hashlib import md5
 
 from OPSI.Backend.BackendManager import BackendManager
-from OPSI.Backend.OpsiPXEConfd import ServerConnection
+from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
@@ -763,7 +763,7 @@ class ClientConnection(threading.Thread):
 			raise Exception(u"Command '%s' not supported" % cmd)
 		except Exception as error:
 			logger.error(error)
-			return u"(ERROR): %s" % error
+			return u'%s: %s' % (ERROR_MARKER, error)
 
 
 class OpsipxeconfdInit(object):
