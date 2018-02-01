@@ -642,7 +642,7 @@ class PXEConfigWriter(threading.Thread):
 		os.chmod(self.pxefile, 0o644)
 
 	def _getPXEConfigContent(self, templateFile):
-		logger.debug(u"Reading Template")
+		logger.debug(u"Reading template {!r}", templateFile)
 		with open(templateFile, 'r') as infile:
 			templateLines = infile.readlines()
 
