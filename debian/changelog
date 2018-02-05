@@ -1,3 +1,10 @@
+opsipxeconfd (4.1.1.8-1) stable; urgency=medium
+
+  * Call getfqdn without parameters since the parameter matches the default.
+  * Small internal refactoring.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Mon, 05 Feb 2018 15:53:50 +0100
+
 opsipxeconfd (4.1.1.7-1) stable; urgency=medium
 
   * Do not try to access possibly undefined variable.
