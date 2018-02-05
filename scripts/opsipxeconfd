@@ -40,7 +40,7 @@ import stat
 import sys
 import threading
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from twisted.conch.ssh import keys
 from hashlib import md5
@@ -723,21 +723,21 @@ class ClientConnection(threading.Thread):
 
 	def run(self):
 		self._running = True
-		self._socket.settimeout(1.0)
 
-		cmd = self._socket.recv(4096)
-		cmd = forceUnicode(cmd.strip())
-		logger.info(u"Got command {0!r}", cmd)
+		with closing(self._socket):
+			self._socket.settimeout(1.0)
 
-		result = self._processCommand(cmd)
-		logger.info(u"Returning result {0!r}", result)
+			cmd = self._socket.recv(4096)
+			cmd = forceUnicode(cmd.strip())
+			logger.info(u"Got command {0!r}", cmd)
 
-		try:
-			self._socket.send(result.encode('utf-8'))
-		except Exception as error:
-			logger.warning(error)
+			result = self._processCommand(cmd)
+			logger.info(u"Returning result {0!r}", result)
 
-		self._socket.close()
+			try:
+				self._socket.send(result.encode('utf-8'))
+			except Exception as error:
+				logger.warning("Problem sending to client connection: {}", error)
 
 		if self._running and self._callback:
 			self._callback(self)
