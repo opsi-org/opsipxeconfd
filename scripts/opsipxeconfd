@@ -176,7 +176,7 @@ class Opsipxeconfd(threading.Thread):
 			with self._clientConnectionLock:
 				self._clientConnections.append(cc)
 			cc.start()
-			logger.debug(u"Connection {} started.".format(cc.name))
+			logger.debug(u"Connection {!r} started.".format(cc.name))
 		except Exception as error:
 			logger.error(u"Failed to create control connection: {0}", error)
 			logger.logException(error)
@@ -220,7 +220,7 @@ class Opsipxeconfd(threading.Thread):
 				except ValueError:
 					pass  # Connection not in list
 
-			logger.debug(u"ClientConnection removed")
+			logger.debug(u"ClientConnection {!r} removed", connection.name)
 		except Exception as error:
 			logger.error(u"Failed to remove ClientConnection: {0}", error)
 
