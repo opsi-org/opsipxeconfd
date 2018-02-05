@@ -760,11 +760,11 @@ class ClientConnection(threading.Thread):
 				return self._opsipxeconfd.status()
 			elif cp[0] == u'update':
 				if len(cp) != 2:
-					raise Exception(u"bad arguments for command 'update', needs <hostId>")
+					raise ValueError(u"bad arguments for command 'update', needs <hostId>")
 				hostId = forceHostId(cp[1])
 				return self._opsipxeconfd.updateBootConfiguration(hostId)
 
-			raise Exception(u"Command '%s' not supported" % cmd)
+			raise ValueError(u"Command '%s' not supported" % cmd)
 		except Exception as error:
 			logger.error(error)
 			return u'%s: %s' % (ERROR_MARKER, error)
