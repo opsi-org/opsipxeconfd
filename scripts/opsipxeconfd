@@ -54,7 +54,7 @@ from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
-__version__ = '4.1.1.5'
+__version__ = '4.1.1.6'
 
 OPSI_ADMIN_GROUP_ID = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
 

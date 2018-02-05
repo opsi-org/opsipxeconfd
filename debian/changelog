@@ -1,3 +1,13 @@
+opsipxeconfd (4.1.1.6-1) stable; urgency=medium
+
+  * Changed output of status command a little.
+  * When closing existing PXEConfigWriters for a host we do not wait
+    an indefinite time.
+  * Improve reliability of socket closing for running client connections.
+  * Made logging thread information more consistent.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Mon, 05 Feb 2018 14:42:34 +0100
+
 opsipxeconfd (4.1.1.5-1) stable; urgency=medium
 
   * Reuse the error marker from python-opsi.
