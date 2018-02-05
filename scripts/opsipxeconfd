@@ -766,7 +766,7 @@ class ClientConnection(threading.Thread):
 
 			raise ValueError(u"Command '%s' not supported" % cmd)
 		except Exception as error:
-			logger.error(error)
+			logger.error("Processing command {!r} failed: {}", cmd, error)
 			return u'%s: %s' % (ERROR_MARKER, error)
 
 
