@@ -311,6 +311,7 @@ class Opsipxeconfd(threading.Thread):
 
 			newProductOnClients = []
 			for poc in productOnClients:
+				logger.debug("Searching for product {!r} on depot {!r}", poc.productId, self.config['depoitId'])
 				productOnDepot = self._backend.productOnDepot_getObjects(
 					productType=u'NetbootProduct',
 					productId=poc.productId,
@@ -417,6 +418,8 @@ class Opsipxeconfd(threading.Thread):
 		"""
 		Get the object for `hostId`.
 		"""
+		logger.debug("Searching for host with id {!r}", hostId)
+
 		host = self._backend.host_getObjects(id=hostId)
 		try:
 			return host[0]
