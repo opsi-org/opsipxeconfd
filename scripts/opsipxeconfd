@@ -407,10 +407,19 @@ class Opsipxeconfd(threading.Thread):
 			for pcw in currentPcws:
 				self._pxeConfigWriters.remove(pcw)
 
+		logger.debug("Removing {} existing config writers for {!r}", len(pcw), hostId)
+
 		for pcw in currentPcws:
 			pcw.stop()
-			while pcw.isAlive():
+
+			for _ in range(10):
+				if not pcw.is_alive():
+					break
+
 				time.sleep(0.1)
+			else:
+				pcw.join(1)
+
 			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
 
 	def _getHostObject(self, hostId):
