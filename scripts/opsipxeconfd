@@ -395,7 +395,7 @@ class Opsipxeconfd(threading.Thread):
 				raise
 		except Exception as error:
 			logger.logException(error)
-			raise
+			raise error
 
 	def _removeCurrentConfigWriters(self, hostId):
 		"""
