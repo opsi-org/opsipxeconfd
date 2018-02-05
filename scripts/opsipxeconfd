@@ -852,7 +852,7 @@ class OpsipxeconfdInit(object):
 		self.config = {
 			'pidFile': u'/var/run/opsipxeconfd/opsipxeconfd.pid',
 			'configFile': u'/etc/opsi/opsipxeconfd.conf',
-			'depotId': forceHostId(getfqdn(conf='/etc/opsi/global.conf')),
+			'depotId': forceHostId(getfqdn()),
 			'daemon': True,
 			'logLevel': LOG_NOTICE,
 			'logFile': u'/var/log/opsi/opsipxeconfd.log',
