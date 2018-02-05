@@ -408,7 +408,7 @@ class Opsipxeconfd(threading.Thread):
 			for pcw in currentPcws:
 				self._pxeConfigWriters.remove(pcw)
 
-		logger.debug("Removing {} existing config writers for {!r}", len(pcw), hostId)
+		logger.debug("Removing {} existing config writers for {!r}", len(currentPcws), hostId)
 
 		for pcw in currentPcws:
 			pcw.stop()
