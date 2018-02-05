@@ -318,7 +318,7 @@ class Opsipxeconfd(threading.Thread):
 					depotId=self.config['depotId']
 				)
 				if not productOnDepot:
-					logger.info(u"Product {0} not available on depot {0!r}", poc.productId, self.config['depotId'])
+					logger.info(u"Product {} not available on depot {!r}", poc.productId, self.config['depotId'])
 					continue
 
 				poc.productVersion = productOnDepot[0].productVersion
