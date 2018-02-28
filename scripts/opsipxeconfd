@@ -3,10 +3,10 @@
 """
 opsi pxe configuration daemon (opsipxeconfd)
 
-opsiconfd is part of the desktop management solution opsi
+opsipxeconfd is part of the desktop management solution opsi
 (open pc server integration) http://www.opsi.org
 
-Copyright (C) 2013-2017 uib GmbH
+Copyright (C) 2013-2018 uib GmbH
 
 http://www.uib.de/
 
@@ -40,21 +40,23 @@ import stat
 import sys
 import threading
 import time
-from contextlib import closing, contextmanager
+from contextlib import contextmanager, closing
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from twisted.conch.ssh import keys
 from hashlib import md5
 
 from OPSI.Backend.BackendManager import BackendManager
+from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
+from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
 
-__version__ = '4.0.7.9'
+__version__ = '4.1.1.6'
 
-OPSI_ADMIN_GROUP_ID = grp.getgrnam('opsiadmin')[2]
+OPSI_ADMIN_GROUP_ID = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
 
 logger = Logger()
 
@@ -157,13 +159,14 @@ class Opsipxeconfd(threading.Thread):
 		logger.debug("Done setting rights on socket {0!r}", path)
 
 	def _getConnection(self):
-		logger.debug2(u"_getConnection()")
 		try:
 			sock, _ = self._socket.accept()
 		except socket.error as error:
 			if error.args[0] == 'timed out' or error.args[0] == 11:
 				return
-			raise
+
+			logger.debug("Socket error: {!r}".format(error))
+			raise error
 		logger.notice(u"Got connection from client")
 
 		cc = None
@@ -173,6 +176,7 @@ class Opsipxeconfd(threading.Thread):
 			with self._clientConnectionLock:
 				self._clientConnections.append(cc)
 			cc.start()
+			logger.debug(u"Connection {!r} started.".format(cc.name))
 		except Exception as error:
 			logger.error(u"Failed to create control connection: {0}", error)
 			logger.logException(error)
@@ -201,8 +205,13 @@ class Opsipxeconfd(threading.Thread):
 			self._running = False
 
 	def clientConnectionCallback(self, connection):
-		logger.info(u"ClientConnection {0!r} finished (took {1:0.3f} seconds)",
-					connection.getName(), (time.time() - connection.startTime))
+		"""
+		:type connection: ClientConnection
+		"""
+		logger.info(
+			u"ClientConnection {!r} finished (took {:0.3f} seconds)",
+			connection.name, (time.time() - connection.startTime)
+		)
 
 		try:
 			with self._clientConnectionLock:
@@ -211,13 +220,18 @@ class Opsipxeconfd(threading.Thread):
 				except ValueError:
 					pass  # Connection not in list
 
-			logger.debug(u"ClientConnection removed")
+			logger.debug(u"ClientConnection {!r} removed", connection.name)
 		except Exception as error:
 			logger.error(u"Failed to remove ClientConnection: {0}", error)
 
 	def pxeConfigWriterCallback(self, pcw):
-		logger.info(u"PXEConfigWriter {0!r} finished (took {1:0.3f} seconds)",
-					pcw.getName(), (time.time() - pcw.startTime))
+		"""
+		:type pcw: PXEConfigWriter
+		"""
+		logger.info(
+			u"PXEConfigWriter {!r} (for {!r}) finished (took {:0.3f} seconds)",
+			pcw.name, pcw.hostId, (time.time() - pcw.startTime)
+		)
 
 		try:
 			with self._pxeConfigWritersLock:
@@ -266,10 +280,10 @@ class Opsipxeconfd(threading.Thread):
 
 		result += u'\n%s boot configuration(s) set\n' % len(self._pxeConfigWriters)
 		for pcw in self._pxeConfigWriters:
-			result += u"Boot config for client '%s' (args %s, path '%s') set at: %s\n" % (
+			result += u"Boot config for client '%s' (path '%s'; configuration %s) set since %s\n" % (
 				pcw.hostId,
-				pcw.append,
 				pcw.pxefile,
+				pcw.append,
 				time.asctime(time.localtime(pcw.startTime))
 			)
 		logger.notice(result)
@@ -290,19 +304,22 @@ class Opsipxeconfd(threading.Thread):
 			)
 
 			if not productOnClients:
+				logger.info("No netboot products with action requests for client {0!r} found.", hostId)
 				return u'Boot configuration updated'
 
 			host = self._getHostObject(hostId)
 
+			depotId = self.config['depotId']
 			newProductOnClients = []
 			for poc in productOnClients:
+				logger.debug("Searching for product {!r} on depot {!r}", poc.productId, depotId)
 				productOnDepot = self._backend.productOnDepot_getObjects(
 					productType=u'NetbootProduct',
 					productId=poc.productId,
-					depotId=self.config['depotId']
+					depotId=depotId
 				)
 				if not productOnDepot:
-					logger.info(u"Product {0} not available on depot {0!r}", poc.productId, self.config['depotId'])
+					logger.info(u"Product {} not available on depot {!r}", poc.productId, depotId)
 					continue
 
 				poc.productVersion = productOnDepot[0].productVersion
@@ -311,6 +328,7 @@ class Opsipxeconfd(threading.Thread):
 			productOnClients = newProductOnClients
 
 			if not productOnClients:
+				logger.info("No matching netboot product found on depot {0!r}.", depotId)
 				return u'Boot configuration updated'
 
 			self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
@@ -379,7 +397,7 @@ class Opsipxeconfd(threading.Thread):
 				raise
 		except Exception as error:
 			logger.logException(error)
-			raise
+			raise error
 
 	def _removeCurrentConfigWriters(self, hostId):
 		"""
@@ -391,16 +409,27 @@ class Opsipxeconfd(threading.Thread):
 			for pcw in currentPcws:
 				self._pxeConfigWriters.remove(pcw)
 
+		logger.debug("Removing {} existing config writers for {!r}", len(currentPcws), hostId)
+
 		for pcw in currentPcws:
 			pcw.stop()
-			while pcw.isAlive():
+
+			for _ in range(10):
+				if not pcw.is_alive():
+					break
+
 				time.sleep(0.1)
+			else:
+				pcw.join(1)
+
 			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
 
 	def _getHostObject(self, hostId):
 		"""
 		Get the object for `hostId`.
 		"""
+		logger.debug("Searching for host with id {!r}", hostId)
+
 		host = self._backend.host_getObjects(id=hostId)
 		try:
 			return host[0]
@@ -630,7 +659,7 @@ class PXEConfigWriter(threading.Thread):
 		os.chmod(self.pxefile, 0o644)
 
 	def _getPXEConfigContent(self, templateFile):
-		logger.debug(u"Reading Template")
+		logger.debug(u"Reading template {!r}", templateFile)
 		with open(templateFile, 'r') as infile:
 			templateLines = infile.readlines()
 
@@ -640,12 +669,12 @@ class PXEConfigWriter(threading.Thread):
 			line = line.rstrip()
 
 			for (propertyId, value) in self.productPropertyStates.items():
-				logger.debug("Property: {0!r}: value: {1!r}", propertyId, value)
+				logger.debug2("Property: {0!r}: value: {1!r}", propertyId, value)
 				line = line.replace(u'%%%s%%' % propertyId, value)
 
 			if line.lstrip().startswith(u'append'):
 				if line.lstrip().startswith(u'append='):
-					logger.notice("elilo configuration detected")
+					logger.notice("elilo configuration detected for {}", self.hostId)
 					self.uefi = True
 					appendLineProperties = ''.join(line.split('="')[1:])[:-1].split()
 				else:
@@ -707,21 +736,21 @@ class ClientConnection(threading.Thread):
 
 	def run(self):
 		self._running = True
-		self._socket.settimeout(1.0)
 
-		cmd = self._socket.recv(4096)
-		cmd = forceUnicode(cmd.strip())
-		logger.info(u"Got command {0!r}", cmd)
+		with closing(self._socket):
+			self._socket.settimeout(1.0)
 
-		result = self._processCommand(cmd)
-		logger.info(u"Returning result {0!r}", result)
+			cmd = self._socket.recv(4096)
+			cmd = forceUnicode(cmd.strip())
+			logger.info(u"Got command {0!r}", cmd)
 
-		try:
-			self._socket.send(result.encode('utf-8'))
-		except Exception as error:
-			logger.warning(error)
+			result = self._processCommand(cmd)
+			logger.info(u"Returning result {0!r}", result)
 
-		self._socket.close()
+			try:
+				self._socket.send(result.encode('utf-8'))
+			except Exception as error:
+				logger.warning("Problem sending to client connection: {}", error)
 
 		if self._running and self._callback:
 			self._callback(self)
@@ -744,48 +773,14 @@ class ClientConnection(threading.Thread):
 				return self._opsipxeconfd.status()
 			elif cp[0] == u'update':
 				if len(cp) != 2:
-					raise Exception(u"bad arguments for command 'update', needs <hostId>")
+					raise ValueError(u"bad arguments for command 'update', needs <hostId>")
 				hostId = forceHostId(cp[1])
 				return self._opsipxeconfd.updateBootConfiguration(hostId)
 
-			raise Exception(u"Command '%s' not supported" % cmd)
+			raise ValueError(u"Command '%s' not supported" % cmd)
 		except Exception as error:
-			logger.error(error)
-			return u"(ERROR): %s" % error
-
-
-class ServerConnection:
-	def __init__(self, port):
-		self.port = port
-
-	def sendCommand(self, cmd):
-		with createUnixSocket(self.port) as unixSocket:
-			unixSocket.send(forceUnicode(cmd).encode('utf-8'))
-
-			result = ''
-			try:
-				for part in iter(lambda: unixSocket.recv(4096), ''):
-					result += forceUnicode(part)
-			except Exception as error:
-				raise Exception(u"Failed to receive: %s" % error)
-
-		if result.startswith(u'(ERROR)'):
-			raise Exception(u"Command '%s' failed: %s" % (cmd, result))
-
-		return result
-
-
-@contextmanager
-def createUnixSocket(port):
-	logger.notice(u"Creating unix socket '%s'" % port)
-	_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-	_socket.settimeout(5.0)
-	try:
-		with closing(_socket) as unixSocket:
-			unixSocket.connect(port)
-			yield unixSocket
-	except Exception as error:
-		raise Exception(u"Failed to connect to socket '%s': %s" % (port, error))
+			logger.error("Processing command {!r} failed: {}", cmd, error)
+			return u'%s: %s' % (ERROR_MARKER, error)
 
 
 class OpsipxeconfdInit(object):
@@ -843,7 +838,7 @@ class OpsipxeconfdInit(object):
 				self._opsipxeconfd.join(30)
 
 		else:
-			con = ServerConnection(self.config['port'])
+			con = ServerConnection(self.config['port'], timeout=5.0)
 			result = con.sendCommand(u' '.join(forceUnicodeList(self.args)))
 			if result:
 				if result.startswith(u'(ERROR)'):
@@ -858,7 +853,7 @@ class OpsipxeconfdInit(object):
 		self.config = {
 			'pidFile': u'/var/run/opsipxeconfd/opsipxeconfd.pid',
 			'configFile': u'/etc/opsi/opsipxeconfd.conf',
-			'depotId': forceHostId(getfqdn(conf='/etc/opsi/global.conf')),
+			'depotId': forceHostId(getfqdn()),
 			'daemon': True,
 			'logLevel': LOG_NOTICE,
 			'logFile': u'/var/log/opsi/opsipxeconfd.log',
