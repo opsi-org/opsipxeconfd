@@ -113,17 +113,14 @@ rm -rf $RPM_BUILD_ROOT
 %service_add_post opsipxeconfd.service
 %endif
 
-systemctl=`which systemctl 2>/dev/null` || true
-if [ ! -z "$systemctl" -a -x "$systemctl" ]; then
-    $systemctl enable opsipxeconfd.service && echo "Enabled opsipxeconfd.service" || echo "Enabling opsipxeconfd.service failed!"
-
-    if [ "$1" -eq 1 ]; then
-        # Install
-        $systemctl start opsipxeconfd.service || true
-    else
-        # Upgrade
-        $systemctl restart opsipxeconfd.service || true
-    fi
+systemctl=`which systemctl`
+$systemctl enable opsipxeconfd.service && echo "Enabled opsipxeconfd.service" || echo "Enabling opsipxeconfd.service failed!"
+if [ "$1" -eq 1 ]; then
+    # Install
+    $systemctl start opsipxeconfd.service || true
+else
+    # Upgrade
+    $systemctl restart opsipxeconfd.service || true
 fi
 
 # ===[ preun ]======================================
