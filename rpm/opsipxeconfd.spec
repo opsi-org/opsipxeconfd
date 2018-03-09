@@ -159,7 +159,7 @@ fi
 %if 0%{?suse_version}
 	%stop_on_removal opsipxeconfd
 %else
-	if [ $1 -eq 0 ]; then
+	if [ "$1" -eq 0 ]; then
 		# Removal
 		/sbin/service opsipxeconfd stop >/dev/null 2>&1
 	fi
@@ -167,8 +167,11 @@ fi
 
 # ===[ postun ]=====================================
 %postun
+%if 0%{?suse_version}
 %restart_on_update opsipxeconfd
-if [ $1 -eq 0 ]; then
+%endif
+
+if [ "$1" -eq 0 ]; then
 	# Removal
 	%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora_version}
 		/sbin/chkconfig --del opsipxeconfd >/dev/null 2>&1 || true
