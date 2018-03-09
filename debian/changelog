@@ -1,3 +1,10 @@
+opsipxeconfd (4.1.1.8-2) stable; urgency=medium
+
+  * Based on opsipxeconfd 4.0.7.9-2.
+  * Assuming systemctl is present and executable.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 09 Mar 2018 14:25:13 +0100
+
 opsipxeconfd (4.1.1.8-1) stable; urgency=medium
 
   * Call getfqdn without parameters since the parameter matches the default.
