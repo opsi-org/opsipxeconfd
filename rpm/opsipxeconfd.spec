@@ -167,7 +167,10 @@ fi
 
 # ===[ postun ]=====================================
 %postun
+%if 0%{?suse_version}
 %restart_on_update opsipxeconfd
+%endif
+
 if [ "$1" -eq 0 ]; then
 	# Removal
 	%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora_version}
