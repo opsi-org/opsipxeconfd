@@ -1,3 +1,10 @@
+opsipxeconfd (4.0.7.9-2) stable; urgency=medium
+
+  * RPM: only use restart macro on SUSE distros.
+  * RPM: Avoid possible bash syntax error.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 09 Mar 2018 11:55:23 +0100
+
 opsipxeconfd (4.0.7.9-1) stable; urgency=medium
 
   * Some logmessages changed to be clearer.
