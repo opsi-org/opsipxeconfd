@@ -229,7 +229,7 @@ class Opsipxeconfd(threading.Thread):
 		:type pcw: PXEConfigWriter
 		"""
 		logger.info(
-			u"PXEConfigWriter {!r} (for {!r}) finished (took {:0.3f} seconds)",
+			u"PXEConfigWriter {!r} (for {!r}) finished (running for {:0.3f} seconds)",
 			pcw.name, pcw.hostId, (time.time() - pcw.startTime)
 		)
 
