@@ -1,3 +1,11 @@
+opsipxeconfd (4.1.1.9-1) stable; urgency=medium
+
+  * Small change in log message of PXEConfigWriter.
+  * ClientConnection: Socket timeout set to 2.0 seconds.
+  * ClientConnection: callback is executed as long as thread is running.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Thu, 12 Apr 2018 16:17:20 +0200
+
 opsipxeconfd (4.1.1.8-2) stable; urgency=medium
 
   * Based on opsipxeconfd 4.0.7.9-2.
