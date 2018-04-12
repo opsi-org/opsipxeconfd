@@ -6,7 +6,7 @@ opsi pxe configuration daemon (opsipxeconfd)
 opsiconfd is part of the desktop management solution opsi
 (open pc server integration) http://www.opsi.org
 
-Copyright (C) 2013-2017 uib GmbH
+Copyright (C) 2013-2018 uib GmbH
 
 http://www.uib.de/
 
@@ -709,22 +709,22 @@ class ClientConnection(threading.Thread):
 		self._running = True
 		self._socket.settimeout(1.0)
 
-		cmd = self._socket.recv(4096)
-		cmd = forceUnicode(cmd.strip())
-		logger.info(u"Got command {0!r}", cmd)
-
-		result = self._processCommand(cmd)
-		logger.info(u"Returning result {0!r}", result)
-
+		logger.debug("Receiving data...")
 		try:
-			self._socket.send(result.encode('utf-8'))
-		except Exception as error:
-			logger.warning(error)
+			cmd = self._socket.recv(4096)
+			cmd = forceUnicode(cmd.strip())
+			logger.info(u"Got command {0!r}", cmd)
 
-		self._socket.close()
+			result = self._processCommand(cmd)
+			logger.info(u"Returning result {0!r}", result)
 
-		if self._running and self._callback:
-			self._callback(self)
+			try:
+				self._socket.send(result.encode('utf-8'))
+			except Exception as error:
+				logger.warning("Sending result over socket failed: {0!r}", error)
+		finally:
+			if self._running and self._callback:
+				self._callback(self)
 
 	def stop(self):
 		self._running = False
