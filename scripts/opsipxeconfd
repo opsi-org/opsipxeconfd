@@ -737,23 +737,23 @@ class ClientConnection(threading.Thread):
 	def run(self):
 		self._running = True
 
+		logger.debug("Receiving data...")
 		with closing(self._socket):
-			self._socket.settimeout(1.0)
-
-			cmd = self._socket.recv(4096)
-			cmd = forceUnicode(cmd.strip())
-			logger.info(u"Got command {0!r}", cmd)
-
-			result = self._processCommand(cmd)
-			logger.info(u"Returning result {0!r}", result)
-
 			try:
-				self._socket.send(result.encode('utf-8'))
-			except Exception as error:
-				logger.warning("Problem sending to client connection: {}", error)
+				cmd = self._socket.recv(4096)
+				cmd = forceUnicode(cmd.strip())
+				logger.info(u"Got command {0!r}", cmd)
 
-		if self._running and self._callback:
-			self._callback(self)
+				result = self._processCommand(cmd)
+				logger.info(u"Returning result {0!r}", result)
+
+				try:
+					self._socket.send(result.encode('utf-8'))
+				except Exception as error:
+					logger.warning("Sending result over socket failed: {0!r}", error)
+			finally:
+				if self._running and self._callback:
+					self._callback(self)
 
 	def stop(self):
 		self._running = False
