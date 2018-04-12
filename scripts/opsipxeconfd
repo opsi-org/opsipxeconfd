@@ -216,7 +216,7 @@ class Opsipxeconfd(threading.Thread):
 			logger.error(u"Failed to remove ClientConnection: {0}", error)
 
 	def pxeConfigWriterCallback(self, pcw):
-		logger.info(u"PXEConfigWriter {0!r} finished (took {1:0.3f} seconds)",
+		logger.info(u"PXEConfigWriter {0!r} finished (running for {1:0.3f} seconds)",
 					pcw.getName(), (time.time() - pcw.startTime))
 
 		try:
