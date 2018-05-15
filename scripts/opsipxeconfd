@@ -306,7 +306,10 @@ class Opsipxeconfd(threading.Thread):
 			self._removeCurrentConfigWriters(hostId)
 
 			try:
-				productOnClients = [ProductOnClient.fromHash(data["productOnClient"])]
+				poc = [ProductOnClient.fromHash(data["productOnClient"])]
+				if poc.productType != u'NetbootProduct' and \
+				poc.actionRequest not in ('setup', 'uninstall', 'update', 'always', 'once', 'custom'):
+					productOnClients = None
 			except:
 				# Get product actions
 				productOnClients = self._backend.productOnClient_getObjects(
@@ -479,7 +482,7 @@ class Opsipxeconfd(threading.Thread):
 					productVersion=poc.productVersion,
 					packageVersion=poc.packageVersion
 				)
-				if product: product = product[0] 
+				if product: product = product[0]
 			if not product:
 				raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 
