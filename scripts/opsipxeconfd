@@ -426,10 +426,10 @@ class Opsipxeconfd(threading.Thread):
 				try:
 					backendInfo = data["backendInfo"]
 				except KeyError:
-					backendinfo = self._backend.backend_info()
-					backendinfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
+					backendInfo = self._backend.backend_info()
+					backendInfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
 
-				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback, backendinfo)
+				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback, backendInfo)
 				with self._pxeConfigWritersLock:
 					self._pxeConfigWriters.append(pcw)
 				pcw.start()
