@@ -317,7 +317,7 @@ class Opsipxeconfd(threading.Thread):
 					productOnClients = None
 				else:
 					productOnClients = [poc]
-			except KeyError:
+			except (KeyError, AttributeError, TypeError):
 				# Get product actions
 				productOnClients = self._backend.productOnClient_getObjects(
 					productType=u'NetbootProduct',
