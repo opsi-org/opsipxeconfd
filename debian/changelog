@@ -1,3 +1,10 @@
+opsipxeconfd (4.1.1.10-1) stable; urgency=medium
+
+  * Refactored selection of template file for UEFI clients.
+  * Log what the reason is done for an early exit when updating the client.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Mon, 28 May 2018 12:10:40 +0200
+
 opsipxeconfd (4.1.1.9-1) stable; urgency=medium
 
   * Small change in log message of PXEConfigWriter.
