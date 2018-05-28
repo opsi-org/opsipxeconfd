@@ -48,6 +48,7 @@ from hashlib import md5
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
 from OPSI.Config import OPSI_ADMIN_GROUP
+from OPSI.Exceptions import BackendMissingDataError
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
@@ -448,7 +449,7 @@ class Opsipxeconfd(threading.Thread):
 				packageVersion=poc.packageVersion
 			)
 			if not product:
-				raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
+				raise BackendMissingDataError(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 			product = product[0]
 
 			if eliloMode:
