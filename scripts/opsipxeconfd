@@ -440,6 +440,14 @@ class Opsipxeconfd(threading.Thread):
 			raise ValueError(u"Host '%s' not found" % hostId)
 
 	def _getPxeConfigTemplate(self, hostId, productOnClients):
+		"""
+		Get the pxe template to use for `hostId`
+
+		:type hostId: str
+		:raises BackendMissingDataError: In case no matching product is found.
+		:rtype: str
+		:returns: The absolute path to the template that should be used for the client.
+		"""
 		eliloMode = self._detectEliloMode(hostId)
 
 		pxeConfigTemplate = None
