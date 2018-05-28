@@ -48,6 +48,7 @@ from hashlib import md5
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
 from OPSI.Config import OPSI_ADMIN_GROUP
+from OPSI.Exceptions import BackendMissingDataError
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
@@ -56,6 +57,8 @@ from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forc
 
 __version__ = '4.1.1.6'
 
+ELILO_X86 = 'x86'
+ELILO_X64 = 'x64'
 OPSI_ADMIN_GROUP_ID = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
 
 logger = Logger()
@@ -437,7 +440,15 @@ class Opsipxeconfd(threading.Thread):
 			raise ValueError(u"Host '%s' not found" % hostId)
 
 	def _getPxeConfigTemplate(self, hostId, productOnClients):
-		eliloMode, eliloX86Mode = self._detectEliloMode(hostId)
+		"""
+		Get the pxe template to use for `hostId`
+
+		:type hostId: str
+		:raises BackendMissingDataError: In case no matching product is found.
+		:rtype: str
+		:returns: The absolute path to the template that should be used for the client.
+		"""
+		eliloMode = self._detectEliloMode(hostId)
 
 		pxeConfigTemplate = None
 		for poc in productOnClients:
@@ -448,16 +459,16 @@ class Opsipxeconfd(threading.Thread):
 				packageVersion=poc.packageVersion
 			)
 			if not product:
-				raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
+				raise BackendMissingDataError(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 			product = product[0]
 
-			if eliloMode:
-				pxeConfigTemplate = self.config['uefiConfTemplate-x64']
-			elif eliloX86Mode:
+			if ELILO_X86 == eliloMode:
 				pxeConfigTemplate = self.config['uefiConfTemplate-x86']
+			elif ELILO_X64 == eliloMode:
+				pxeConfigTemplate = self.config['uefiConfTemplate-x64']
 
 			if product.pxeConfigTemplate:
-				if not (eliloMode or eliloX86Mode):
+				if not eliloMode:
 					if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
 						logger.error(
 							u"Cannot use more than one pxe config template, got: {0}, {1}",
@@ -483,19 +494,24 @@ class Opsipxeconfd(threading.Thread):
 		return pxeConfigTemplate, product
 
 	def _detectEliloMode(self, hostId):
-		# Try to detect elilo mode
-		eliloMode = False
-		eliloX86Mode = False
+		"""
+		Checks if elilo mode is set for client.
+
+		:rtype: str or None
+		:returns: The elilo mode of the client represented as either
+`x86` or `x64` if it is set. If no elilo mode is set then `None`.
+		"""
+		eliloMode = None
 		configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename", objectId=hostId)
 		if configStates:
 			val = configStates[0].getValues()
 			if val and 'elilo' in val[0]:
 				if 'x86' in val[0]:
-					eliloX86Mode = True
+					eliloMode = ELILO_X86
 				else:
-					eliloMode = True
+					eliloMode = ELILO_X64
 
-		return eliloMode, eliloX86Mode
+		return eliloMode
 
 	@staticmethod
 	def _getNameForPXEConfigFile(host):
