@@ -345,9 +345,10 @@ class Opsipxeconfd(threading.Thread):
 						logger.info(u"Product {} not available on depot {!r}", poc.productId, depotId)
 						continue
 
-				poc.productVersion = productOnDepot.productVersion
-				poc.packageVersion = productOnDepot.packageVersion
-				newProductOnClients.append(poc)
+				if productOnDepot:
+					poc.productVersion = productOnDepot.productVersion
+					poc.packageVersion = productOnDepot.packageVersion
+					newProductOnClients.append(poc)
 
 			productOnClients = newProductOnClients
 
