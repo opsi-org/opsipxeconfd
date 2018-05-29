@@ -304,11 +304,11 @@ class Opsipxeconfd(threading.Thread):
 
 			try:
 				poc = data["productOnClient"]
-				if poc.actionRequest not in ('setup', 'uninstall', 'update', 'always', 'once', 'custom'):
-					productOnClients = None
-				else:
+				if poc:
 					productOnClients = [poc]
-			except (KeyError, AttributeError, TypeError):
+				else:
+					productOnClients = None
+			except KeyError:
 				# Get product actions
 				productOnClients = self._backend.productOnClient_getObjects(
 					productType=u'NetbootProduct',
