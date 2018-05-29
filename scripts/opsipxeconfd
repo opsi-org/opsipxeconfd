@@ -403,7 +403,13 @@ class Opsipxeconfd(threading.Thread):
 			if append['pckey']:
 				logger.addConfidentialString(append['pckey'])
 
-			for key, value in self._getAdditionalBootimageParameters(hostId):
+			try:
+				bootimageAppendConfigStates = [data['bootimageAppend']]
+				bootimageAppend = self._getAdditionalBootimageParameters(hostId, bootimageAppendConfigStates)
+			except KeyError:
+				bootimageAppend = self._getAdditionalBootimageParameters(hostId)
+
+			for key, value in bootimageAppend:
 				append[key] = value
 
 			# Get product property states
@@ -598,11 +604,12 @@ class Opsipxeconfd(threading.Thread):
 
 		return address
 
-	def _getAdditionalBootimageParameters(self, hostId):
+	def _getAdditionalBootimageParameters(self, hostId, configStates=None):
 		"""
 		Returns any additional bootimage parameters that may be set for `hostId`.
 		"""
-		configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'opsi-linux-bootimage.append')
+		if configStates is None:
+			configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'opsi-linux-bootimage.append')
 
 		if configStates:
 			app = u' '.join(forceUnicodeList(configStates[0].getValues()))
