@@ -358,11 +358,16 @@ class Opsipxeconfd(threading.Thread):
 
 			try:
 				product = data["product"]
+
+				# Setting empty string to avoid making another
+				# unnecessary call to the backend.
+				elilo = data['elilo'] or ''
 			except KeyError:
 				product = None
+				elilo = None
 				self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
 
-			pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients, product)
+			pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients, product, elilo)
 			logger.debug(u"Using pxe config template {0!r}", pxeConfigTemplate)
 
 			pxeConfigName = self._getNameForPXEConfigFile(host)
@@ -492,8 +497,13 @@ class Opsipxeconfd(threading.Thread):
 		except IndexError:
 			raise ValueError(u"Host '%s' not found" % hostId)
 
-	def _getPxeConfigTemplate(self, hostId, productOnClients, product=None):
-		eliloMode, eliloX86Mode = self._detectEliloMode(hostId)
+	def _getPxeConfigTemplate(self, hostId, productOnClients, product=None, elilo=None):
+		if elilo is None:
+			eliloMode, eliloX86Mode = self._detectEliloMode(hostId)
+			if eliloMode:
+				elilo = 'x64'
+			elif eliloX86Mode:
+				elilo = 'x86'
 
 		pxeConfigTemplate = None
 		for poc in productOnClients:
@@ -511,13 +521,13 @@ class Opsipxeconfd(threading.Thread):
 			if not product:
 				raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 
-			if eliloMode:
+			if elilo == 'x64':
 				pxeConfigTemplate = self.config['uefiConfTemplate-x64']
-			elif eliloX86Mode:
+			elif elilo == 'x86':
 				pxeConfigTemplate = self.config['uefiConfTemplate-x86']
 
 			if product.pxeConfigTemplate:
-				if not (eliloMode or eliloX86Mode):
+				if not elilo:
 					if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
 						logger.error(
 							u"Cannot use more than one pxe config template, got: {0}, {1}",
