@@ -32,7 +32,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import base64
-import cPickle
+import codecs
+import json
 import getopt
 import grp
 import os
@@ -47,14 +48,15 @@ from twisted.conch.ssh import keys
 from hashlib import md5
 
 from OPSI.Backend.BackendManager import BackendManager
-from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
+from OPSI.Backend.OpsiPXEConfd import (ERROR_MARKER, getClientDataPath,
+	ServerConnection)
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
-from OPSI.Object import ProductOnClient, ProductOnDepot, Product, OpsiClient
 from OPSI.System.Posix import execute, which
-from OPSI.Util import getfqdn
+from OPSI.Util import getfqdn, deserialize
 from OPSI.Util.File import ConfigFile
-from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
+from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
+	forceUnicodeList)
 
 __version__ = '4.1.1.6'
 
@@ -293,24 +295,29 @@ class Opsipxeconfd(threading.Thread):
 
 	def updateBootConfiguration(self, hostId):
 		try:
-			data = {}
-			inputfile = "/tmp/%s" % hostId
+			inputfile = getClientDataPath(hostId)
 			if os.path.exists(inputfile):
-				with open(inputfile, "rb") as f:
-					data = cPickle.load(f)
+				with codecs.open(inputfile, "r") as inFile:
+					data = json.load(inFile)
 				os.unlink(inputfile)
-				logger.info(u"inputfile found with info: '%s'" % data)
+
+				data = deserialize(data)
+				logger.debug(u"inputfile found with info: {!r}", data)
+			else:
+				data = {}
+
 			hostId = forceHostId(hostId)
 			logger.info(u"Updating PXE boot configuration for host {0!r}", hostId)
 
 			self._removeCurrentConfigWriters(hostId)
 
 			try:
-				poc = [ProductOnClient.fromHash(data["productOnClient"])]
-				if poc.productType != u'NetbootProduct' and \
-				poc.actionRequest not in ('setup', 'uninstall', 'update', 'always', 'once', 'custom'):
+				poc = data["productOnClient"]
+				if poc.actionRequest not in ('setup', 'uninstall', 'update', 'always', 'once', 'custom'):
 					productOnClients = None
-			except:
+				else:
+					productOnClients = [poc]
+			except (KeyError, AttributeError, TypeError):
 				# Get product actions
 				productOnClients = self._backend.productOnClient_getObjects(
 					productType=u'NetbootProduct',
@@ -323,8 +330,8 @@ class Opsipxeconfd(threading.Thread):
 				return u'Boot configuration updated'
 
 			try:
-				host = OpsiClient.fromHash(data["host"])
-			except:
+				host = data["host"]
+			except KeyError:
 				host = self._getHostObject(hostId)
 
 			depotId = self.config['depotId']
@@ -332,34 +339,36 @@ class Opsipxeconfd(threading.Thread):
 			newProductOnClients = []
 			for poc in productOnClients:
 				try:
-					poc.productVersion = data["productOnDepot"]["productVersion"]
-					poc.packageVersion = data["productOnDepot"]["packageVersion"]
-					newProductOnClients.append(poc)
-				except:
+					productOnDepot = data["productOnDepot"]
+				except KeyError:
 					logger.debug("Searching for product {!r} on depot {!r}", poc.productId, depotId)
 					productOnDepot = self._backend.productOnDepot_getObjects(
 						productType=u'NetbootProduct',
 						productId=poc.productId,
 						depotId=depotId
 					)
-					if not productOnDepot:
+
+					try:
+						productOnDepot = productOnDepot[0]
+					except IndexError:
 						logger.info(u"Product {} not available on depot {!r}", poc.productId, depotId)
 						continue
 
-					poc.productVersion = productOnDepot[0].productVersion
-					poc.packageVersion = productOnDepot[0].packageVersion
-					newProductOnClients.append(poc)
+				poc.productVersion = productOnDepot.productVersion
+				poc.packageVersion = productOnDepot.packageVersion
+				newProductOnClients.append(poc)
+
 			productOnClients = newProductOnClients
 
 			if not productOnClients:
 				logger.info("No matching netboot product found on depot {0!r}.", depotId)
 				return u'Boot configuration updated'
 
-			product = None
-			if not data:
+			try:
+				product = data["product"]
+			except KeyError:
+				product = None
 				self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
-			else:
-				product = Product.fromHash(data["product"])
 
 			pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients, product)
 			logger.debug(u"Using pxe config template {0!r}", pxeConfigTemplate)
@@ -396,24 +405,31 @@ class Opsipxeconfd(threading.Thread):
 				append[key] = value
 
 			# Get product property states
-			productPropertyStates = {}
 			try:
 				productPropertyStates = data["productPropertyStates"]
-			except:
+			except KeyError:
 				productIds = [poc.productId for poc in productOnClients]
 				if productIds:
-					for pps in self._backend.productPropertyState_getObjects(objectId=hostId, productId=productIds):
-						productPropertyStates[pps.propertyId] = u','.join(forceUnicodeList(pps.getValues()))
+					productPropertyStates = {
+						pps.propertyId: u','.join(forceUnicodeList(pps.getValues()))
+						for pps in self._backend.productPropertyState_getObjects(
+							objectId=hostId,
+							productId=productIds
+						)
+					}
+				else:
+					productPropertyStates = {}
 
 			pcw = None
 			try:
 				logger.info(u"Creating thread for pxeconfig {0}", len(self._pxeConfigWriters) + 1)
 				try:
 					backendInfo = data["backendInfo"]
-				except:
-					backendinfo = self._backend.backend_info()
-					backendinfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
-				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback, backendinfo)
+				except KeyError:
+					backendInfo = self._backend.backend_info()
+					backendInfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
+
+				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback, backendInfo)
 				with self._pxeConfigWritersLock:
 					self._pxeConfigWriters.append(pcw)
 				pcw.start()
@@ -476,13 +492,16 @@ class Opsipxeconfd(threading.Thread):
 		pxeConfigTemplate = None
 		for poc in productOnClients:
 			if not product:
-				product = self._backend.product_getObjects(
-					type=u'NetbootProduct',
-					id=poc.productId,
-					productVersion=poc.productVersion,
-					packageVersion=poc.packageVersion
-				)
-				if product: product = product[0]
+				try:
+					product = self._backend.product_getObjects(
+						type=u'NetbootProduct',
+						id=poc.productId,
+						productVersion=poc.productVersion,
+						packageVersion=poc.packageVersion
+					)[0]
+				except IndexError:
+					product = None
+
 			if not product:
 				raise Exception(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 
