@@ -295,21 +295,12 @@ class Opsipxeconfd(threading.Thread):
 
 	def updateBootConfiguration(self, hostId):
 		try:
-			inputfile = getClientDataPath(hostId)
-			if os.path.exists(inputfile):
-				with codecs.open(inputfile, "r") as inFile:
-					data = json.load(inFile)
-				os.unlink(inputfile)
-
-				data = deserialize(data)
-				logger.debug(u"inputfile found with info: {!r}", data)
-			else:
-				data = {}
-
 			hostId = forceHostId(hostId)
 			logger.info(u"Updating PXE boot configuration for host {0!r}", hostId)
 
 			self._removeCurrentConfigWriters(hostId)
+
+			data = self._readCachedData(hostId)
 
 			try:
 				poc = data["productOnClient"]
@@ -473,6 +464,20 @@ class Opsipxeconfd(threading.Thread):
 				pcw.join(1)
 
 			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
+
+	def _readCachedData(self, hostId):
+		inputfile = getClientDataPath(hostId)
+		if os.path.exists(inputfile):
+			with codecs.open(inputfile, "r") as inFile:
+				data = json.load(inFile)
+			os.unlink(inputfile)
+
+			data = deserialize(data)
+			logger.debug(u"Cached data read for {}: {!r}", hostId, data)
+		else:
+			data = {}
+
+		return data
 
 	def _getHostObject(self, hostId):
 		"""
