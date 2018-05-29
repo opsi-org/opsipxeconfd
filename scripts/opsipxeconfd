@@ -387,13 +387,18 @@ class Opsipxeconfd(threading.Thread):
 				logger.debug(u"PXE boot configuration {0!r} already exists, removing.", pxefile)
 				os.unlink(pxefile)
 
+			try:
+				serviceAddress = data['serviceAddress']
+			except KeyError:
+				serviceAddress = self._getConfigServiceAddress(hostId)
+
 			# Append arguments
 			append = {
 				'pckey': host.getOpsiHostKey(),
 				'hn': hostId.split('.')[0],
 				'dn': u'.'.join(hostId.split('.')[1:]),
 				'product': product.id,
-				'service': self._getConfigServiceAddress(hostId),
+				'service': serviceAddress,
 			}
 			if append['pckey']:
 				logger.addConfidentialString(append['pckey'])
