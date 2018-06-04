@@ -554,6 +554,7 @@ class Opsipxeconfd(threading.Thread):
 					logger.notice("Ignoring given pxeConfigTemplate because uefi detected for the client.")
 
 		if not pxeConfigTemplate:
+			logger.debug("Using default config template")
 			pxeConfigTemplate = self.config['pxeConfTemplate']
 
 		if not os.path.isabs(pxeConfigTemplate):  # Not an absolute path
