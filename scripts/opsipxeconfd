@@ -300,12 +300,12 @@ class Opsipxeconfd(threading.Thread):
 
 			self._removeCurrentConfigWriters(hostId)
 
-			data = self._readCachedData(cacheFile)
-			if data:
-				logger.debug(u"Cached data read for {}: {!r}", hostId, data)
+			cachedData = self._readCachedData(cacheFile)
+			if cachedData:
+				logger.debug(u"Cached data read for {}: {!r}", hostId, cachedData)
 
 			try:
-				poc = data["productOnClient"]
+				poc = cachedData["productOnClient"]
 				if poc:
 					productOnClients = [poc]
 				else:
@@ -323,7 +323,7 @@ class Opsipxeconfd(threading.Thread):
 				return u'Boot configuration updated'
 
 			try:
-				host = data["host"]
+				host = cachedData["host"]
 			except KeyError:
 				host = self._getHostObject(hostId)
 
@@ -332,7 +332,7 @@ class Opsipxeconfd(threading.Thread):
 			newProductOnClients = []
 			for poc in productOnClients:
 				try:
-					productOnDepot = data["productOnDepot"]
+					productOnDepot = cachedData["productOnDepot"]
 				except KeyError:
 					logger.debug("Searching for product {!r} on depot {!r}", poc.productId, depotId)
 					productOnDepot = self._backend.productOnDepot_getObjects(
@@ -359,11 +359,11 @@ class Opsipxeconfd(threading.Thread):
 				return u'Boot configuration updated'
 
 			try:
-				product = data["product"]
+				product = cachedData["product"]
 
 				# Setting empty string to avoid making another
 				# unnecessary call to the backend.
-				elilo = data['elilo'] or ''
+				elilo = cachedData['elilo'] or ''
 			except KeyError:
 				product = None
 				elilo = None
@@ -390,7 +390,7 @@ class Opsipxeconfd(threading.Thread):
 				os.unlink(pxefile)
 
 			try:
-				serviceAddress = data['serviceAddress']
+				serviceAddress = cachedData['serviceAddress']
 			except KeyError:
 				serviceAddress = self._getConfigServiceAddress(hostId)
 
@@ -406,7 +406,7 @@ class Opsipxeconfd(threading.Thread):
 				logger.addConfidentialString(append['pckey'])
 
 			try:
-				bootimageAppendConfigStates = [data['bootimageAppend']]
+				bootimageAppendConfigStates = [cachedData['bootimageAppend']]
 				bootimageAppend = self._getAdditionalBootimageParameters(hostId, bootimageAppendConfigStates)
 			except KeyError:
 				bootimageAppend = self._getAdditionalBootimageParameters(hostId)
@@ -416,7 +416,7 @@ class Opsipxeconfd(threading.Thread):
 
 			# Get product property states
 			try:
-				productPropertyStates = data["productPropertyStates"]
+				productPropertyStates = cachedData["productPropertyStates"]
 			except KeyError:
 				productIds = [poc.productId for poc in productOnClients]
 				if productIds:
@@ -434,7 +434,7 @@ class Opsipxeconfd(threading.Thread):
 			try:
 				logger.info(u"Creating thread for pxeconfig {0}", len(self._pxeConfigWriters) + 1)
 				try:
-					backendInfo = data["backendInfo"]
+					backendInfo = cachedData["backendInfo"]
 				except KeyError:
 					backendInfo = self._backend.backend_info()
 					backendInfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
