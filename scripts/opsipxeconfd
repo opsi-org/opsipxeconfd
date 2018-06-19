@@ -43,13 +43,13 @@ import sys
 import threading
 import time
 from contextlib import contextmanager, closing
+from shlex import split as shlex_split
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from twisted.conch.ssh import keys
 from hashlib import md5
 
 from OPSI.Backend.BackendManager import BackendManager
-from OPSI.Backend.OpsiPXEConfd import (ERROR_MARKER, getClientDataPath,
-	ServerConnection)
+from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
@@ -293,14 +293,16 @@ class Opsipxeconfd(threading.Thread):
 		logger.notice(result)
 		return result
 
-	def updateBootConfiguration(self, hostId):
+	def updateBootConfiguration(self, hostId, cacheFile=None):
 		try:
 			hostId = forceHostId(hostId)
 			logger.info(u"Updating PXE boot configuration for host {0!r}", hostId)
 
 			self._removeCurrentConfigWriters(hostId)
 
-			data = self._readCachedData(hostId)
+			data = self._readCachedData(cacheFile)
+			if data:
+				logger.debug(u"Cached data read for {}: {!r}", hostId, data)
 
 			try:
 				poc = data["productOnClient"]
@@ -482,19 +484,19 @@ class Opsipxeconfd(threading.Thread):
 
 			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
 
-	def _readCachedData(self, hostId):
-		inputfile = getClientDataPath(hostId)
-		if os.path.exists(inputfile):
-			with codecs.open(inputfile, "r") as inFile:
+	def _readCachedData(self, cacheFile):
+		if not cacheFile:
+			return {}
+
+		if os.path.exists(cacheFile):
+			logger.debug("Reading data from {}", cacheFile)
+			with codecs.open(cacheFile, "r") as inFile:
 				data = json.load(inFile)
-			os.unlink(inputfile)
+			os.unlink(cacheFile)
 
-			data = deserialize(data)
-			logger.debug(u"Cached data read for {}: {!r}", hostId, data)
+			return deserialize(data)
 		else:
-			data = {}
-
-		return data
+			return {}
 
 	def _getHostObject(self, hostId):
 		"""
