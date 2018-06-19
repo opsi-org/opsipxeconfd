@@ -850,18 +850,30 @@ class ClientConnection(threading.Thread):
 
 	def _processCommand(self, cmd):
 		try:
-			cp = cmd.split()
+			try:
+				command, arguments = cmd.split(None, 1)
+				arguments = shlex_split(arguments)
+			except ValueError:
+				command = cmd.split()[0]
 
-			if cp[0] == u'stop':
+			command = command.strip()
+
+			if command == u'stop':
 				self._opsipxeconfd.stop()
 				return u'opsipxeconfd is going down'
-			elif cp[0] == u'status':
+			elif command == u'status':
 				return self._opsipxeconfd.status()
-			elif cp[0] == u'update':
-				if len(cp) != 2:
+			elif command == u'update':
+				if len(arguments) == 2:
+					# We have an update path
+					hostId = forceHostId(arguments[0])
+					cacheFilePath = forceFilename(arguments[1])
+					return self._opsipxeconfd.updateBootConfiguration(hostId, cacheFilePath)
+				elif len(arguments) == 1:
+					hostId = forceHostId(arguments[0])
+					return self._opsipxeconfd.updateBootConfiguration(hostId)
+				else:
 					raise ValueError(u"bad arguments for command 'update', needs <hostId>")
-				hostId = forceHostId(cp[1])
-				return self._opsipxeconfd.updateBootConfiguration(hostId)
 
 			raise ValueError(u"Command '%s' not supported" % cmd)
 		except Exception as error:
