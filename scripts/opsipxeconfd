@@ -487,16 +487,15 @@ class Opsipxeconfd(threading.Thread):
 	def _readCachedData(self, cacheFile):
 		if not cacheFile:
 			return {}
-
-		if os.path.exists(cacheFile):
-			logger.debug("Reading data from {}", cacheFile)
-			with codecs.open(cacheFile, "r") as inFile:
-				data = json.load(inFile)
-			os.unlink(cacheFile)
-
-			return deserialize(data)
-		else:
+		elif not os.path.exists(cacheFile):
 			return {}
+
+		logger.debug("Reading data from {}", cacheFile)
+		with codecs.open(cacheFile, "r", 'utf-8') as inFile:
+			data = json.load(inFile)
+		os.unlink(cacheFile)
+
+		return deserialize(data)
 
 	def _getHostObject(self, hostId):
 		"""
