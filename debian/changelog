@@ -1,3 +1,11 @@
+opsipxeconfd (4.1.1.12-1) testing; urgency=medium
+
+  * Make it possible to hand over the path to a cache file when updating a
+    client. Data will be read from the cache file and only if the required
+    data isn't there data will be read from the backend.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Tue, 19 Jun 2018 13:22:43 +0200
+
 opsipxeconfd (4.1.1.11-1) stable; urgency=medium
 
   * Refactored selection of template file for UEFI clients.
