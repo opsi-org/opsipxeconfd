@@ -32,6 +32,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import base64
+import codecs
+import json
 import getopt
 import grp
 import os
@@ -41,6 +43,7 @@ import sys
 import threading
 import time
 from contextlib import contextmanager, closing
+from shlex import split as shlex_split
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from twisted.conch.ssh import keys
 from hashlib import md5
@@ -51,9 +54,10 @@ from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Exceptions import BackendMissingDataError
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
 from OPSI.System.Posix import execute, which
-from OPSI.Util import getfqdn
+from OPSI.Util import getfqdn, deserialize
 from OPSI.Util.File import ConfigFile
-from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode, forceUnicodeList)
+from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
+	forceUnicodeList)
 
 __version__ = '4.1.1.11'
 
@@ -292,51 +296,83 @@ class Opsipxeconfd(threading.Thread):
 		logger.notice(result)
 		return result
 
-	def updateBootConfiguration(self, hostId):
+	def updateBootConfiguration(self, hostId, cacheFile=None):
 		try:
 			hostId = forceHostId(hostId)
 			logger.info(u"Updating PXE boot configuration for host {0!r}", hostId)
 
 			self._removeCurrentConfigWriters(hostId)
 
-			# Get product actions
-			productOnClients = self._backend.productOnClient_getObjects(
-				productType=u'NetbootProduct',
-				clientId=hostId,
-				actionRequest=['setup', 'uninstall', 'update', 'always', 'once', 'custom']
-			)
+			cachedData = self._readCachedData(cacheFile)
+			if cachedData:
+				logger.debug(u"Cached data read for {}: {!r}", hostId, cachedData)
+
+			try:
+				poc = cachedData["productOnClient"]
+				if poc:
+					productOnClients = [poc]
+				else:
+					productOnClients = None
+			except KeyError:
+				# Get product actions
+				productOnClients = self._backend.productOnClient_getObjects(
+					productType=u'NetbootProduct',
+					clientId=hostId,
+					actionRequest=['setup', 'uninstall', 'update', 'always', 'once', 'custom']
+				)
 
 			if not productOnClients:
 				logger.info("No netboot products with action requests for client {0!r} found.", hostId)
 				return u'Boot configuration updated'
 
-			host = self._getHostObject(hostId)
+			try:
+				host = cachedData["host"]
+			except KeyError:
+				host = self._getHostObject(hostId)
 
 			depotId = self.config['depotId']
+
 			newProductOnClients = []
 			for poc in productOnClients:
-				logger.debug("Searching for product {!r} on depot {!r}", poc.productId, depotId)
-				productOnDepot = self._backend.productOnDepot_getObjects(
-					productType=u'NetbootProduct',
-					productId=poc.productId,
-					depotId=depotId
-				)
-				if not productOnDepot:
-					logger.info(u"Product {} not available on depot {!r}", poc.productId, depotId)
-					continue
+				try:
+					productOnDepot = cachedData["productOnDepot"]
+				except KeyError:
+					logger.debug("Searching for product {!r} on depot {!r}", poc.productId, depotId)
+					productOnDepot = self._backend.productOnDepot_getObjects(
+						productType=u'NetbootProduct',
+						productId=poc.productId,
+						depotId=depotId
+					)
 
-				poc.productVersion = productOnDepot[0].productVersion
-				poc.packageVersion = productOnDepot[0].packageVersion
-				newProductOnClients.append(poc)
+					try:
+						productOnDepot = productOnDepot[0]
+					except IndexError:
+						logger.info(u"Product {} not available on depot {!r}", poc.productId, depotId)
+						continue
+
+				if productOnDepot:
+					poc.productVersion = productOnDepot.productVersion
+					poc.packageVersion = productOnDepot.packageVersion
+					newProductOnClients.append(poc)
+
 			productOnClients = newProductOnClients
 
 			if not productOnClients:
 				logger.info("No matching netboot product found on depot {0!r}.", depotId)
 				return u'Boot configuration updated'
 
-			self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
+			try:
+				product = cachedData["product"]
 
-			pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients)
+				# Setting empty string to avoid making another
+				# unnecessary call to the backend.
+				elilo = cachedData['elilo'] or ''
+			except KeyError:
+				product = None
+				elilo = None
+				self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
+
+			pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients, product, elilo)
 			logger.debug(u"Using pxe config template {0!r}", pxeConfigTemplate)
 
 			pxeConfigName = self._getNameForPXEConfigFile(host)
@@ -356,33 +392,57 @@ class Opsipxeconfd(threading.Thread):
 				logger.debug(u"PXE boot configuration {0!r} already exists, removing.", pxefile)
 				os.unlink(pxefile)
 
+			try:
+				serviceAddress = cachedData['serviceAddress']
+			except KeyError:
+				serviceAddress = self._getConfigServiceAddress(hostId)
+
 			# Append arguments
 			append = {
 				'pckey': host.getOpsiHostKey(),
 				'hn': hostId.split('.')[0],
 				'dn': u'.'.join(hostId.split('.')[1:]),
 				'product': product.id,
-				'service': self._getConfigServiceAddress(hostId),
+				'service': serviceAddress,
 			}
 			if append['pckey']:
 				logger.addConfidentialString(append['pckey'])
 
-			for key, value in self._getAdditionalBootimageParameters(hostId):
+			try:
+				bootimageAppendConfigStates = [cachedData['bootimageAppend']]
+				bootimageAppend = self._getAdditionalBootimageParameters(hostId, bootimageAppendConfigStates)
+			except KeyError:
+				bootimageAppend = self._getAdditionalBootimageParameters(hostId)
+
+			for key, value in bootimageAppend:
 				append[key] = value
 
 			# Get product property states
-			productPropertyStates = {}
-			productIds = [poc.productId for poc in productOnClients]
-			if productIds:
-				for pps in self._backend.productPropertyState_getObjects(objectId=hostId, productId=productIds):
-					productPropertyStates[pps.propertyId] = u','.join(forceUnicodeList(pps.getValues()))
+			try:
+				productPropertyStates = cachedData["productPropertyStates"]
+			except KeyError:
+				productIds = [poc.productId for poc in productOnClients]
+				if productIds:
+					productPropertyStates = {
+						pps.propertyId: u','.join(forceUnicodeList(pps.getValues()))
+						for pps in self._backend.productPropertyState_getObjects(
+							objectId=hostId,
+							productId=productIds
+						)
+					}
+				else:
+					productPropertyStates = {}
 
 			pcw = None
 			try:
 				logger.info(u"Creating thread for pxeconfig {0}", len(self._pxeConfigWriters) + 1)
-				backendinfo = self._backend.backend_info()
-				backendinfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
-				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback, backendinfo)
+				try:
+					backendInfo = cachedData["backendInfo"]
+				except KeyError:
+					backendInfo = self._backend.backend_info()
+					backendInfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
+
+				pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, self.pxeConfigWriterCallback, backendInfo)
 				with self._pxeConfigWritersLock:
 					self._pxeConfigWriters.append(pcw)
 				pcw.start()
@@ -427,6 +487,19 @@ class Opsipxeconfd(threading.Thread):
 
 			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
 
+	def _readCachedData(self, cacheFile):
+		if not cacheFile:
+			return {}
+		elif not os.path.exists(cacheFile):
+			return {}
+
+		logger.debug("Reading data from {}", cacheFile)
+		with codecs.open(cacheFile, "r", 'utf-8') as inFile:
+			data = json.load(inFile)
+		os.unlink(cacheFile)
+
+		return deserialize(data)
+
 	def _getHostObject(self, hostId):
 		"""
 		Get the object for `hostId`.
@@ -439,7 +512,7 @@ class Opsipxeconfd(threading.Thread):
 		except IndexError:
 			raise ValueError(u"Host '%s' not found" % hostId)
 
-	def _getPxeConfigTemplate(self, hostId, productOnClients):
+	def _getPxeConfigTemplate(self, hostId, productOnClients, product=None, elilo=None):
 		"""
 		Get the pxe template to use for `hostId`
 
@@ -448,27 +521,33 @@ class Opsipxeconfd(threading.Thread):
 		:rtype: str
 		:returns: The absolute path to the template that should be used for the client.
 		"""
-		eliloMode = self._detectEliloMode(hostId)
+		if elilo is None:
+			elilo = self._detectEliloMode(hostId)
 
 		pxeConfigTemplate = None
 		for poc in productOnClients:
-			product = self._backend.product_getObjects(
-				type=u'NetbootProduct',
-				id=poc.productId,
-				productVersion=poc.productVersion,
-				packageVersion=poc.packageVersion
-			)
+			if not product:
+				try:
+					product = self._backend.product_getObjects(
+						type=u'NetbootProduct',
+						id=poc.productId,
+						productVersion=poc.productVersion,
+						packageVersion=poc.packageVersion
+					)[0]
+				except IndexError:
+					product = None
+
 			if not product:
 				raise BackendMissingDataError(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 			product = product[0]
 
-			if ELILO_X86 == eliloMode:
+			if ELILO_X86 == elilo:
 				pxeConfigTemplate = self.config['uefiConfTemplate-x86']
-			elif ELILO_X64 == eliloMode:
+			elif ELILO_X64 == elilo:
 				pxeConfigTemplate = self.config['uefiConfTemplate-x64']
 
 			if product.pxeConfigTemplate:
-				if not eliloMode:
+				if not elilo:
 					if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
 						logger.error(
 							u"Cannot use more than one pxe config template, got: {0}, {1}",
@@ -484,6 +563,7 @@ class Opsipxeconfd(threading.Thread):
 					logger.notice("Ignoring given pxeConfigTemplate because uefi detected for the client.")
 
 		if not pxeConfigTemplate:
+			logger.debug("Using default config template")
 			pxeConfigTemplate = self.config['pxeConfTemplate']
 
 		if not os.path.isabs(pxeConfigTemplate):  # Not an absolute path
@@ -539,11 +619,12 @@ class Opsipxeconfd(threading.Thread):
 
 		return address
 
-	def _getAdditionalBootimageParameters(self, hostId):
+	def _getAdditionalBootimageParameters(self, hostId, configStates=None):
 		"""
 		Returns any additional bootimage parameters that may be set for `hostId`.
 		"""
-		configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'opsi-linux-bootimage.append')
+		if configStates is None:
+			configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'opsi-linux-bootimage.append')
 
 		if configStates:
 			app = u' '.join(forceUnicodeList(configStates[0].getValues()))
@@ -781,18 +862,30 @@ class ClientConnection(threading.Thread):
 
 	def _processCommand(self, cmd):
 		try:
-			cp = cmd.split()
+			try:
+				command, arguments = cmd.split(None, 1)
+				arguments = shlex_split(arguments)
+			except ValueError:
+				command = cmd.split()[0]
 
-			if cp[0] == u'stop':
+			command = command.strip()
+
+			if command == u'stop':
 				self._opsipxeconfd.stop()
 				return u'opsipxeconfd is going down'
-			elif cp[0] == u'status':
+			elif command == u'status':
 				return self._opsipxeconfd.status()
-			elif cp[0] == u'update':
-				if len(cp) != 2:
+			elif command == u'update':
+				if len(arguments) == 2:
+					# We have an update path
+					hostId = forceHostId(arguments[0])
+					cacheFilePath = forceFilename(arguments[1])
+					return self._opsipxeconfd.updateBootConfiguration(hostId, cacheFilePath)
+				elif len(arguments) == 1:
+					hostId = forceHostId(arguments[0])
+					return self._opsipxeconfd.updateBootConfiguration(hostId)
+				else:
 					raise ValueError(u"bad arguments for command 'update', needs <hostId>")
-				hostId = forceHostId(cp[1])
-				return self._opsipxeconfd.updateBootConfiguration(hostId)
 
 			raise ValueError(u"Command '%s' not supported" % cmd)
 		except Exception as error:

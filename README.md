@@ -41,7 +41,10 @@ To update the boot configuration of a client:
 
     opsipxeconfd update <clientId>
 
+To update the boot configuration of a client from a specific cache file:
+
+	opsipxeconfd update <clientId> <path to cache file>
+
 To stop opsipxeconfd:
 
     opsipxeconfd stop
-
