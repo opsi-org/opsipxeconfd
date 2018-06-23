@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.13-1) testing; urgency=medium
+
+  * Fix problem accessing product element.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Sat, 23 Jun 2018 15:49:43 +0200
+
 opsipxeconfd (4.1.1.12-1) testing; urgency=medium
 
   * Make it possible to hand over the path to a cache file when updating a
