@@ -1,3 +1,10 @@
+opsipxeconfd (4.0.7.9-3) stable; urgency=medium
+
+  * Backport UEFI configuration options in opsiconfd.conf to opsi 4.0.
+  * RPM: On SUSE configure the appropriate paths.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 25 Jul 2018 17:01:33 +0100
+
 opsipxeconfd (4.0.7.9-2) stable; urgency=medium
 
   * RPM: only use restart macro on SUSE distros.
