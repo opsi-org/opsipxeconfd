@@ -19,7 +19,7 @@ case "$1" in
 				/etc/init.d/opsipxeconfd start || true
 			fi
 		fi
-		if $(which ucr) >/dev/null 2>/dev/null; then
+		if which ucr >/dev/null 2>/dev/null; then
 			sed -i 's_/tftpboot/linux_/var/lib/univention-client-boot_g' /etc/opsi/opsipxeconfd.conf
 		fi
 
