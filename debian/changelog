@@ -1,4 +1,4 @@
-opsipxeconfd (4.0.7.9-4) stable; urgency=medium
+opsipxeconfd (4.0.7.9-4) unreleased; urgency=medium
 
   * postinst: patching tftpboot directory on UCS systems
 
