@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.13-2) stable; urgency=medium
+
+  * Merged opsipxeconfd 4.0.7.9-4.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Mon, 20 Aug 2018 16:06:38 +0200
+
 opsipxeconfd (4.1.1.13-1) testing; urgency=medium
 
   * Fix problem accessing product element.
@@ -186,6 +192,19 @@ opsipxeconfd (4.1.1.1-1) experimental; urgency=medium
   * Sharing more code with python-opsi.
 
  -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 02 Dec 2016 11:04:06 +0100
+
+opsipxeconfd (4.0.7.9-4) stable; urgency=medium
+
+  * UCS: postinst: patching tftpboot directory
+
+ -- Mathias Radtke <m.radtke@uib.de>  Mon, 20 Aug 2018 14:03:28 +0200
+
+opsipxeconfd (4.0.7.9-3) stable; urgency=medium
+
+  * Backport UEFI configuration options in opsiconfd.conf to opsi 4.0.
+  * RPM: On SUSE configure the appropriate paths.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 25 Jul 2018 17:01:33 +0100
 
 opsipxeconfd (4.0.7.9-2) stable; urgency=medium
 
