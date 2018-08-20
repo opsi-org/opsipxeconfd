@@ -1,6 +1,6 @@
 opsipxeconfd (4.0.7.9-4) unreleased; urgency=medium
 
-  * postinst: patching tftpboot directory on UCS systems
+  * UCS: postinst: patching tftpboot directory
 
  -- Mathias Radtke <m.radtke@uib.de>  Mon, 20 Aug 2018 14:03:28 +0200
 
