@@ -1200,5 +1200,5 @@ if __name__ == "__main__":
 		pass
 	except Exception as exception:
 		logger.logException(exception)
-		print(u"ERROR: %s" % unicode(exception), file=sys.stderr)
+		print(u"ERROR: %s" % exception, file=sys.stderr)
 		sys.exit(1)
