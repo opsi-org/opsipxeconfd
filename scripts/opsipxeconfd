@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @license: GNU Affero GPL version 3
 """
 
+from __future__ import print_function
+
 import base64
 import codecs
 import json
@@ -916,13 +918,13 @@ class OpsipxeconfdInit(object):
 			if opt in ("-c", '--conffile'):
 				self.config['configFile'] = forceFilename(arg)
 			elif opt == "-v":
-				print u"opsipxeconfd version %s" % __version__
+				print(u"opsipxeconfd version %s" % __version__)
 				sys.exit(0)
 		self.readConfigFile()
 		self.setCommandlineConfig()
 
 		if self.args[0] == u'version':
-			print __version__
+			print(__version__)
 			sys.exit(0)
 
 		elif self.args[0] == u'start':
@@ -951,9 +953,9 @@ class OpsipxeconfdInit(object):
 			result = con.sendCommand(u' '.join(forceUnicodeList(self.args)))
 			if result:
 				if result.startswith(u'(ERROR)'):
-					print >> sys.stderr, result
+					print(result, file=sys.stderr)
 					sys.exit(1)
-				print >> sys.stdout, result
+				print(result, file=sys.stdout)
 				sys.exit(0)
 			else:
 				sys.exit(1)
@@ -1059,19 +1061,19 @@ class OpsipxeconfdInit(object):
 
 	@staticmethod
 	def usage():
-		print u"\nUsage: %s [options] <command> [clientId] [args]..." % os.path.basename(sys.argv[0])
-		print u"Commands:"
-		print u"  version         Show version information and exit"
-		print u"  start           Start main process"
-		print u"  stop            Stop main process"
-		print u"  status          Print status information of the main process"
-		print u"  update          update PXE boot configuration for client"
-		print u"Options:"
-		print u"  -F, --no-fork   Do not fork to background"
-		print u"  -c, --conffile  Location of config file"
-		print u"  -l, --loglevel  Set log level (default: 5)"
-		print u"        0=comment, 1=essential, 2=critical, 3=error, 4=warning, 5=notice, 6=info, 7=debug, 8=debug2, 9=confidential"
-		print u""
+		print(u"\nUsage: %s [options] <command> [clientId] [args]..." % os.path.basename(sys.argv[0]))
+		print(u"Commands:")
+		print(u"  version         Show version information and exit")
+		print(u"  start           Start main process")
+		print(u"  stop            Stop main process")
+		print(u"  status          Print status information of the main process")
+		print(u"  update          update PXE boot configuration for client")
+		print(u"Options:")
+		print(u"  -F, --no-fork   Do not fork to background")
+		print(u"  -c, --conffile  Location of config file")
+		print(u"  -l, --loglevel  Set log level (default: 5)")
+		print(u"        0=comment, 1=essential, 2=critical, 3=error, 4=warning, 5=notice, 6=info, 7=debug, 8=debug2, 9=confidential")
+		print(u"")
 
 	def daemonize(self):
 		# Fork to allow the shell to return and to call setsid
@@ -1174,5 +1176,5 @@ if __name__ == "__main__":
 		pass
 	except Exception as exception:
 		logger.logException(exception)
-		print >> sys.stderr, u"ERROR:", unicode(exception)
+		print(u"ERROR: %s" % unicode(exception), file=sys.stderr)
 		sys.exit(1)
