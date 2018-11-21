@@ -60,7 +60,7 @@ This package contains the opsi pxe configuration daemon.
 # ===[ build ]======================================
 %build
 export CFLAGS="$RPM_OPT_FLAGS"
-%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
+%if 0%{?rhel_version} || 0%{?centos_version}
 # Fix for https://bugzilla.redhat.com/show_bug.cgi?id=1117878
 export PATH="/usr/bin:$PATH"
 %endif
@@ -84,11 +84,9 @@ mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 
 sed -i 's#/etc/logrotate.d$##' INSTALLED_FILES
 
-%if 0%{?suse_version} >= 1315 || 0%{?centos_version} >= 700 || 0%{?rhel_version} >= 700
-    # Adjusting to the correct service names
-    sed --in-place "s/=smbd.service/=smb.service/" "debian/opsipxeconfd.service" || true
-    sed --in-place "s/=isc-dhcp-server.service/=dhcpd.service/" "debian/opsipxeconfd.service" || true
-%endif
+# Adjusting to the correct service names
+sed --in-place "s/=smbd.service/=smb.service/" "debian/opsipxeconfd.service" || true
+sed --in-place "s/=isc-dhcp-server.service/=dhcpd.service/" "debian/opsipxeconfd.service" || true
 
 %if 0%{?suse_version}
     # Adjust the path for the PXE netboot template
