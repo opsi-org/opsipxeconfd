@@ -7,31 +7,37 @@
 #
 
 Name:           opsipxeconfd
-BuildRequires:  python-devel python-setuptools systemd
-Requires:       opsi-tftpd python-opsi >= 4.1.1.23 opsi-linux-bootimage systemd
+BuildRequires:  python3-devel >= 3.5.3
+BuildRequires:  python3-setuptools
+BuildRequires:  systemd
+Requires:       opsi-tftpd
+Requires:       python3 >= 3.5.3
+Requires:       python3-opsi >= 4.2
+Requires:       systemd
 %{?systemd_requires}
 BuildArch:      noarch
 Url:            http://www.opsi.org
 License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        4.1.1.5
+Version:        4.2.0.1
 Release:        2
 Summary:        This is the opsi pxe configuration daemon
-Source:         opsipxeconfd_4.1.1.4-2.tar.gz
+Source:         opsipxeconfd_4.2.0.1-2.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1315
 # SLES
-BuildRequires: python-opsi >= 4.1 zypper logrotate
+BuildRequires: logrotate
+BuildRequires: python3-opsi >= 4.2
+BuildRequires: zypper
 %endif
 
 %if 0%{?suse_version}
 Suggests: logrotate
-BuildRequires: zypper logrotate
-%if 0%{?suse_version} >= 1210
+BuildRequires: logrotate
 BuildRequires: systemd-rpm-macros
-%endif
+BuildRequires: zypper
 %{py_requires}
 %endif
 
@@ -54,7 +60,7 @@ This package contains the opsi pxe configuration daemon.
 # ===[ build ]======================================
 %build
 export CFLAGS="$RPM_OPT_FLAGS"
-%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
+%if 0%{?rhel_version} || 0%{?centos_version}
 # Fix for https://bugzilla.redhat.com/show_bug.cgi?id=1117878
 export PATH="/usr/bin:$PATH"
 %endif
@@ -70,19 +76,17 @@ python setup.py build
 %install
 
 %if 0%{?suse_version}
-python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
+python3 setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
 %else
-python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
+python3 setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 %endif
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 
 sed -i 's#/etc/logrotate.d$##' INSTALLED_FILES
 
-%if 0%{?suse_version} >= 1315 || 0%{?centos_version} >= 700 || 0%{?rhel_version} >= 700
-    # Adjusting to the correct service names
-    sed --in-place "s/=smbd.service/=smb.service/" "debian/opsipxeconfd.service" || true
-    sed --in-place "s/=isc-dhcp-server.service/=dhcpd.service/" "debian/opsipxeconfd.service" || true
-%endif
+# Adjusting to the correct service names
+sed --in-place "s/=smbd.service/=smb.service/" "debian/opsipxeconfd.service" || true
+sed --in-place "s/=isc-dhcp-server.service/=dhcpd.service/" "debian/opsipxeconfd.service" || true
 
 %if 0%{?suse_version}
     # Adjust the path for the PXE netboot template
