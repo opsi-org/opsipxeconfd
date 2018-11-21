@@ -40,7 +40,7 @@ if not VERSION:
 # Always set __version__ to the version found in the changelog to make
 # sure the version is always up-to-date  and nobody needs to manually
 # update it.
-initFilePath = os.path.join('scripts', 'opsipxeconfd')
+initFilePath = os.path.join('opsipxeconfd')
 newInitLines = []
 with open(initFilePath) as originalFile:
 	for line in originalFile:
@@ -61,7 +61,7 @@ setup(
 	license='AGPL-3',
 	url="http://www.opsi.org",
 	description='The opsi pxe configiration management daemon',
-	scripts=['scripts/opsipxeconfd'],
+	scripts=['opsipxeconfd'],
 	data_files=[
 		('/etc/opsi', ['data/etc/opsi/opsipxeconfd.conf']),
 		('/etc/logrotate.d', ['data/etc/logrotate.d/opsipxeconfd']),
