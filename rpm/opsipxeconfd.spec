@@ -35,10 +35,9 @@ BuildRequires: zypper
 
 %if 0%{?suse_version}
 Suggests: logrotate
-BuildRequires: zypper logrotate
-%if 0%{?suse_version} >= 1210
+BuildRequires: logrotate
 BuildRequires: systemd-rpm-macros
-%endif
+BuildRequires: zypper
 %{py_requires}
 %endif
 
