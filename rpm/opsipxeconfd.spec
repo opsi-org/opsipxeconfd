@@ -7,10 +7,12 @@
 #
 
 Name:           opsipxeconfd
+BuildRequires:  python3-devel >= 3.5.3
+BuildRequires:  python3-setuptools
 BuildRequires:  systemd
 Requires:       opsi-tftpd
-Requires:       opsi-linux-bootimage
-Requires:       python-opsi >= 4.1.1.76
+Requires:       python3 >= 3.5.3
+Requires:       python3-opsi >= 4.2
 Requires:       systemd
 %{?systemd_requires}
 BuildArch:      noarch
@@ -18,25 +20,17 @@ Url:            http://www.opsi.org
 License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
-Version:        4.1.1.20
-Release:        1
+Version:        4.1.1.5
+Release:        2
 Summary:        This is the opsi pxe configuration daemon
-Source:         opsipxeconfd_4.1.1.20-1.tar.gz
+Source:         opsipxeconfd_4.1.1.4-2.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1315
 # SLES
 BuildRequires: logrotate
-BuildRequires: python-opsi >= 4.1
+BuildRequires: python3-opsi >= 4.2
 BuildRequires: zypper
-%endif
-
-%if 0%{?rhel_version} >= 800 || 0%{?centos_version} >= 800
-BuildRequires:  python2-devel
-BuildRequires:  python2-setuptools
-%else
-BuildRequires:  python-devel
-BuildRequires:  python-setuptools
 %endif
 
 %if 0%{?suse_version}
@@ -71,7 +65,7 @@ export CFLAGS="$RPM_OPT_FLAGS"
 # Fix for https://bugzilla.redhat.com/show_bug.cgi?id=1117878
 export PATH="/usr/bin:$PATH"
 %endif
-python2 setup.py build
+python setup.py build
 
 # ===[ pre ]========================================
 %pre
@@ -83,9 +77,9 @@ python2 setup.py build
 %install
 
 %if 0%{?suse_version}
-python2 setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
+python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
 %else
-python2 setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
+python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 %endif
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 
