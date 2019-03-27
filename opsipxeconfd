@@ -6,7 +6,7 @@ opsi pxe configuration daemon (opsipxeconfd)
 opsipxeconfd is part of the desktop management solution opsi
 (open pc server integration) http://www.opsi.org
 
-Copyright (C) 2013-2018 uib GmbH
+Copyright (C) 2013-2019 uib GmbH
 
 http://www.uib.de/
 
@@ -158,8 +158,8 @@ class Opsipxeconfd(threading.Thread):
 
 		self._setAccessRightsForSocket(self.config['port'])
 
-	@classmethod
-	def _setAccessRightsForSocket(self, path):
+	@staticmethod
+	def _setAccessRightsForSocket(path):
 		logger.debug("Setting rights on socket {0!r}", path)
 		mode = os.stat(path)[0]
 		# Adding read + write access for group and other.
@@ -489,7 +489,8 @@ class Opsipxeconfd(threading.Thread):
 
 			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
 
-	def _readCachedData(self, cacheFile):
+	@staticmethod
+	def _readCachedData(cacheFile):
 		if not cacheFile:
 			return {}
 		elif not os.path.exists(cacheFile):
@@ -682,7 +683,7 @@ class StartupTask(threading.Thread):
 
 
 class PXEConfigWriter(threading.Thread):
-	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback=None, backendinfo={}):
+	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback=None, backendinfo=None):
 		threading.Thread.__init__(self)
 		self.templatefile = templatefile
 		self.append = append
@@ -697,7 +698,7 @@ class PXEConfigWriter(threading.Thread):
 		self.uefi = False
 		self._running = False
 
-		if backendinfo:
+		if backendinfo:  # expect this to be a dict
 			modules = backendinfo['modules']
 			helpermodules = backendinfo['realmodules']
 			hostCount = backendinfo['hostCount']
