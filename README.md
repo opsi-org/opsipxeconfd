@@ -1,19 +1,18 @@
 # opsipxeconfd
 
-opsipxeconfd is part of the client management solution opsi.
+opsipxeconfd is part of the client management solution [opsi](https://www.opsi.org/).
 There it is used to write named pipes for clients that boot over PXE to provide a one-time configuration.
 
-The named pipes are empty and will be filled on-the-fly once a read is requested. They will be removed after one read request.
+The named pipes are _empty_ and will be filled on-the-fly once a read is requested. They will be removed after one read request.
 
 ## Usage
 
 opsipxeconfd is usually running as a service.
-For general usage we recommend using the `service` command to manage it.
 
     # Starting the service
-    service opsiconfd start
+    systemctl start opsipxeconfd.service
     # Stopping the service.
-    service opsiconfd stop
+    systemctl stop opsipxeconfd.service
 
 Manual control is also possible.
 
@@ -48,3 +47,4 @@ To update the boot configuration of a client from a specific cache file:
 To stop opsipxeconfd:
 
     opsipxeconfd stop
+
