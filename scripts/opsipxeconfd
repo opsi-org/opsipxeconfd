@@ -791,6 +791,20 @@ class PXEConfigWriter(threading.Thread):
 					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
 				else:
 					content = '%s  append %s\n' % (content, ' '.join(appendLineProperties))
+			elif line.lstrip().startswith(u'linux'):
+			    logger.notice("UEFI GRUB configuration detected for {}", self.hostId)
+			    self.uefi = True
+			    appendLineProperties = line.lstrip().split()[1:]
+			    for key, value in self.append.items():
+			        if value:
+			            appendLineProperties.append("%s=%s" % (key, value))
+			        else:
+			            appendLineProperties.append(str(key))
+
+			    if self._uefiModule and self.uefi:
+			        content = '%slinux %s\n' % (content, ' '.join(appendLineProperties))
+			    elif not self._uefiModule and self.uefi:
+			        raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
 			else:
 				content = "%s%s\n" % (content, line)
 
@@ -811,6 +825,7 @@ class PXEConfigWriter(threading.Thread):
 		if pipeOpenend:
 			logger.notice(u"Pipe {0!r} opened, piping pxe boot configuration", self.pxefile)
 			os.write(self._pipe, self.content)
+			time.sleep(5)
 			os.close(self._pipe)
 
 		if os.path.exists(self.pxefile):
