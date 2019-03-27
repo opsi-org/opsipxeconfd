@@ -61,7 +61,7 @@ from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
 	forceUnicodeList)
 
-__version__ = '4.1.1.12'
+__version__ = '4.2.0.2'
 
 ELILO_X86 = 'x86'
 ELILO_X64 = 'x64'
