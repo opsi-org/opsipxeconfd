@@ -8,12 +8,11 @@ The named pipes are empty and will be filled on-the-fly once a read is requested
 ## Usage
 
 opsipxeconfd is usually running as a service.
-For general usage we recommend using the `service` command to manage it.
 
     # Starting the service
-    service opsiconfd start
+    systemctl start opsipxeconfd.service
     # Stopping the service.
-    service opsiconfd stop
+    systemctl stop opsipxeconfd.service
 
 Manual control is also possible.
 
@@ -48,3 +47,4 @@ To update the boot configuration of a client from a specific cache file:
 To stop opsipxeconfd:
 
     opsipxeconfd stop
+
