@@ -489,7 +489,8 @@ class Opsipxeconfd(threading.Thread):
 
 			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
 
-	def _readCachedData(self, cacheFile):
+	@staticmethod
+	def _readCachedData(cacheFile):
 		if not cacheFile:
 			return {}
 		elif not os.path.exists(cacheFile):
