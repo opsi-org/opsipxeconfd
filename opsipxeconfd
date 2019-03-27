@@ -683,7 +683,7 @@ class StartupTask(threading.Thread):
 
 
 class PXEConfigWriter(threading.Thread):
-	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback=None, backendinfo={}):
+	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback=None, backendinfo=None):
 		threading.Thread.__init__(self)
 		self.templatefile = templatefile
 		self.append = append
@@ -698,7 +698,7 @@ class PXEConfigWriter(threading.Thread):
 		self.uefi = False
 		self._running = False
 
-		if backendinfo:
+		if backendinfo:  # expect this to be a dict
 			modules = backendinfo['modules']
 			helpermodules = backendinfo['realmodules']
 			hostCount = backendinfo['hostCount']
