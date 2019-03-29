@@ -749,7 +749,7 @@ class PXEConfigWriter(threading.Thread):
 		try:
 			del self.append['pckey']
 		except KeyError:
-			pass  # My be non-existing
+			pass  # Key may be non-existing
 
 		if os.path.exists(self.pxefile):
 			os.unlink(self.pxefile)
