@@ -792,19 +792,19 @@ class PXEConfigWriter(threading.Thread):
 				else:
 					content = '%s  append %s\n' % (content, ' '.join(appendLineProperties))
 			elif line.lstrip().startswith(u'linux'):
-			    logger.notice("UEFI GRUB configuration detected for {}", self.hostId)
-			    self.uefi = True
-			    appendLineProperties = line.lstrip().split()[1:]
-			    for key, value in self.append.items():
-			        if value:
-			            appendLineProperties.append("%s=%s" % (key, value))
-			        else:
-			            appendLineProperties.append(str(key))
+				logger.notice("UEFI GRUB configuration detected for {}", self.hostId)
+				self.uefi = True
+				appendLineProperties = line.lstrip().split()[1:]
+				for key, value in self.append.items():
+					if value:
+						appendLineProperties.append("%s=%s" % (key, value))
+					else:
+						appendLineProperties.append(str(key))
 
-			    if self._uefiModule and self.uefi:
-			        content = '%slinux %s\n' % (content, ' '.join(appendLineProperties))
-			    elif not self._uefiModule and self.uefi:
-			        raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
+				if self._uefiModule and self.uefi:
+					content = '%slinux %s\n' % (content, ' '.join(appendLineProperties))
+				elif not self._uefiModule and self.uefi:
+					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
 			else:
 				content = "%s%s\n" % (content, line)
 
