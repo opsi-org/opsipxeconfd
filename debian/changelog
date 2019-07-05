@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.14-2) stable; urgency=medium
+
+  * deb: Remove adjustment for Univention Corporate Client (UCC) tftp root.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 05 Jul 2019 14:47:03 +0200
+
 opsipxeconfd (4.1.1.14-1) stable; urgency=medium
 
   * Make print Python 3 compatible.
