@@ -16,9 +16,6 @@ case "$1" in
 			$systemctl daemon-reload || echo "Reloading unit-files failed!"
 			$systemctl enable opsipxeconfd.service && echo "Enabled opsipxeconfd.service" || echo "Enabling opsipxeconfd.service failed!"
 		fi
-		if which ucr >/dev/null 2>/dev/null; then
-			sed -i 's_/tftpboot/linux_/var/lib/univention-client-boot_g' /etc/opsi/opsipxeconfd.conf
-		fi
 	;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)
