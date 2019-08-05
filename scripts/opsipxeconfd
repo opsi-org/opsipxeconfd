@@ -828,7 +828,8 @@ class PXEConfigWriter(threading.Thread):
 		if pipeOpenend:
 			logger.notice(u"Pipe {0!r} opened, piping pxe boot configuration", self.pxefile)
 			os.write(self._pipe, self.content)
-			time.sleep(5)
+			if self._secureBootModule:
+				time.sleep(5)
 			os.close(self._pipe)
 
 		if os.path.exists(self.pxefile):
