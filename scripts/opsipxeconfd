@@ -697,6 +697,7 @@ class PXEConfigWriter(threading.Thread):
 		self.uefi = False
 		self._uefiModule = False
 		self._secureBootModule = False
+		self._usingGrub = False
 
 		if backendinfo:
 			modules = backendinfo['modules']
@@ -800,6 +801,7 @@ class PXEConfigWriter(threading.Thread):
 					raise Exception(u"You have not licensed the secureboot module, please check your modules or contact info@uib.de")
 
 				self.uefi = True
+				self._usingGrub = True
 				appendLineProperties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
@@ -828,7 +830,7 @@ class PXEConfigWriter(threading.Thread):
 		if pipeOpenend:
 			logger.notice(u"Pipe {0!r} opened, piping pxe boot configuration", self.pxefile)
 			os.write(self._pipe, self.content)
-			if self._secureBootModule:
+			if self.uefi and self._usingGrub:
 				time.sleep(5)
 			os.close(self._pipe)
 
