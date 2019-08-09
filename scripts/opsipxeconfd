@@ -690,12 +690,14 @@ class PXEConfigWriter(threading.Thread):
 		self.hostId = hostId
 		self.productOnClients = productOnClients
 		self.pxefile = pxefile
-		self.startTime = time.time()
 		self._callback = callback
-		self._pipe = None
-		self._uefiModule = False
-		self.uefi = False
+		self.startTime = time.time()
 		self._running = False
+		self._pipe = None
+		self.uefi = False
+		self._uefiModule = False
+		self._secureBootModule = False
+		self._usingGrub = False
 
 		if backendinfo:
 			modules = backendinfo['modules']
@@ -731,9 +733,11 @@ class PXEConfigWriter(threading.Thread):
 				if not bool(publicKey.verify(md5(data).digest(), [long(modules['signature'])])):
 					logger.error(u"Failed to verify modules signature")
 					return
-				else:
-					if modules.get('uefi'):
-						self._uefiModule = True
+
+				if modules.get('uefi'):
+					self._uefiModule = True
+				if modules.get('secureboot'):
+					self._secureBootModule = True
 
 		logger.info(u"PXEConfigWriter initializing: templatefile {0!r}, pxefile {1!r}, hostId {2!r}, append {3}",
 					self.templatefile, self.pxefile, self.hostId, self.append)
@@ -749,7 +753,7 @@ class PXEConfigWriter(threading.Thread):
 		try:
 			del self.append['pckey']
 		except KeyError:
-			pass  # My be non-existing
+			pass  # Key may be non-existing
 
 		if os.path.exists(self.pxefile):
 			os.unlink(self.pxefile)
@@ -791,6 +795,21 @@ class PXEConfigWriter(threading.Thread):
 					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
 				else:
 					content = '%s  append %s\n' % (content, ' '.join(appendLineProperties))
+			elif line.lstrip().startswith(u'linux'):
+				logger.notice("UEFI GRUB configuration detected for {}", self.hostId)
+				if not self._secureBootModule:
+					raise Exception(u"You have not licensed the secureboot module, please check your modules or contact info@uib.de")
+
+				self.uefi = True
+				self._usingGrub = True
+				appendLineProperties = line.lstrip().split()[1:]
+				for key, value in self.append.items():
+					if value:
+						appendLineProperties.append("%s=%s" % (key, value))
+					else:
+						appendLineProperties.append(str(key))
+
+				content = '%slinux %s\n' % (content, ' '.join(appendLineProperties))
 			else:
 				content = "%s%s\n" % (content, line)
 
@@ -811,6 +830,8 @@ class PXEConfigWriter(threading.Thread):
 		if pipeOpenend:
 			logger.notice(u"Pipe {0!r} opened, piping pxe boot configuration", self.pxefile)
 			os.write(self._pipe, self.content)
+			if self.uefi and self._usingGrub:
+				time.sleep(5)
 			os.close(self._pipe)
 
 		if os.path.exists(self.pxefile):
