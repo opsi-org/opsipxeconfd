@@ -15,7 +15,7 @@ Section: opsi
 Architecture: all
 Depends: opsi-tftpd,
 	python3 (>= 3.5.3),
-	python3-opsi (>= 4.2),
+	python3-opsi (>= 4.2.0.12),
 	systemd,
 	${misc:Depends},
 	${python:Depends}
