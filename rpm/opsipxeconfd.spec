@@ -7,8 +7,13 @@
 #
 
 Name:           opsipxeconfd
-BuildRequires:  python-devel python-setuptools systemd
-Requires:       opsi-tftpd python-opsi >= 4.1.1.23 opsi-linux-bootimage systemd
+BuildRequires:  python-devel
+BuildRequires:  python-setuptools
+BuildRequires:  systemd
+Requires:       opsi-tftpd
+Requires:       opsi-linux-bootimage
+Requires:       python-opsi >= 4.1.1.76
+Requires:       systemd
 %{?systemd_requires}
 BuildArch:      noarch
 Url:            http://www.opsi.org
@@ -23,7 +28,9 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1315
 # SLES
-BuildRequires: python-opsi >= 4.1 zypper logrotate
+BuildRequires: logrotate
+BuildRequires: python-opsi >= 4.1
+BuildRequires: zypper
 %endif
 
 %if 0%{?suse_version}
