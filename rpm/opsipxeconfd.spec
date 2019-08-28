@@ -12,7 +12,7 @@ BuildRequires:  python3-setuptools
 BuildRequires:  systemd
 Requires:       opsi-tftpd
 Requires:       python3 >= 3.5.3
-Requires:       python3-opsi >= 4.2
+Requires:       python3-opsi >= 4.2.0.12
 Requires:       systemd
 %{?systemd_requires}
 BuildArch:      noarch
