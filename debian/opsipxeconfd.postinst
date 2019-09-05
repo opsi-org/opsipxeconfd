@@ -16,6 +16,8 @@ case "$1" in
 			$systemctl daemon-reload || echo "Reloading unit-files failed!"
 			$systemctl enable opsipxeconfd.service && echo "Enabled opsipxeconfd.service" || echo "Enabling opsipxeconfd.service failed!"
 		fi
+		# replacing univention-clientboot-directory with debian/ubutnu default tftp directory
+		sed -i 's_/var/lib/univention-client-boot/_/tftpboot/linux/_g' /etc/opsi/opsipxeconfd.conf
 	;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)
