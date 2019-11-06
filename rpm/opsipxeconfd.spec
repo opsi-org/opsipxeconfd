@@ -7,8 +7,6 @@
 #
 
 Name:           opsipxeconfd
-BuildRequires:  python-devel
-BuildRequires:  python-setuptools
 BuildRequires:  systemd
 Requires:       opsi-tftpd
 Requires:       opsi-linux-bootimage
@@ -21,9 +19,9 @@ License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
 Version:        4.1.1.17
-Release:        1
+Release:        2
 Summary:        This is the opsi pxe configuration daemon
-Source:         opsipxeconfd_4.1.1.17-1.tar.gz
+Source:         opsipxeconfd_4.1.1.17-2.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1315
@@ -31,6 +29,14 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildRequires: logrotate
 BuildRequires: python-opsi >= 4.1
 BuildRequires: zypper
+%endif
+
+%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
+BuildRequires:  python3-devel
+BuildRequires:  python3-setuptools
+%else
+BuildRequires:  python-devel
+BuildRequires:  python-setuptools
 %endif
 
 %if 0%{?suse_version}
