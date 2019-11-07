@@ -1,0 +1,25 @@
+image: ubuntu:latest
+
+stages:
+  - package
+
+package for OBS:
+  stage: package
+  before_script:
+    - apt update
+    - apt install -y devscripts debhelper dh-systemd dh-python python python-setuptools
+  script:
+    - ./create_source.sh
+    - test -f opsipxeconfd_*.dsc
+    - test -f opsipxeconfd_*.tar.gz
+    - test -f opsipxeconfd.spec
+  artifacts:
+    paths:
+      - opsipxeconfd_*.dsc
+      - opsipxeconfd_*.tar.gz
+      - opsipxeconfd.spec
+    expire_in: 2 days
+  only:
+      - /^release/.*$/i
+      - tags
+      - web
