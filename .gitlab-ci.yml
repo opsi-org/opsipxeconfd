@@ -19,4 +19,7 @@ package for OBS:
       - opsipxeconfd_*.tar.gz
       - opsipxeconfd.spec
     expire_in: 2 days
-
+  only:
+      - /^release/.*$/i
+      - tags
+      - web
