@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.17-4) testing; urgency=medium
+
+  * using python2 packages on CentOS/RHEL 8
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 07 Nov 2019 10:32:09 +0100
+
 opsipxeconfd (4.1.1.17-3) testing; urgency=medium
 
   * rpm: installing python36-devel on centos 8 / rhel 8

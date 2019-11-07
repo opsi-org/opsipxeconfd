@@ -19,9 +19,9 @@ License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
 Version:        4.1.1.17
-Release:        3
+Release:        4
 Summary:        This is the opsi pxe configuration daemon
-Source:         opsipxeconfd_4.1.1.17-3.tar.gz
+Source:         opsipxeconfd_4.1.1.17-4.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1315
@@ -32,8 +32,8 @@ BuildRequires: zypper
 %endif
 
 %if 0%{?rhel_version} >= 800 || 0%{?centos_version} >= 800
-BuildRequires:  python36-devel
-BuildRequires:  python3-setuptools
+BuildRequires:  python2-devel
+BuildRequires:  python2-setuptools
 %else
 BuildRequires:  python-devel
 BuildRequires:  python-setuptools
