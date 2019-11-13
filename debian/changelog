@@ -1,3 +1,9 @@
+opsipxeconfd (4.2.0.6-1) stable; urgency=medium
+
+  * Fix a problem with signature checking.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Wed, 13 Nov 2019 17:25:36 +0100
+
 opsipxeconfd (4.2.0.5-1) stable; urgency=medium
 
   * Fix a problem with parsing the modules.
