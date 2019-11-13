@@ -727,7 +727,8 @@ class PXEConfigWriter(threading.Thread):
 						if val is True:
 							val = 'yes'
 					data += u'%s = %s\r\n' % (module.lower().strip(), val)
-				if not bool(publicKey.verify(md5(data).digest(), [long(modules['signature'])])):
+
+				if not bool(publicKey.verify(md5(data.encode()).digest(), [int(modules['signature'])])):
 					logger.error(u"Failed to verify modules signature")
 					return
 				else:
