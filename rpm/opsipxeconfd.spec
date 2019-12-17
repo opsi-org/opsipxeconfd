@@ -32,8 +32,8 @@ BuildRequires: zypper
 %endif
 
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
-BuildRequires:  python3-devel
-BuildRequires:  python3-setuptools
+BuildRequires:  python2-devel
+BuildRequires:  python2-setuptools
 %else
 BuildRequires:  python-devel
 BuildRequires:  python-setuptools

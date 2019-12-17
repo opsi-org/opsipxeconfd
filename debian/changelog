@@ -1,6 +1,6 @@
 opsipxeconfd (4.1.1.17-2) testing; urgency=medium
 
-  * rpm: using python3-devel / python3-setuptools on CentOS 8 / RHEL 8
+  * rpm: using python2-devel / python2-setuptools on CentOS 8 / RHEL 8
 
  -- Mathias Radtke <m.radtke@uib.de>  Wed, 06 Nov 2019 14:38:21 +0100
 
