@@ -1,3 +1,10 @@
+opsipxeconfd (4.1.1.18-1) testing; urgency=medium
+
+  * opsipxeconfd: removed secureboot module check when using grub uefi netboot
+    remplate
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 26 Mar 2020 18:52:03 +0100
+
 opsipxeconfd (4.1.1.17-1) testing; urgency=medium
 
   * postinst: UCS replacing /var/lib/univention-client-boot with /tftpboot/linux 

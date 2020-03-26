@@ -796,8 +796,8 @@ class PXEConfigWriter(threading.Thread):
 					content = '%s  append %s\n' % (content, ' '.join(appendLineProperties))
 			elif line.lstrip().startswith(u'linux'):
 				logger.notice("UEFI GRUB configuration detected for {}", self.hostId)
-				if not self._secureBootModule:
-					raise Exception(u"You have not licensed the secureboot module, please check your modules or contact info@uib.de")
+				if not self._uefiModule and self.uefi:
+					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
 
 				self.uefi = True
 				self._usingGrub = True
