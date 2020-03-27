@@ -1,3 +1,15 @@
+opsipxeconfd (4.1.1.17-6) testing; urgency=medium
+
+  * spec: using python2 on install steps
+
+ -- Mathias Radtke <m.radtke@uib.de>  Tue, 17 Dec 2019 16:38:23 +0100
+
+opsipxeconfd (4.1.1.17-5) testing; urgency=medium
+
+  * spec: using python2
+
+ -- Mathias Radtke <m.radtke@uib.de>  Tue, 17 Dec 2019 16:09:02 +0100
+
 opsipxeconfd (4.1.1.17-4) testing; urgency=medium
 
   * using python2 packages on CentOS/RHEL 8

@@ -19,9 +19,9 @@ License:        AGPL-3.0+
 Group:          Productivity/Networking/Opsi
 AutoReqProv:    on
 Version:        4.1.1.17
-Release:        4
+Release:        6
 Summary:        This is the opsi pxe configuration daemon
-Source:         opsipxeconfd_4.1.1.17-4.tar.gz
+Source:         opsipxeconfd_4.1.1.17-6.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?sles_version} || 0%{?suse_version} == 1315
@@ -71,7 +71,7 @@ export CFLAGS="$RPM_OPT_FLAGS"
 # Fix for https://bugzilla.redhat.com/show_bug.cgi?id=1117878
 export PATH="/usr/bin:$PATH"
 %endif
-python setup.py build
+python2 setup.py build
 
 # ===[ pre ]========================================
 %pre
@@ -83,9 +83,9 @@ python setup.py build
 %install
 
 %if 0%{?suse_version}
-python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
+python2 setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record-rpm=INSTALLED_FILES
 %else
-python setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
+python2 setup.py install --prefix=%{_prefix} --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 %endif
 mkdir -p $RPM_BUILD_ROOT/var/log/opsi
 
