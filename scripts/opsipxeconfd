@@ -522,7 +522,7 @@ class Opsipxeconfd(threading.Thread):
 		:rtype: str
 		:returns: The absolute path to the template that should be used for the client.
 		"""
-		if elilo is None:
+		if elilo is (None or ''):
 			elilo = self._detectEliloMode(hostId)
 
 		pxeConfigTemplate = None
@@ -585,7 +585,7 @@ class Opsipxeconfd(threading.Thread):
 		configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename", objectId=hostId)
 		if configStates:
 			val = configStates[0].getValues()
-			if val and 'elilo' in val[0]:
+			if val and (('elilo' in val[0]) or ('shimx64' in val[0])):
 				if 'x86' in val[0]:
 					eliloMode = ELILO_X86
 				else:
