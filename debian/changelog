@@ -1,3 +1,10 @@
+opsipxeconfd (4.1.1.19-1) testing; urgency=medium
+
+  * opsipxeconfd: made it compatible with new clientconfig.dhcpd.filename
+    setting in configed 4.1.9.1.0
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 01 Apr 2020 16:20:01 +0200
+
 opsipxeconfd (4.1.1.18-1) testing; urgency=medium
 
   * opsipxeconfd: removed secureboot module check when using grub uefi netboot
