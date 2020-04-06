@@ -522,7 +522,7 @@ class Opsipxeconfd(threading.Thread):
 		:rtype: str
 		:returns: The absolute path to the template that should be used for the client.
 		"""
-		if elilo is (None or ''):
+		if elilo is None:
 			elilo = self._detectEliloMode(hostId)
 
 		pxeConfigTemplate = None

@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.19-2) testing; urgency=medium
+
+  * opsipxeconfd: removed check for empty value when checking eliloMode config
+
+ -- Mathias Radtke <m.radtke@uib.de>  Mon, 06 Apr 2020 18:11:36 +0200
+
 opsipxeconfd (4.1.1.19-1) testing; urgency=medium
 
   * opsipxeconfd: made it compatible with new clientconfig.dhcpd.filename
