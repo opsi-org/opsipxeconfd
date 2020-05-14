@@ -1,3 +1,53 @@
+opsipxeconfd (4.1.1.19-2) testing; urgency=medium
+
+  * opsipxeconfd: removed check for empty value when checking eliloMode config
+
+ -- Mathias Radtke <m.radtke@uib.de>  Mon, 06 Apr 2020 18:11:36 +0200
+
+opsipxeconfd (4.1.1.19-1) testing; urgency=medium
+
+  * opsipxeconfd: made it compatible with new clientconfig.dhcpd.filename
+    setting in configed 4.1.9.1.0
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 01 Apr 2020 16:20:01 +0200
+
+opsipxeconfd (4.1.1.18-1) testing; urgency=medium
+
+  * opsipxeconfd: removed secureboot module check when using grub uefi netboot
+    template
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 26 Mar 2020 18:52:03 +0100
+
+opsipxeconfd (4.1.1.17-6) testing; urgency=medium
+
+  * spec: using python2 on install steps
+
+ -- Mathias Radtke <m.radtke@uib.de>  Tue, 17 Dec 2019 16:38:23 +0100
+
+opsipxeconfd (4.1.1.17-5) testing; urgency=medium
+
+  * spec: using python2
+
+ -- Mathias Radtke <m.radtke@uib.de>  Tue, 17 Dec 2019 16:09:02 +0100
+
+opsipxeconfd (4.1.1.17-4) testing; urgency=medium
+
+  * using python2 packages on CentOS/RHEL 8
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 07 Nov 2019 10:32:09 +0100
+
+opsipxeconfd (4.1.1.17-3) testing; urgency=medium
+
+  * rpm: installing python36-devel on centos 8 / rhel 8
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 07 Nov 2019 10:11:32 +0100
+
+opsipxeconfd (4.1.1.17-2) testing; urgency=medium
+
+  * rpm: using python3-devel / python3-setuptools on CentOS 8 / RHEL 8
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 06 Nov 2019 14:38:21 +0100
+
 opsipxeconfd (4.1.1.17-1) testing; urgency=medium
 
   * postinst: UCS replacing /var/lib/univention-client-boot with /tftpboot/linux 
