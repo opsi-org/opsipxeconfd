@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "opsipxeconfd"
+version = "4.2.0"
+description = "opsi pxe configuration service"
+homepage = "https://www.opsi.org"
+maintainers = ["uib GmbH <info@uib.de>"]
+authors = ["uib GmbH <info@uib.de>"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+python-opsi = {path = "python-opsi"}
+#python-opsi = "^4.2.0"
+setuptools = "^46.4.0"
+
+[tool.poetry.dev-dependencies]
+pyinstaller = "^3.6"
+#opsi-dev-tools = "^1.0.4"
+
+[tool.poetry.scripts]
+opsipxeconfd = "pyopsipxeconfd.__main__:main"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

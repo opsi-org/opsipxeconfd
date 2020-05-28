@@ -1187,7 +1187,8 @@ def temporaryPidFile(filepath):
 			logger.error(u"Failed to remove pid file {0!r}: {1}", pidFile, error)
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
+def main()
 	logger.setConsoleLevel(LOG_WARNING)
 
 	try:
