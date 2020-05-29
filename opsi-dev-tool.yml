@@ -1,0 +1,48 @@
+project:
+  name: opsipxeconfd
+  version: 4.2.0
+  description: Opsi PXE Configuration Service
+  homepage: http://www.opsi.org
+  licenses: 
+      - license:  AGPL-3.0
+
+pyinstaller-poetry:
+  update_version_in:
+    - opsipxeconfd/__init__.py
+  one_file: no
+  scripts:
+    - script: run-opsipxeconfd
+      binaries:
+        - opsipxeconfd
+  data_files:
+    - src: opsipxeconfd_data/**/*
+      dst: opsipxeconfd_data
+  dirname: opsipxeconfd
+
+package:
+  name: opsipxeconfd
+  architecture: amd64
+  type: binary
+  systemd: yes
+  debpendencies: []
+  source_script:
+    - pyi_src="${SRC}"
+    - if [ -e "${SRC}/dist/opsipxeconfd/opsipxeconfd" ]; then pyi_src="${SRC}/dist"; fi
+    - mkdir -p ${DST}/rootfs/etc/opsi
+    - mkdir -p ${DST}/rootfs/usr/bin
+    - mkdir -p ${DST}/rootfs/usr/lib
+    - mkdir -p ${DST}/rootfs/var/log/opsi/opsipxeconfd
+    - mkdir -p ${DST}/systemd_units
+    - cp -a ${pyi_src}/opsipxeconfd ${DST}/rootfs/usr/lib/
+    - echo "#!/bin/sh"               > ${DST}/rootfs/usr/bin/opsipxeconfd
+    - echo "cd /usr/lib/opsipxeconfd"  >> ${DST}/rootfs/usr/bin/opsipxeconfd
+    - echo "exec ./opsipxeconfd \$@"   >> ${DST}/rootfs/usr/bin/opsipxeconfd
+    #- cp ${SRC}/dist/opsipxeconfd/opsipxeconfd ${DST}/rootfs/usr/bin
+    - chmod 755 ${DST}/rootfs/usr/bin/opsipxeconfd
+    - mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
+    - mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
+    - rm -r ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data
+  
+changelog:
+  next:
+    - poetry
