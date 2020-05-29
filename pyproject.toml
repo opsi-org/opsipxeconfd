@@ -5,6 +5,10 @@ description = "opsi pxe configuration service"
 homepage = "https://www.opsi.org"
 maintainers = ["uib GmbH <info@uib.de>"]
 authors = ["uib GmbH <info@uib.de>"]
+include = [
+    "run-opsipxeconfd",
+    "opsipxeconfd_data/**/*"
+]
 
 [[tool.poetry.source]]
 name = "uibpypi"
@@ -15,7 +19,6 @@ url = "http://pypi.uib.gmbh:8080/simple"
 python = "^3.6"
 #python-opsi = {path = "python-opsi"}
 python-opsi = "^4.2"
-setuptools = "^46.4.0"
 
 [tool.poetry.dev-dependencies]
 pyinstaller = "^3.6"
