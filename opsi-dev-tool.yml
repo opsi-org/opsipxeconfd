@@ -10,6 +10,9 @@ pyinstaller-poetry:
   update_version_in:
     - opsipxeconfd/__init__.py
   one_file: no
+  hidden_imports:
+    all:
+      - OPSI.Backend.DHCPD
   scripts:
     - script: run-opsipxeconfd
       binaries:
