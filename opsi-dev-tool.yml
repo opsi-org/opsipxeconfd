@@ -46,9 +46,9 @@ package:
     - mkdir -p ${DST}/rootfs/var/log/opsi/opsipxeconfd
     - mkdir -p ${DST}/systemd_units
     - cp -a ${pyi_src}/opsipxeconfd ${DST}/rootfs/usr/lib/
-    - echo "#!/bin/sh"               > ${DST}/rootfs/usr/bin/opsipxeconfd
-    - echo "cd /usr/lib/opsipxeconfd"  >> ${DST}/rootfs/usr/bin/opsipxeconfd
-    - echo "exec ./opsipxeconfd \$@"   >> ${DST}/rootfs/usr/bin/opsipxeconfd
+    - echo "#!/bin/sh"                    > ${DST}/rootfs/usr/bin/opsipxeconfd
+    - echo "cd /usr/lib/opsipxeconfd"    >> ${DST}/rootfs/usr/bin/opsipxeconfd
+    - echo "exec ./opsipxeconfd \"\$@\"" >> ${DST}/rootfs/usr/bin/opsipxeconfd
     #- cp ${SRC}/dist/opsipxeconfd/opsipxeconfd ${DST}/rootfs/usr/bin
     - chmod 755 ${DST}/rootfs/usr/bin/opsipxeconfd
     - mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
