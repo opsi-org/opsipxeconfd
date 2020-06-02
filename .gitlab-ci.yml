@@ -1,31 +1,32 @@
-image: ubuntu:latest
+image: python:3.7-stretch
 
 stages:
+  - build
   - package
 
-package for OBS:
-  stage: package
-  before_script:
-    - export DEBIAN_FRONTEND noninteractive
-    - export DEBCONF_NONINTERACTIVE_SEEN true
-    - echo "tzdata tzdata/Areas select Europe" > /tmp/preseed.txt
-    - echo "tzdata tzdata/Zones/Europe select Berlin" >> /tmp/preseed.txt
-    - debconf-set-selections /tmp/preseed.txt
-    - apt update
-    - apt install -y tzdata
-    - apt install -y devscripts debhelper dh-systemd dh-python python python-setuptools
+before_script:
+  - apt update
+  - apt install -y curl debhelper osc
+  - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+  - pip3 install --trusted-host pypi.uib.gmbh --index-url http://pypi.uib.gmbh:8080/simple opsi-dev-tools
+  - source $HOME/.poetry/env
+
+build:linux-pyinstaller:
+  stage: build
   script:
-    - ./create_source.sh
-    - test -f opsipxeconfd_*.dsc
-    - test -f opsipxeconfd_*.tar.gz
-    - test -f opsipxeconfd.spec
+    - poetry install
+    - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
+    - mv opsipxeconfd opsipxeconfd.src
+    - mv dist/opsipxeconfd .
   artifacts:
+    name: 'opsipxeconfd-linux-pyinstaller'
     paths:
-      - opsipxeconfd_*.dsc
-      - opsipxeconfd_*.tar.gz
-      - opsipxeconfd.spec
-    expire_in: 2 days
-  only:
-      - /^release/.*$/i
-      - tags
-      - web
+      - opsipxeconfd
+    expire_in: 2 day
+
+package:obs:
+  stage: package
+  script:
+    - opsi-dev-tool -l info --obs-update-package https://obs.uib.local home:uibmz:opsi:4.2:experimental
+
+
