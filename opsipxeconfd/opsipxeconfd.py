@@ -1002,7 +1002,9 @@ class OpsipxeconfdInit(object):
 			'logLevel_stderr': LOG_NOTICE,
 			'logLevel_file': LOG_NOTICE,
 			'logFile': u'/var/log/opsi/opsipxeconfd.log',
-			'logFormat': u'[%l] [%D] %M (%F|%N)',
+			'maxBytesLog': 6000,
+			'backupCountLog': 5,
+			'logFormat': '%(log_color)s%(levelname)-8s%(reset)s %(message_log_color)s%(message)s',
 			'port': u'/var/run/opsipxeconfd/opsipxeconfd.socket',
 			'pxeDir': u'/tftpboot/linux/pxelinux.cfg',
 			'pxeConfTemplate': u'/tftpboot/linux/pxelinux.cfg/install',
@@ -1023,9 +1025,9 @@ class OpsipxeconfdInit(object):
 
 	def signalHandler(self, signo, stackFrame):
 		for thread in threading.enumerate():
-			logger.debug(u"Running thread before signal: {0}", thread)
+			logger.debug(u"Running thread before signal: %s", thread)
 
-		logger.debug(u"Processing signal {0!r}", signo)
+		logger.debug(u"Processing signal %r", signo)
 		if signo == SIGHUP:
 			self.setDefaultConfig()
 			self.readConfigFile()
@@ -1117,7 +1119,7 @@ class OpsipxeconfdInit(object):
 				# Parent exits
 				sys.exit(0)
 		except OSError as error:
-			raise Exception(u"First fork failed: %e" % error)
+			raise Exception("First fork failed: %e", error)
 
 		# Do not hinder umounts
 		os.chdir("/")
@@ -1130,7 +1132,7 @@ class OpsipxeconfdInit(object):
 			if self._pid > 0:
 				sys.exit(0)
 		except OSError as error:
-			raise Exception(u"Second fork failed: %e" % error)
+			raise Exception("Second fork failed: %e", error)
 
 		logger.setLevel(LOG_NONE)
 
@@ -1161,7 +1163,7 @@ def temporaryPidFile(filepath):
 	'''
 	pidFile = filepath
 
-	logger.debug("Reading old pidFile {0!r}...", pidFile)
+	logger.debug("Reading old pidFile %r...", pidFile)
 	try:
 		with open(pidFile, 'r') as pf:
 			oldPid = pf.readline().strip()
@@ -1178,12 +1180,12 @@ def temporaryPidFile(filepath):
 				logger.error(error)
 
 			if running:
-				raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % oldPid)
+				raise Exception("Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile.", oldPid)
 	except IOError as ioerr:
 		if ioerr.errno != 2:  # errno 2 == no such file
 			raise ioerr
 
-	logger.info(u"Creating pid file {0!r}", pidFile)
+	logger.info(u"Creating pid file %r", pidFile)
 	pid = os.getpid()
 	with open(pidFile, "w") as pf:
 		pf.write(str(pid))
@@ -1192,14 +1194,14 @@ def temporaryPidFile(filepath):
 		yield
 	finally:
 		try:
-			logger.debug(u"Removing pid file {0!r}...")
+			logger.debug("Removing pid file %r...")
 			os.unlink(pidFile)
-			logger.info(u"Removed pid file {0!r}", pidFile)
+			logger.info("Removed pid file %r", pidFile)
 		except OSError as oserr:
 			if oserr.errno != 2:
-				logger.error(u"Failed to remove pid file {0!r}: {1}", pidFile, oserr)
+				logger.error("Failed to remove pid file %r: %s", pidFile, oserr)
 		except Exception as error:
-			logger.error(u"Failed to remove pid file {0!r}: {1}", pidFile, error)
+			logger.error("Failed to remove pid file %r: %s", pidFile, error)
 
 
 # if __name__ == "__main__":
@@ -1212,5 +1214,5 @@ def main():
 		pass
 	except Exception as exception:
 		logger.logException(exception)
-		print(u"ERROR: %s" % exception, file=sys.stderr)
+		print(u"ERROR: %s", exception, file=sys.stderr)
 		sys.exit(1)

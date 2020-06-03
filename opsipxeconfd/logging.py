@@ -196,8 +196,7 @@ class SecretFormatter(object):
 		return getattr(self.orig_formatter, attr)
 
 def init_logging(config):
-	try:
-	
+	try:	
 		logger.notice(config)
 
 		if config["logLevel_stderr"] and config["logLevel_file"]:
@@ -206,21 +205,21 @@ def init_logging(config):
 			logLevel = (10 - logLevel) * 10
 		else:
 			logLevel = config.get("logLevel")
-		
-		# if config['logFormat']:
-		# 	log_formatter = colorlog.ColoredFormatter(
-		# 			config["logFormat"], 
-		# 			log_colors=LOG_COLORS
-		# 	)
-		# else:
-		log_formatter = colorlog.ColoredFormatter(
-			'[%(log_color)s%(levelname)-9s %(asctime)s]%(reset)s %(message)s',
-			log_colors=LOG_COLORS
-		)
+
+		if config["logFormat"]:
+			log_formatter = colorlog.ColoredFormatter(
+				config["logFormat"],
+				log_colors=LOG_COLORS
+			)
+		else:
+			log_formatter = colorlog.ColoredFormatter(
+				"[%(log_color)s%(levelname)-9s %(asctime)s]%(reset)s %(message)s",
+				log_colors=LOG_COLORS
+			)
 		
 		if config['logFile']:
 			logger.setLogFile(config['logFile'])
-			file_handler = RotatingFileHandler(config['logFile'], maxBytes=20000,backupCount=5)
+			file_handler = RotatingFileHandler(config['logFile'], maxBytes=config['maxBytesLog'],backupCount=config['backupCountLog'])
 			file_handler.setFormatter(log_formatter)
 			file_handler.setLevel(config.get("logLevel_file"))
 			logger.addHandler(file_handler)
@@ -242,6 +241,7 @@ def init_logging(config):
 
 		logger.notice(logger.handlers)
 		logger.notice(logLevel)
+		logger.notice(config["logFormat"])
 		
 		"""
 		logger.secret("SECRET")
