@@ -1065,6 +1065,14 @@ class OpsipxeconfdInit(object):
 					self.config['pidFile'] = forceFilename(value)
 				elif option == 'log level':
 					self.config['logLevel'] = forceInt(value)
+				elif option == 'log level stderr':
+					self.config['logLevel_stderr'] = forceInt(value)
+				elif option == 'log level file':
+					self.config['logLevel_file'] = forceInt(value)
+				elif option == 'max byte log':
+					self.config['maxBytesLog'] = forceInt(value)
+				elif option == 'backup count log':
+					self.config['backupCountLog'] = forceInt(value)
 				elif option == 'log file':
 					self.config['logFile'] = forceFilename(value)
 				elif option == 'log format':
