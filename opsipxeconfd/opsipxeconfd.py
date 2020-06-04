@@ -62,7 +62,7 @@ from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
 	forceUnicodeList)
 
-__version__ = '4.2.0.6'
+from . import __version__
 
 ELILO_X86 = 'x86'
 ELILO_X64 = 'x64'
@@ -88,10 +88,7 @@ class Opsipxeconfd(threading.Thread):
 
 		# hier init logging?
 		# init_logging(self.config)
-		logger.comment("""\
-\n==================================================================
-=           opsi pxe configuration service starting              =
-==================================================================""")
+		logger.comment("opsi pxe configuration service starting")
 
 	def setConfig(self, config):
 		logger.notice(u"Got new config")
@@ -913,7 +910,7 @@ class ClientConnection(threading.Thread):
 
 class OpsipxeconfdInit(object):
 	def __init__(self):
-		logger.setLevel((10 - LOG_WARNING) * 10)
+		logger.setLevel(logging.LOG_WARNING)
 		logger.debug(u"OpsiPXEConfdInit")
 		# Set umask
 		os.umask(0o077)
@@ -988,7 +985,7 @@ class OpsipxeconfdInit(object):
 			'logFile': u'/var/log/opsi/opsipxeconfd.log',
 			'maxBytesLog': 4000000,
 			'backupCountLog': 5,
-			'logFormat': '[%(levelname)-9s %(asctime)s] %(message)s',
+			'logFormat': '%(log_color)s[%(opsilevel)s] [%(asctime)s.%(msecs)03d]%(reset)s %(message)s   (%(filename)s:%(lineno)d)',
 			'port': u'/var/run/opsipxeconfd/opsipxeconfd.socket',
 			'pxeDir': u'/tftpboot/linux/pxelinux.cfg',
 			'pxeConfTemplate': u'/tftpboot/linux/pxelinux.cfg/install',
