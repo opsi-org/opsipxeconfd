@@ -196,15 +196,8 @@ class SecretFormatter(object):
 		return getattr(self.orig_formatter, attr)
 
 def init_logging(config):
-	try:	
-
-		logger.debug("config: %s", config)
-
+	try:
 		logger.handlers = []
-
-		for handler in logger.handlers:
-			logger.notice(handler)
-			logger.notice(type(handler))
 
 		logLevel = max(config.get("logLevel"), config.get("logLevel_stderr"), config.get("logLevel_file"))
 		logLevel = (10 - logLevel) * 10
@@ -230,18 +223,6 @@ def init_logging(config):
 
 		logger.setLevel(logLevel)		
 		logging.captureWarnings(True)
-
-		# logger.notice(logger.handlers)
-		# logger.notice(logLevel)
-		# logger.notice(config["logFormat"])
-
-		# for handler in logger.handlers:
-		# 	logger.notice(handler)
-		# 	logger.notice(type(handler))
-		# 	if(isinstance(handler, RotatingFileHandler)):
-		# 		logger.warning("FILE")
-		# 	elif(isinstance(handler, StreamHandler)):
-		# 		logger.warning("CONSOLE")
 
 	except Exception as exc:
 		handle_log_exception(exc)
