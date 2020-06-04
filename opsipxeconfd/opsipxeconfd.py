@@ -50,8 +50,6 @@ from signal import SIGHUP, SIGINT, SIGTERM, signal
 from hashlib import md5
 
 from .logging import logger, init_logging
-from logging.handlers import RotatingFileHandler
-from logging import StreamHandler
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
@@ -915,7 +913,7 @@ class ClientConnection(threading.Thread):
 
 class OpsipxeconfdInit(object):
 	def __init__(self):
-		logger.setLevel("WARNING")
+		logger.setLevel((10 - LOG_WARNING) * 10)
 		logger.debug(u"OpsiPXEConfdInit")
 		# Set umask
 		os.umask(0o077)
@@ -1146,7 +1144,7 @@ class OpsipxeconfdInit(object):
 		os.dup2(0, 2)
 		# sys.stdout = logger.getStdout()
 		# sys.stderr = logger.getStderr()
-		logger.addHandler(StreamHandler(sys.stdout))
+	
 
 
 @contextmanager
