@@ -29,15 +29,11 @@ class Singleton(type):
 			cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
 		return cls._instances[cls]
 
-#DEFAULT_FORMAT = '[%(levelname)s] [%(asctime)s] %(message)s (%(filename)s:%(lineno)d)'
-#DEFAULT_FORMAT = '[%(log_color)s%(levelname)-9s %(asctime)s]%(reset)s %(filename)16s:%(lineno)4s   %(message)s'
-#DEFAULT_FORMAT = '[%(log_color)s%(levelname)-9s %(asctime)s]%(reset)s %(message)s'
-#DEFAULT_FORMAT = '[%(log_color)s%(levelname)-9s %(asctime)s]%(reset)s %(client_address)s - %(message)s   (%(filename)s:%(lineno)d)'
-DEFAULT_FORMAT = '[%(log_color)s%(levelname)-9s %(asctime)s]%(reset)s %(client_address)s - %(message)s'
-#DEFAULT_FORMATTER = Formatter(DEFAULT_FORMAT)
+DEFAULT_FORMAT = "%(log_color)s[%(opsilevel)s] [%(asctime)s.%(msecs)03d]%(reset)s %(message)s   (%(filename)s:%(lineno)d)"
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 SECRET_REPLACEMENT_STRING = '***secret***'
 
-#logger = logging.getLogger('opsiconfd')
+#logger = logging.getLogger('opsipxeconfd')
 logger = logging.getLogger()
 #redis_log_handler = None
 
@@ -83,6 +79,32 @@ logging._nameToLevel = {
 	'NONE': logging.NONE
 }
 
+logging._levelToOpsiLevel = {
+	logging.SECRET: 9,
+	logging.TRACE: 8,
+	logging.DEBUG: 7,
+	logging.INFO: 6,
+	logging.NOTICE: 5,
+	logging.WARNING: 4,
+	logging.ERROR: 3,
+	logging.CRITICAL: 2,
+	logging.ESSENTIAL: 1,
+	logging.NONE: 0
+}
+
+logging._opsiLevelToLevel = {
+	9: logging.SECRET,
+	8: logging.TRACE,
+	7: logging.DEBUG,
+	6: logging.INFO,
+	5: logging.NOTICE,
+	4: logging.WARNING,
+	3: logging.ERROR,
+	2: logging.CRITICAL,
+	1: logging.ESSENTIAL,
+	0: logging.NONE
+}
+
 LOG_COLORS = {
 	'SECRET': 'thin_yellow',
 	'TRACE': 'thin_white',
@@ -118,7 +140,15 @@ def essential(self, msg, *args, **kwargs):
 logging.Logger.essential = essential
 logging.Logger.comment = essential
 
-# Set default log level to WARNING early
+def logrecord_init(self, name, level, pathname, lineno, msg, args, exc_info, func=None, sinfo=None, **kwargs):
+	self.__init_orig__(name, level, pathname, lineno, msg, args, exc_info, func=func, sinfo=sinfo, **kwargs)
+	self.opsilevel = logging._levelToOpsiLevel.get(level, level)
+	self.client_address = kwargs.get("client_address", "")
+
+LogRecord.__init_orig__ = LogRecord.__init__
+LogRecord.__init__ = logrecord_init
+
+# Set default log level to ERROR early
 logger.setLevel(logging.ERROR)
 
 # Replace OPSI Logger
@@ -200,21 +230,23 @@ def init_logging(config):
 		logger.handlers = []
 
 		logLevel = max(config.get("logLevel"), config.get("logLevel_stderr"), config.get("logLevel_file"))
-		logLevel = (10 - logLevel) * 10
+		logLevel = logging._opsiLevelToLevel[logLevel]
 		
 		if config['logFile']:
-			formatter = logging.Formatter(config["logFormat"])
+			formatter = logging.Formatter(
+				config["logFormat"].replace("%(log_color)s", "").replace("%(reset)s", ""),
+				datefmt=DATETIME_FORMAT
+			)
 			file_handler = RotatingFileHandler(config['logFile'], maxBytes=config['maxBytesLog'], backupCount=config['backupCountLog'])
 			file_handler.setFormatter(formatter)
 			file_handler.setLevel(config.get("logLevel_file"))
 			logger.addHandler(file_handler)
 
 		if not config['daemon']:
-			colorlog_format = config["logFormat"].replace('%(message)s','')
-			colorlog_format = (f'%(log_color)s{colorlog_format}%(reset)s %(message)s')
 			formatter = colorlog.ColoredFormatter(
-				colorlog_format,
-				log_colors=LOG_COLORS
+				config["logFormat"],
+				log_colors=LOG_COLORS,
+				datefmt=DATETIME_FORMAT
 			)
 			console_handler = StreamHandler(stream=sys.stderr)
 			console_handler.setFormatter(formatter)
