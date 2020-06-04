@@ -88,8 +88,8 @@ class Opsipxeconfd(threading.Thread):
 		self._pxeConfigWriters = []
 		self._startupTask = None
 
-		# self._setOpsiLogging()
-		#  init_logging(self.config)
+		# hier init logging?
+		# init_logging(self.config)
 		logger.comment("""\
 \n==================================================================
 =           opsi pxe configuration service starting              =
@@ -124,20 +124,10 @@ class Opsipxeconfd(threading.Thread):
 
 	def reload(self):
 		logger.notice(u"Reloading opsipxeconfd")
-		# self._setOpsiLogging()
-		# init_logging(self.config)
+		init_logging(self.config)
 		self._createBackendInstance()
 		self._createSocket()
 
-	# def _setOpsiLogging(self):
-	# 	if self.config['logFile']:
-	# 		logger.setLogFile(self.config['logFile'])
-	# 		log_handler = RotatingFileHandler(self.config['logFile'], maxBytes=20000,backupCount=5)
-	# 		logger.addHandler(log_handler)
-	# 	if self.config['logFormat']:
-	# 		logger.setLogFormat(self.config['logFormat'])
-	# 		logger.setLevel(self.config['logLevel'])
-	# 	logger.setLevel(self.config['logLevel'])
 
 	def _createBackendInstance(self):
 		logger.info(u"Creating backend instance")
@@ -160,7 +150,7 @@ class Opsipxeconfd(threading.Thread):
 		try:
 			self._socket.bind(self.config['port'])
 		except Exception as error:
-			raise Exception(u"Failed to bind to socket '%s': %s", (self.config['port'], error))
+			raise Exception(u"Failed to bind to socket '%s': %s" % (self.config['port'], error))
 		self._socket.settimeout(0.1)
 		self._socket.listen(self.config['maxConnections'])
 
@@ -925,10 +915,7 @@ class ClientConnection(threading.Thread):
 
 class OpsipxeconfdInit(object):
 	def __init__(self):
-		# console_handler = StreamHandler(stream=sys.stdout)
-		# console_handler.setLevel("DEBUG")
-		# logger.addHandler(console_handler)
-		logger.setLevel("DEBUG")
+		logger.setLevel("WARNING")
 		logger.debug(u"OpsiPXEConfdInit")
 		# Set umask
 		os.umask(0o077)
@@ -951,7 +938,7 @@ class OpsipxeconfdInit(object):
 			if opt in ("-c", '--conffile'):
 				self.config['configFile'] = forceFilename(arg)
 			elif opt == "-v":
-				print(u"opsipxeconfd version %s" % __version__)
+				print(u"opsipxeconfd version %s", __version__)
 				sys.exit(0)
 		self.readConfigFile()
 		self.setCommandlineConfig()
@@ -971,7 +958,6 @@ class OpsipxeconfdInit(object):
 			if self.config['daemon']:
 				self.daemonize()
 			
-
 			with temporaryPidFile(self.config['pidFile']):
 				self._opsipxeconfd = Opsipxeconfd(self.config)
 				self._opsipxeconfd.start()
@@ -999,12 +985,12 @@ class OpsipxeconfdInit(object):
 			'depotId': forceHostId(getfqdn()),
 			'daemon': True,
 			'logLevel': LOG_NOTICE,
-			'logLevel_stderr': LOG_NOTICE,
+			'logLevel_stderr': LOG_WARNING,
 			'logLevel_file': LOG_NOTICE,
 			'logFile': u'/var/log/opsi/opsipxeconfd.log',
-			'maxBytesLog': 6000,
+			'maxBytesLog': 4000000,
 			'backupCountLog': 5,
-			'logFormat': '%(log_color)s%(levelname)-8s%(reset)s %(message_log_color)s%(message)s',
+			'logFormat': '[%(levelname)-9s %(asctime)s] %(message)s',
 			'port': u'/var/run/opsipxeconfd/opsipxeconfd.socket',
 			'pxeDir': u'/tftpboot/linux/pxelinux.cfg',
 			'pxeConfTemplate': u'/tftpboot/linux/pxelinux.cfg/install',
@@ -1025,9 +1011,9 @@ class OpsipxeconfdInit(object):
 
 	def signalHandler(self, signo, stackFrame):
 		for thread in threading.enumerate():
-			logger.debug(u"Running thread before signal: %s", thread)
+			logger.debug("Running thread before signal: %s", thread)
 
-		logger.debug(u"Processing signal %r", signo)
+		logger.debug("Processing signal %r", signo)
 		if signo == SIGHUP:
 			self.setDefaultConfig()
 			self.readConfigFile()
@@ -1140,9 +1126,9 @@ class OpsipxeconfdInit(object):
 			if self._pid > 0:
 				sys.exit(0)
 		except OSError as error:
-			raise Exception("Second fork failed: %e", error)
+			raise Exception(u"Second fork failed: %e" % error)
 
-		logger.setLevel(LOG_NONE)
+		# logger.setConsoleLevel(LOG_NONE)
 
 		# Close standard output and standard error.
 		os.close(0)
@@ -1188,7 +1174,7 @@ def temporaryPidFile(filepath):
 				logger.error(error)
 
 			if running:
-				raise Exception("Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile.", oldPid)
+				raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % oldPid)
 	except IOError as ioerr:
 		if ioerr.errno != 2:  # errno 2 == no such file
 			raise ioerr
@@ -1222,5 +1208,5 @@ def main():
 		pass
 	except Exception as exception:
 		logger.logException(exception)
-		print(u"ERROR: %s", exception, file=sys.stderr)
+		print(u"ERROR: %s" % exception, file=sys.stderr)
 		sys.exit(1)

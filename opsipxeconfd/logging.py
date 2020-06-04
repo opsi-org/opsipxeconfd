@@ -197,64 +197,51 @@ class SecretFormatter(object):
 
 def init_logging(config):
 	try:	
-		logger.notice(config)
 
-		if config["logLevel_stderr"] and config["logLevel_file"]:
-			logLevel = max(config.get("logLevel"), config.get("logLevel_stderr"), config.get("logLevel_file"))
-			print(logLevel)
-			logLevel = (10 - logLevel) * 10
-		else:
-			logLevel = config.get("logLevel")
+		logger.debug("config: %s", config)
 
-		if config["logFormat"]:
-			log_formatter = colorlog.ColoredFormatter(
-				config["logFormat"],
-				log_colors=LOG_COLORS
-			)
-		else:
-			log_formatter = colorlog.ColoredFormatter(
-				"[%(log_color)s%(levelname)-9s %(asctime)s]%(reset)s %(message)s",
-				log_colors=LOG_COLORS
-			)
+		logger.handlers = []
+
+		for handler in logger.handlers:
+			logger.notice(handler)
+			logger.notice(type(handler))
+
+		logLevel = max(config.get("logLevel"), config.get("logLevel_stderr"), config.get("logLevel_file"))
+		logLevel = (10 - logLevel) * 10
 		
 		if config['logFile']:
-			logger.setLogFile(config['logFile'])
-			file_handler = RotatingFileHandler(config['logFile'], maxBytes=config['maxBytesLog'],backupCount=config['backupCountLog'])
-			file_handler.setFormatter(log_formatter)
+			formatter = logging.Formatter(config["logFormat"])
+			file_handler = RotatingFileHandler(config['logFile'], maxBytes=config['maxBytesLog'], backupCount=config['backupCountLog'])
+			file_handler.setFormatter(formatter)
 			file_handler.setLevel(config.get("logLevel_file"))
 			logger.addHandler(file_handler)
 
 		if not config['daemon']:
-			
+			colorlog_format = config["logFormat"].replace('%(message)s','')
+			colorlog_format = (f'%(log_color)s{colorlog_format}%(reset)s %(message)s')
+			formatter = colorlog.ColoredFormatter(
+				colorlog_format,
+				log_colors=LOG_COLORS
+			)
 			console_handler = StreamHandler(stream=sys.stderr)
-			console_handler.setFormatter(log_formatter)
+			console_handler.setFormatter(formatter)
 			console_handler.setLevel(config.get("logLevel_stderr"))
-
 			logger.addHandler(console_handler)
-			logger.setLevel(logLevel)
-			# logger.setConsoleColor(True)
 
-		logger.setLevel(logLevel)
-		print(logLevel)
-		
+		logger.setLevel(logLevel)		
 		logging.captureWarnings(True)
 
-		logger.notice(logger.handlers)
-		logger.notice(logLevel)
-		logger.notice(config["logFormat"])
-		
-		"""
-		logger.secret("SECRET")
-		logger.trace("TRACE")
-		logger.debug("DEBUG")
-		logger.info("INFO")
-		logger.notice("NOTICE")
-		logger.warning("WARNING")
-		logger.error("ERROR")
-		logger.critical("CRITICAL")
-		logger.essential("ESSENTIAL")
-		"""
+		# logger.notice(logger.handlers)
+		# logger.notice(logLevel)
+		# logger.notice(config["logFormat"])
+
+		# for handler in logger.handlers:
+		# 	logger.notice(handler)
+		# 	logger.notice(type(handler))
+		# 	if(isinstance(handler, RotatingFileHandler)):
+		# 		logger.warning("FILE")
+		# 	elif(isinstance(handler, StreamHandler)):
+		# 		logger.warning("CONSOLE")
+
 	except Exception as exc:
 		handle_log_exception(exc)
-
-
