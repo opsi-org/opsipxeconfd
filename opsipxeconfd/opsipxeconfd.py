@@ -49,11 +49,13 @@ from shlex import split as shlex_split
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from hashlib import md5
 
+from .logging import logger, init_logging
+
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Exceptions import BackendMissingDataError
-from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, Logger
+from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, LOG_ERROR, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import deserialize, getfqdn, getPublicKey
 from OPSI.Util.File import ConfigFile
@@ -66,7 +68,7 @@ ELILO_X86 = 'x86'
 ELILO_X64 = 'x64'
 OPSI_ADMIN_GROUP_ID = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
 
-logger = Logger()
+# logger = Logger()
 
 
 class Opsipxeconfd(threading.Thread):
@@ -84,9 +86,10 @@ class Opsipxeconfd(threading.Thread):
 		self._pxeConfigWriters = []
 		self._startupTask = None
 
-		self._setOpsiLogging()
+		# hier init logging?
+		# init_logging(self.config)
 		logger.comment("""\
-==================================================================
+\n==================================================================
 =           opsi pxe configuration service starting              =
 ==================================================================""")
 
@@ -119,16 +122,10 @@ class Opsipxeconfd(threading.Thread):
 
 	def reload(self):
 		logger.notice(u"Reloading opsipxeconfd")
-		self._setOpsiLogging()
+		init_logging(self.config)
 		self._createBackendInstance()
 		self._createSocket()
 
-	def _setOpsiLogging(self):
-		if self.config['logFile']:
-			logger.setLogFile(self.config['logFile'])
-		if self.config['logFormat']:
-			logger.setLogFormat(self.config['logFormat'])
-		logger.setFileLevel(self.config['logLevel'])
 
 	def _createBackendInstance(self):
 		logger.info(u"Creating backend instance")
@@ -916,6 +913,7 @@ class ClientConnection(threading.Thread):
 
 class OpsipxeconfdInit(object):
 	def __init__(self):
+		logger.setLevel((10 - LOG_WARNING) * 10)
 		logger.debug(u"OpsiPXEConfdInit")
 		# Set umask
 		os.umask(0o077)
@@ -938,10 +936,12 @@ class OpsipxeconfdInit(object):
 			if opt in ("-c", '--conffile'):
 				self.config['configFile'] = forceFilename(arg)
 			elif opt == "-v":
-				print(u"opsipxeconfd version %s" % __version__)
+				print(u"opsipxeconfd version %s", __version__)
 				sys.exit(0)
 		self.readConfigFile()
 		self.setCommandlineConfig()
+
+		init_logging(self.config)
 
 		if self.args[0] == u'version':
 			print(__version__)
@@ -954,12 +954,8 @@ class OpsipxeconfdInit(object):
 			signal(SIGINT, self.signalHandler)
 
 			if self.config['daemon']:
-				logger.setConsoleLevel(LOG_NONE)
 				self.daemonize()
-			else:
-				logger.setConsoleLevel(self.config['logLevel'])
-				logger.setConsoleColor(True)
-
+			
 			with temporaryPidFile(self.config['pidFile']):
 				self._opsipxeconfd = Opsipxeconfd(self.config)
 				self._opsipxeconfd.start()
@@ -987,8 +983,12 @@ class OpsipxeconfdInit(object):
 			'depotId': forceHostId(getfqdn()),
 			'daemon': True,
 			'logLevel': LOG_NOTICE,
+			'logLevel_stderr': LOG_WARNING,
+			'logLevel_file': LOG_NOTICE,
 			'logFile': u'/var/log/opsi/opsipxeconfd.log',
-			'logFormat': u'[%l] [%D] %M (%F|%N)',
+			'maxBytesLog': 4000000,
+			'backupCountLog': 5,
+			'logFormat': '[%(levelname)-9s %(asctime)s] %(message)s',
 			'port': u'/var/run/opsipxeconfd/opsipxeconfd.socket',
 			'pxeDir': u'/tftpboot/linux/pxelinux.cfg',
 			'pxeConfTemplate': u'/tftpboot/linux/pxelinux.cfg/install',
@@ -1009,9 +1009,9 @@ class OpsipxeconfdInit(object):
 
 	def signalHandler(self, signo, stackFrame):
 		for thread in threading.enumerate():
-			logger.debug(u"Running thread before signal: {0}", thread)
+			logger.debug("Running thread before signal: %s", thread)
 
-		logger.debug(u"Processing signal {0!r}", signo)
+		logger.debug("Processing signal %r", signo)
 		if signo == SIGHUP:
 			self.setDefaultConfig()
 			self.readConfigFile()
@@ -1029,17 +1029,17 @@ class OpsipxeconfdInit(object):
 				pass  # probably set to None
 
 		for thread in threading.enumerate():
-			logger.debug(u"Running thread after signal: {0}", thread)
+			logger.debug("Running thread after signal: %s", thread)
 
 	def readConfigFile(self):
 		''' Get settings from config file '''
-		logger.notice(u"Trying to read config from file: {0!r}", self.config['configFile'])
+		logger.notice("Trying to read config from file: %s", self.config['configFile'])
 
 		try:
 			configFile = ConfigFile(filename=self.config['configFile'])
 			for line in configFile.parse():
 				if '=' not in line:
-					logger.error(u"Parse error in config file: {0!r}, line {1}: '=' not found", self.config['configFile'], line)
+					logger.error("Parse error in config file: %s, line %s: '=' not found", self.config['configFile'], line)
 					continue
 
 				(option, value) = line.split(u'=', 1)
@@ -1049,6 +1049,14 @@ class OpsipxeconfdInit(object):
 					self.config['pidFile'] = forceFilename(value)
 				elif option == 'log level':
 					self.config['logLevel'] = forceInt(value)
+				elif option == 'log level stderr':
+					self.config['logLevel_stderr'] = forceInt(value)
+				elif option == 'log level file':
+					self.config['logLevel_file'] = forceInt(value)
+				elif option == 'max byte log':
+					self.config['maxBytesLog'] = forceInt(value)
+				elif option == 'backup count log':
+					self.config['backupCountLog'] = forceInt(value)
 				elif option == 'log file':
 					self.config['logFile'] = forceFilename(value)
 				elif option == 'log format':
@@ -1070,11 +1078,11 @@ class OpsipxeconfdInit(object):
 				elif option == 'dispatch config file':
 					self.config['dispatchConfigFile'] = forceFilename(value)
 				else:
-					logger.warning(u"Ignoring unknown option {0!r} in config file: {1!r}", option, self.config['configFile'])
+					logger.warning("Ignoring unknown option %s in config file: %s", option, self.config['configFile'])
 
 		except Exception as error:
 			# An error occured while trying to read the config file
-			logger.error(u"Failed to read config file {0!r}: {1}", self.config['configFile'], error)
+			logger.error("Failed to read config file %s: %s", self.config['configFile'], error)
 			logger.logException(error)
 			raise
 		logger.notice(u"Config read")
@@ -1103,7 +1111,7 @@ class OpsipxeconfdInit(object):
 				# Parent exits
 				sys.exit(0)
 		except OSError as error:
-			raise Exception(u"First fork failed: %e" % error)
+			raise Exception("First fork failed: %e", error)
 
 		# Do not hinder umounts
 		os.chdir("/")
@@ -1118,7 +1126,7 @@ class OpsipxeconfdInit(object):
 		except OSError as error:
 			raise Exception(u"Second fork failed: %e" % error)
 
-		logger.setConsoleLevel(LOG_NONE)
+		# logger.setConsoleLevel(LOG_NONE)
 
 		# Close standard output and standard error.
 		os.close(0)
@@ -1134,8 +1142,9 @@ class OpsipxeconfdInit(object):
 		# Duplicate standard input to standard output and standard error.
 		os.dup2(0, 1)
 		os.dup2(0, 2)
-		sys.stdout = logger.getStdout()
-		sys.stderr = logger.getStderr()
+		# sys.stdout = logger.getStdout()
+		# sys.stderr = logger.getStderr()
+	
 
 
 @contextmanager
@@ -1146,7 +1155,7 @@ def temporaryPidFile(filepath):
 	'''
 	pidFile = filepath
 
-	logger.debug("Reading old pidFile {0!r}...", pidFile)
+	logger.debug("Reading old pidFile %r...", pidFile)
 	try:
 		with open(pidFile, 'r') as pf:
 			oldPid = pf.readline().strip()
@@ -1168,7 +1177,7 @@ def temporaryPidFile(filepath):
 		if ioerr.errno != 2:  # errno 2 == no such file
 			raise ioerr
 
-	logger.info(u"Creating pid file {0!r}", pidFile)
+	logger.info(u"Creating pid file %r", pidFile)
 	pid = os.getpid()
 	with open(pidFile, "w") as pf:
 		pf.write(str(pid))
@@ -1177,19 +1186,19 @@ def temporaryPidFile(filepath):
 		yield
 	finally:
 		try:
-			logger.debug(u"Removing pid file {0!r}...")
+			logger.debug("Removing pid file %r...")
 			os.unlink(pidFile)
-			logger.info(u"Removed pid file {0!r}", pidFile)
+			logger.info("Removed pid file %r", pidFile)
 		except OSError as oserr:
 			if oserr.errno != 2:
-				logger.error(u"Failed to remove pid file {0!r}: {1}", pidFile, oserr)
+				logger.error("Failed to remove pid file %r: %s", pidFile, oserr)
 		except Exception as error:
-			logger.error(u"Failed to remove pid file {0!r}: {1}", pidFile, error)
+			logger.error("Failed to remove pid file %r: %s", pidFile, error)
 
 
 # if __name__ == "__main__":
 def main():
-	logger.setConsoleLevel(LOG_WARNING)
+	# init_logging()
 
 	try:
 		OpsipxeconfdInit()
