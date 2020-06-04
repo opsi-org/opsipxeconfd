@@ -29,7 +29,7 @@ class Singleton(type):
 			cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
 		return cls._instances[cls]
 
-DEFAULT_FORMAT = "%(log_color)s[%(opsilevel)s] [%(asctime)s.%(msecs)03d]%(reset)s %(message)s   (%(filename)s:%(lineno)d)"
+DEFAULT_FORMAT = "%(log_color)s[%(opsilevel)d] [%(asctime)s.%(msecs)03d]%(reset)s %(message)s   (%(filename)s:%(lineno)d)"
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 SECRET_REPLACEMENT_STRING = '***secret***'
 

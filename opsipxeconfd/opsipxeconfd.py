@@ -49,7 +49,7 @@ from shlex import split as shlex_split
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from hashlib import md5
 
-from .logging import logger, init_logging
+from .logging import logger, init_logging, logging, DEFAULT_FORMAT
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
@@ -86,8 +86,6 @@ class Opsipxeconfd(threading.Thread):
 		self._pxeConfigWriters = []
 		self._startupTask = None
 
-		# hier init logging?
-		# init_logging(self.config)
 		logger.comment("opsi pxe configuration service starting")
 
 	def setConfig(self, config):
@@ -110,12 +108,12 @@ class Opsipxeconfd(threading.Thread):
 		except Exception as error:
 			logger.debug("Unhandled error during stop: {0!r}", error)
 
+		self._running = False
+
 		try:
 			self._socket.close()
 		except Exception as error:
 			logger.error(u"Failed to close socket: {0}", error)
-
-		self._running = False
 
 	def reload(self):
 		logger.notice(u"Reloading opsipxeconfd")
@@ -138,7 +136,7 @@ class Opsipxeconfd(threading.Thread):
 		return self._createUnixSocket()
 
 	def _createUnixSocket(self):
-		logger.notice(u"Creating unix socket {0!r}", self.config['port'])
+		logger.notice(u"Creating unix socket %s", self.config['port'])
 		if os.path.exists(self.config['port']):
 			os.unlink(self.config['port'])
 		self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -164,6 +162,8 @@ class Opsipxeconfd(threading.Thread):
 		try:
 			sock, _ = self._socket.accept()
 		except socket.error as error:
+			if not self._running:
+				return
 			if error.args[0] == 'timed out' or error.args[0] == 11:
 				return
 
@@ -910,7 +910,7 @@ class ClientConnection(threading.Thread):
 
 class OpsipxeconfdInit(object):
 	def __init__(self):
-		logger.setLevel(logging.LOG_WARNING)
+		logger.setLevel(logging.WARNING)
 		logger.debug(u"OpsiPXEConfdInit")
 		# Set umask
 		os.umask(0o077)
@@ -935,6 +935,7 @@ class OpsipxeconfdInit(object):
 			elif opt == "-v":
 				print(u"opsipxeconfd version %s", __version__)
 				sys.exit(0)
+		self.updateConfigFile()
 		self.readConfigFile()
 		self.setCommandlineConfig()
 
@@ -1027,6 +1028,22 @@ class OpsipxeconfdInit(object):
 
 		for thread in threading.enumerate():
 			logger.debug("Running thread after signal: %s", thread)
+
+	def updateConfigFile(self):
+		with codecs.open(self.config['configFile'], 'r', "utf-8") as f:
+			data = f.read()
+		new_data = data.replace("[%l] [%D] %M (%F|%N)", DEFAULT_FORMAT)
+		new_data = new_data.replace("%D", "%(asctime)s")
+		new_data = new_data.replace("%T", "%(thread)d")
+		new_data = new_data.replace("%l", "%(opsilevel)d")
+		new_data = new_data.replace("%L", "%(levelname)s")
+		new_data = new_data.replace("%M", "%(message)s")
+		new_data = new_data.replace("%F", "%(filename)s")
+		new_data = new_data.replace("%N", "%(lineno)s")
+		if new_data != data:
+			logger.notice("Updating config file: %s", self.config['configFile'])
+			with codecs.open(self.config['configFile'], 'w', "utf-8") as f:
+				f.write(new_data)
 
 	def readConfigFile(self):
 		''' Get settings from config file '''
@@ -1193,10 +1210,7 @@ def temporaryPidFile(filepath):
 			logger.error("Failed to remove pid file %r: %s", pidFile, error)
 
 
-# if __name__ == "__main__":
 def main():
-	# init_logging()
-
 	try:
 		OpsipxeconfdInit()
 	except SystemExit:
