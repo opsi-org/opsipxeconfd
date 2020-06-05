@@ -749,9 +749,11 @@ class PXEConfigWriter(threading.Thread):
 					verified = h_int == s_int
 				
 				if not verified:
-					logger.error(u"Failed to verify modules signature")
+					logger.error("Failed to verify modules signature")
 					return
 
+				logger.debug("Modules file signature verified (customer: %s)", modules.get('customer'))
+				
 				if modules.get('uefi'):
 					self._uefiModule = True
 				if modules.get('secureboot'):
