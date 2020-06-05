@@ -11,8 +11,6 @@ package for OBS:
     - echo "tzdata tzdata/Areas select Europe" > /tmp/preseed.txt
     - echo "tzdata tzdata/Zones/Europe select Berlin" >> /tmp/preseed.txt
     - debconf-set-selections /tmp/preseed.txt
-    - [ -e /etc/timezone ] && rm /etc/timezone
-    - [ -e /etc/localtime ] && rm /etc/localtime
     - apt update
     - apt install -y tzdata
     - apt install -y devscripts debhelper dh-systemd dh-python python python-setuptools
