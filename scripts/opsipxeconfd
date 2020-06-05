@@ -553,7 +553,7 @@ class Opsipxeconfd(threading.Thread):
 						pxeConfigTemplate, product.pxeConfigTemplate
 					)
 					absolutePathToTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), product.pxeConfigTemplate)
-					if os.path.isfile("%s.efi" % absolutePathToTemplate):
+					if os.path.isfile("%s.efi" % absolutePathToTemplate):z
 						logger.notice(u"Using an alternate UEFI template provided by netboot product")
 						pxeConfigTemplate = "%s.efi" % product.pxeConfigTemplate
 					else:
