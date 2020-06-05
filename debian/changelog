@@ -1,3 +1,10 @@
+opsipxeconfd (4.1.1.20-1) testing; urgency=medium
+
+  * opsipxeconfd: check if any pxeConfigTemplate.efi file exists to overwrite
+    uefi netboot config template
+
+ -- Mathias Radtke <m.radtke@uib.de>  Mon, 18 May 2020 20:06:31 +0200
+
 opsipxeconfd (4.1.1.19-2) testing; urgency=medium
 
   * opsipxeconfd: removed check for empty value when checking eliloMode config

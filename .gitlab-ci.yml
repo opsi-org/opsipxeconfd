@@ -6,7 +6,13 @@ stages:
 package for OBS:
   stage: package
   before_script:
+    - export DEBIAN_FRONTEND noninteractive
+    - export DEBCONF_NONINTERACTIVE_SEEN true
+    - echo "tzdata tzdata/Areas select Europe" > /tmp/preseed.txt
+    - echo "tzdata tzdata/Zones/Europe select Berlin" >> /tmp/preseed.txt
+    - debconf-set-selections /tmp/preseed.txt
     - apt update
+    - apt install -y tzdata
     - apt install -y devscripts debhelper dh-systemd dh-python python python-setuptools
   script:
     - ./create_source.sh
