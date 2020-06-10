@@ -12,7 +12,6 @@ pyinstaller-poetry:
   one_file: no
   hidden_imports:
     all:
-      - distro
       - OPSI.Backend.DHCPD
       - OPSI.Backend.File
       - OPSI.Backend.HostControl
@@ -22,7 +21,8 @@ pyinstaller-poetry:
       - OPSI.Backend.OpsiPXEConfd
       - OPSI.Backend.Replicator
       - OPSI.Backend.SQLite
-  scripts:
+      - distro
+      scripts:
     - script: run-opsipxeconfd
       binaries:
         - opsipxeconfd
