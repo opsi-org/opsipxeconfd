@@ -957,10 +957,10 @@ class OpsipxeconfdInit(object):
 		self.setDefaultConfig()
 		# Process command line arguments
 		for (opt, arg) in self.opts:
-			if opt in ("-c", '--conffile'):
+			if opt in ("-c", "--conffile"):
 				self.config['configFile'] = forceFilename(arg)
-			elif opt == "-v":
-				print(u"opsipxeconfd version %s", __version__)
+			elif opt in ("-v", "--version"):
+				print(__version__)
 				sys.exit(0)
 		self.updateConfigFile()
 		self.readConfigFile()
