@@ -157,8 +157,7 @@ class Opsipxeconfd(threading.Thread):
 
 		self._setAccessRightsForSocket(self.config['port'])
 
-	@staticmethod
-	def _setAccessRightsForSocket(path):
+	def _setAccessRightsForSocket(self, path):
 		logger.debug("Setting rights on socket {0!r}", path)
 		mode = os.stat(path)[0]
 		# Adding read + write access for group and other.
