@@ -20,6 +20,7 @@ python = "^3.6"
 #python-opsi = {path = "python-opsi"}
 python-opsi = "^4.2"
 distro = "^1.5.0"
+mysqlclient = "^1.4.6"
 
 [tool.poetry.dev-dependencies]
 pyinstaller = "^3.6"
