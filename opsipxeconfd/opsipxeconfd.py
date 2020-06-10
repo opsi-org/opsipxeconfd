@@ -74,7 +74,6 @@ from . import __version__
 
 ELILO_X86 = 'x86'
 ELILO_X64 = 'x64'
-OPSI_ADMIN_GROUP_ID = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
 
 # logger = Logger()
 
@@ -93,6 +92,7 @@ class Opsipxeconfd(threading.Thread):
 		self._clientConnections = []
 		self._pxeConfigWriters = []
 		self._startupTask = None
+		self._opsi_admin_gid = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
 
 		logger.comment("opsi pxe configuration service starting")
 
@@ -163,7 +163,7 @@ class Opsipxeconfd(threading.Thread):
 		mode = os.stat(path)[0]
 		# Adding read + write access for group and other.
 		os.chmod(path, mode | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
-		os.chown(path, -1, OPSI_ADMIN_GROUP_ID)
+		os.chown(path, -1, self._opsi_admin_gid)
 		logger.debug("Done setting rights on socket {0!r}", path)
 
 	def _getConnection(self):
