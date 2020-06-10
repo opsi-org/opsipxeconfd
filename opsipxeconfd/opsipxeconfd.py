@@ -943,7 +943,7 @@ class OpsipxeconfdInit(object):
 		self._pid = 0
 
 		try:
-			(self.opts, self.args) = getopt.getopt(sys.argv[1:], "vFl:c:", ["no-fork", "loglevel=", "conffile="])
+			(self.opts, self.args) = getopt.getopt(sys.argv[1:], "vFl:c:", ["no-fork", "version", "loglevel=", "conffile="])
 		except getopt.GetoptError:
 			self.usage()
 			sys.exit(1)
