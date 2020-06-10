@@ -18,6 +18,8 @@ build:linux-pyinstaller:
     - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
     - mv opsipxeconfd opsipxeconfd.src
     - mv dist/opsipxeconfd .
+    # Check if binary is working
+    - ./opsipxeconfd --help
   artifacts:
     name: 'opsipxeconfd-linux-pyinstaller'
     paths:
