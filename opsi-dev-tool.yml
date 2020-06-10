@@ -12,7 +12,6 @@ pyinstaller-poetry:
   one_file: no
   hidden_imports:
     all:
-      - OPSI.Backend.Depotsever
       - OPSI.Backend.DHCPD
       - OPSI.Backend.File
       - OPSI.Backend.HostControl
