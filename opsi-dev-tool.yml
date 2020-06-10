@@ -21,6 +21,7 @@ pyinstaller-poetry:
       - OPSI.Backend.OpsiPXEConfd
       - OPSI.Backend.Replicator
       - OPSI.Backend.SQLite
+      - MySQLdb
   scripts:
     - script: run-opsipxeconfd
       binaries:
