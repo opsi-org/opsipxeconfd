@@ -16,6 +16,7 @@ build:linux-pyinstaller:
   script:
     - poetry install
     - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
+    - python3 -c "import distro"
     - mv opsipxeconfd opsipxeconfd.src
     - mv dist/opsipxeconfd .
     # Check if binary is working
