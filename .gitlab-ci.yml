@@ -19,7 +19,7 @@ build:linux-pyinstaller:
     - mv opsipxeconfd opsipxeconfd.src
     - mv dist/opsipxeconfd .
     # Check if binary is working
-    - ./opsipxeconfd/opsipxeconfd -c opsipxeconfd_data/opsipxeconfd.conf version
+    - ./opsipxeconfd/opsipxeconfd -c opsipxeconfd_data/opsipxeconfd.conf --version
   artifacts:
     name: 'opsipxeconfd-linux-pyinstaller'
     paths:
