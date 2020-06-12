@@ -59,6 +59,7 @@ except ImportError:
 
 from .logging import logger, init_logging, logging, DEFAULT_FORMAT
 
+from OPSI import __version__ as python_opsi_version
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
 from OPSI.Config import OPSI_ADMIN_GROUP
@@ -959,7 +960,7 @@ class OpsipxeconfdInit(object):
 			if opt in ("-c", "--conffile"):
 				self.config['configFile'] = forceFilename(arg)
 			elif opt in ("-v", "--version"):
-				print(__version__)
+				print(f"{__version__} [python-opsi={python_opsi_version}]")
 				sys.exit(0)
 		self.updateConfigFile()
 		self.readConfigFile()
@@ -968,7 +969,7 @@ class OpsipxeconfdInit(object):
 		init_logging(self.config)
 
 		if self.args[0] == u'version':
-			print(__version__)
+			print(f"{__version__} [python-opsi={python_opsi_version}]")
 			sys.exit(0)
 
 		elif self.args[0] == u'start':
