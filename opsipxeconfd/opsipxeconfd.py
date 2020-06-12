@@ -945,11 +945,7 @@ class OpsipxeconfdInit(object):
 
 		try:
 			(self.opts, self.args) = getopt.getopt(sys.argv[1:], "vFl:c:", ["no-fork", "version", "loglevel=", "conffile="])
-		except getopt.GetoptError:
-			self.usage()
-			sys.exit(1)
-
-		if len(self.args) < 1:
+		except getopt.GetoptError as e:
 			self.usage()
 			sys.exit(1)
 
@@ -962,6 +958,11 @@ class OpsipxeconfdInit(object):
 			elif opt in ("-v", "--version"):
 				print(f"{__version__} [python-opsi={python_opsi_version}]")
 				sys.exit(0)
+		
+		if len(self.args) < 1:
+			self.usage()
+			sys.exit(1)
+		
 		self.updateConfigFile()
 		self.readConfigFile()
 		self.setCommandlineConfig()
