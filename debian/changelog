@@ -1,3 +1,9 @@
+opsipxeconfd (4.1.1.20-2ubuntu1) UNRELEASED; urgency=medium
+
+  * corrected typo
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 17 Jun 2020 14:03:09 +0200
+
 opsipxeconfd (4.1.1.20-2) testing; urgency=medium
 
   * opsipxeconfd.conf: grub template is now default for UEFI netboot
