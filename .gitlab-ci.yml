@@ -29,12 +29,16 @@ build:linux-pyinstaller:
 
 package:obs_int:
   stage: package
+  dependencies:
+    - build:linux-pyinstaller
   script:
     - *install_tools
     - opsi-dev-tool -l info --obs-update-package https://obs.uib.gmbh home:uibmz:opsi:4.2:experimental
 
 package:obs_ext:
   stage: package
+  dependencies:
+    - build:linux-pyinstaller
   script:
     - *install_tools
     - opsi-dev-tool -l info --obs-update-package https://build.opensuse.org home:uibmz:opsi:4.2:experimental
