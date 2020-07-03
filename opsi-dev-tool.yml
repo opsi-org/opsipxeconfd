@@ -1,11 +1,3 @@
-project:
-  name: opsipxeconfd
-  version: 4.2.0.1
-  description: Opsi PXE Configuration Service
-  homepage: http://www.opsi.org
-  licenses: 
-      - license:  AGPL-3.0
-
 pyinstaller-poetry:
   update_version_in:
     - opsipxeconfd/__init__.py
