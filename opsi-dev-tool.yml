@@ -1,6 +1,6 @@
 project:
   name: opsipxeconfd
-  version: 4.2.0
+  version: 4.2.0.1
   description: Opsi PXE Configuration Service
   homepage: http://www.opsi.org
   licenses: 
