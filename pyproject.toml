@@ -3,6 +3,7 @@ name = "opsipxeconfd"
 version = "4.2.0.7"
 description = "opsi pxe configuration service"
 homepage = "https://www.opsi.org"
+license = "AGPL-3.0"
 maintainers = ["uib GmbH <info@uib.de>"]
 authors = ["uib GmbH <info@uib.de>"]
 include = [
