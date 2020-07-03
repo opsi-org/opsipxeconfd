@@ -8,7 +8,7 @@ Wants=smbd.service
 
 [Service]
 Type=forking
-ExecStart=/usr/bin/opsipxeconfd start --log-level-stderr=0
+ExecStart=/usr/bin/opsipxeconfd start
 Restart=always
 RestartSec=5
 KillMode=process
