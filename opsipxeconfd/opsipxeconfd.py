@@ -550,20 +550,24 @@ class Opsipxeconfd(threading.Thread):
 				pxeConfigTemplate = self.config['uefiConfTemplate-x64']
 
 			if product.pxeConfigTemplate:
-				if not elilo:
-					if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
-						logger.error(
-							u"Cannot use more than one pxe config template, got: {0}, {1}",
-							pxeConfigTemplate, product.pxeConfigTemplate
-						)
+				if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
+					logger.error(
+						u"Cannot use more than one pxe config template, got: {0}, {1}",
+						pxeConfigTemplate, product.pxeConfigTemplate
+					)
+					absolutePathToTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), product.pxeConfigTemplate)
+					if os.path.isfile("%s.efi" % absolutePathToTemplate):
+						logger.notice(u"Using an alternate UEFI template provided by netboot product")
+						pxeConfigTemplate = "%s.efi" % product.pxeConfigTemplate
 					else:
-						pxeConfigTemplate = product.pxeConfigTemplate
-						logger.notice(
-							u"Special pxe config template {0!r} will be used used for host {1!r}, product {2!r}",
-							pxeConfigTemplate, hostId, poc.productId
-						)
+						logger.notice(u"Did not find any alternate UEFI pxeConfigTemplate, will use the default UEFI template")
+
 				else:
-					logger.notice("Ignoring given pxeConfigTemplate because uefi detected for the client.")
+					pxeConfigTemplate = product.pxeConfigTemplate
+					logger.notice(
+						u"Special pxe config template {0!r} will be used used for host {1!r}, product {2!r}",
+						pxeConfigTemplate, hostId, poc.productId
+					)
 
 		if not pxeConfigTemplate:
 			logger.debug("Using default config template")
@@ -588,7 +592,7 @@ class Opsipxeconfd(threading.Thread):
 		configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename", objectId=hostId)
 		if configStates:
 			val = configStates[0].getValues()
-			if val and 'elilo' in val[0]:
+			if val and (('elilo' in val[0]) or ('shimx64' in val[0])):
 				if 'x86' in val[0]:
 					eliloMode = ELILO_X86
 				else:
@@ -817,8 +821,8 @@ class PXEConfigWriter(threading.Thread):
 					content = '%s  append %s\n' % (content, ' '.join(appendLineProperties))
 			elif line.lstrip().startswith(u'linux'):
 				logger.notice("UEFI GRUB configuration detected for {}", self.hostId)
-				if not self._secureBootModule:
-					raise Exception(u"You have not licensed the secureboot module, please check your modules or contact info@uib.de")
+				if not self._uefiModule and self.uefi:
+					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
 
 				self.uefi = True
 				self._usingGrub = True
