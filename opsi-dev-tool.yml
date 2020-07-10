@@ -47,7 +47,4 @@ package:
     mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
     mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
     rm -r ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data
-  
-changelog:
-  next:
-    - poetry
+
