@@ -115,14 +115,14 @@ class Opsipxeconfd(threading.Thread):
 		except RuntimeError:
 			pass  # Probably not yet started
 		except Exception as error:
-			logger.debug("Unhandled error during stop: {0!r}", error)
+			logger.debug("Unhandled error during stop: '%s", error)
 
 		self._running = False
 
 		try:
 			self._socket.close()
 		except Exception as error:
-			logger.error(u"Failed to close socket: {0}", error)
+			logger.error(u"Failed to close socket: %s", error)
 
 	def reload(self):
 		logger.notice(u"Reloading opsipxeconfd")
@@ -159,12 +159,12 @@ class Opsipxeconfd(threading.Thread):
 		self._setAccessRightsForSocket(self.config['port'])
 
 	def _setAccessRightsForSocket(self, path):
-		logger.debug("Setting rights on socket {0!r}", path)
+		logger.debug("Setting rights on socket '%s'", path)
 		mode = os.stat(path)[0]
 		# Adding read + write access for group and other.
 		os.chmod(path, mode | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
 		os.chown(path, -1, self._opsi_admin_gid)
-		logger.debug("Done setting rights on socket {0!r}", path)
+		logger.debug("Done setting rights on socket '%s'", path)
 
 	def _getConnection(self):
 		try:
@@ -180,7 +180,7 @@ class Opsipxeconfd(threading.Thread):
 		logger.notice(u"Got connection from client")
 
 		cc = None
-		logger.info(u"Creating thread for connection {0}", len(self._clientConnections) + 1)
+		logger.info(u"Creating thread for connection %d", len(self._clientConnections) + 1)
 		try:
 			cc = ClientConnection(self, sock, self.clientConnectionCallback)
 			with self._clientConnectionLock:
@@ -188,7 +188,7 @@ class Opsipxeconfd(threading.Thread):
 			cc.start()
 			logger.debug(u"Connection {!r} started.".format(cc.name))
 		except Exception as error:
-			logger.error(u"Failed to create control connection: {0}", error)
+			logger.error(u"Failed to create control connection: %s", error)
 			logger.logException(error)
 
 			with self._clientConnectionLock:
@@ -219,8 +219,8 @@ class Opsipxeconfd(threading.Thread):
 		:type connection: ClientConnection
 		"""
 		logger.info(
-			u"ClientConnection {!r} finished (took {:0.3f} seconds)",
-			connection.name, (time.time() - connection.startTime)
+			u"ClientConnection {!r} finished (took {:0.3f} seconds)".format(
+			connection.name, (time.time() - connection.startTime))
 		)
 
 		try:
@@ -230,17 +230,17 @@ class Opsipxeconfd(threading.Thread):
 				except ValueError:
 					pass  # Connection not in list
 
-			logger.debug(u"ClientConnection {!r} removed", connection.name)
+			logger.debug(u"ClientConnection '%s' removed", connection.name)
 		except Exception as error:
-			logger.error(u"Failed to remove ClientConnection: {0}", error)
+			logger.error(u"Failed to remove ClientConnection: %s", error)
 
 	def pxeConfigWriterCallback(self, pcw):
 		"""
 		:type pcw: PXEConfigWriter
 		"""
 		logger.info(
-			u"PXEConfigWriter {!r} (for {!r}) finished (running for {:0.3f} seconds)",
-			pcw.name, pcw.hostId, (time.time() - pcw.startTime)
+			u"PXEConfigWriter {!r} (for {!r}) finished (running for {:0.3f} seconds)".format(
+			pcw.name, pcw.hostId, (time.time() - pcw.startTime))
 		)
 
 		try:
@@ -251,7 +251,7 @@ class Opsipxeconfd(threading.Thread):
 					pass  # Writer not in list
 			logger.debug(u"PXE config writer removed")
 		except Exception as error:
-			logger.error(u"Failed to remove PXE config writer: {0}", error)
+			logger.error(u"Failed to remove PXE config writer: %s", error)
 
 		gotAlways = False
 		for i, poc in enumerate(pcw.productOnClients):
@@ -302,13 +302,13 @@ class Opsipxeconfd(threading.Thread):
 	def updateBootConfiguration(self, hostId, cacheFile=None):
 		try:
 			hostId = forceHostId(hostId)
-			logger.info(u"Updating PXE boot configuration for host {0!r}", hostId)
+			logger.info(u"Updating PXE boot configuration for host '%s'", hostId)
 
 			self._removeCurrentConfigWriters(hostId)
 
 			cachedData = self._readCachedData(cacheFile)
 			if cachedData:
-				logger.debug(u"Cached data read for {}: {!r}", hostId, cachedData)
+				logger.debug(u"Cached data read for %s: '%s'", hostId, cachedData)
 
 			try:
 				poc = cachedData["productOnClient"]
@@ -325,7 +325,7 @@ class Opsipxeconfd(threading.Thread):
 				)
 
 			if not productOnClients:
-				logger.info("No netboot products with action requests for client {0!r} found.", hostId)
+				logger.info("No netboot products with action requests for client '%s' found.", hostId)
 				return u'Boot configuration updated'
 
 			try:
@@ -340,7 +340,7 @@ class Opsipxeconfd(threading.Thread):
 				try:
 					productOnDepot = cachedData["productOnDepot"]
 				except KeyError:
-					logger.debug("Searching for product {!r} on depot {!r}", poc.productId, depotId)
+					logger.debug("Searching for product '%s' on depot '%s'", poc.productId, depotId)
 					productOnDepot = self._backend.productOnDepot_getObjects(
 						productType=u'NetbootProduct',
 						productId=poc.productId,
@@ -350,7 +350,7 @@ class Opsipxeconfd(threading.Thread):
 					try:
 						productOnDepot = productOnDepot[0]
 					except IndexError:
-						logger.info(u"Product {} not available on depot {!r}", poc.productId, depotId)
+						logger.info(u"Product %s not available on depot '%s'", poc.productId, depotId)
 						continue
 
 				if productOnDepot:
@@ -361,7 +361,7 @@ class Opsipxeconfd(threading.Thread):
 			productOnClients = newProductOnClients
 
 			if not productOnClients:
-				logger.info("No matching netboot product found on depot {0!r}.", depotId)
+				logger.info("No matching netboot product found on depot '%s'.", depotId)
 				return u'Boot configuration updated'
 
 			try:
@@ -376,7 +376,7 @@ class Opsipxeconfd(threading.Thread):
 				self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
 
 			pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients, product, elilo)
-			logger.debug(u"Using pxe config template {0!r}", pxeConfigTemplate)
+			logger.debug(u"Using pxe config template '%s'", pxeConfigTemplate)
 
 			pxeConfigName = self._getNameForPXEConfigFile(host)
 
@@ -387,12 +387,12 @@ class Opsipxeconfd(threading.Thread):
 						raise Exception(u"Should use uefi netboot, but uefi module is not licensed.")
 					if pcw.pxefile == pxefile:
 						if host.id == pcw.hostId:
-							logger.notice(u"PXE boot configuration {0!r} for client {1!r} already exists.", pxefile, host.id)
+							logger.notice(u"PXE boot configuration '%s' for client '%s' already exists.", pxefile, host.id)
 							return
 						else:
 							raise Exception(u"PXE boot configuration '%s' already exists. Clients '%s' and '%s' using same address?"
 											% (pxefile, host.id, pcw.hostId))
-				logger.debug(u"PXE boot configuration {0!r} already exists, removing.", pxefile)
+				logger.debug(u"PXE boot configuration '%s' already exists, removing.", pxefile)
 				os.unlink(pxefile)
 
 			try:
@@ -438,7 +438,7 @@ class Opsipxeconfd(threading.Thread):
 
 			pcw = None
 			try:
-				logger.info(u"Creating thread for pxeconfig {0}", len(self._pxeConfigWriters) + 1)
+				logger.info(u"Creating thread for pxeconfig %d", len(self._pxeConfigWriters) + 1)
 				try:
 					backendInfo = cachedData["backendInfo"]
 				except KeyError:
@@ -449,10 +449,10 @@ class Opsipxeconfd(threading.Thread):
 				with self._pxeConfigWritersLock:
 					self._pxeConfigWriters.append(pcw)
 				pcw.start()
-				logger.notice(u"PXE boot configuration for host {0} is now set at {1!r}", hostId, pxefile)
+				logger.notice(u"PXE boot configuration for host %s is now set at '%s'", hostId, pxefile)
 				return u'Boot configuration updated'
 			except Exception as error:
-				logger.error(u"Failed to create pxe config writer: {0}", error)
+				logger.error(u"Failed to create pxe config writer: %s", error)
 
 				with self._pxeConfigWritersLock:
 					try:
@@ -475,7 +475,7 @@ class Opsipxeconfd(threading.Thread):
 			for pcw in currentPcws:
 				self._pxeConfigWriters.remove(pcw)
 
-		logger.debug("Removing {} existing config writers for {!r}", len(currentPcws), hostId)
+		logger.debug("Removing %s existing config writers for '%s'", len(currentPcws), hostId)
 
 		for pcw in currentPcws:
 			pcw.stop()
@@ -488,7 +488,7 @@ class Opsipxeconfd(threading.Thread):
 			else:
 				pcw.join(1)
 
-			logger.notice(u"PXE boot configuration for host {0!r} removed", hostId)
+			logger.notice(u"PXE boot configuration for host '%s' removed", hostId)
 
 	@staticmethod
 	def _readCachedData(cacheFile):
@@ -497,7 +497,7 @@ class Opsipxeconfd(threading.Thread):
 		elif not os.path.exists(cacheFile):
 			return {}
 
-		logger.debug("Reading data from {}", cacheFile)
+		logger.debug("Reading data from %s", cacheFile)
 		with codecs.open(cacheFile, "r", 'utf-8') as inFile:
 			data = json.load(inFile)
 		os.unlink(cacheFile)
@@ -508,7 +508,7 @@ class Opsipxeconfd(threading.Thread):
 		"""
 		Get the object for `hostId`.
 		"""
-		logger.debug("Searching for host with id {!r}", hostId)
+		logger.debug("Searching for host with id '%s'", hostId)
 
 		host = self._backend.host_getObjects(id=hostId)
 		try:
@@ -550,20 +550,24 @@ class Opsipxeconfd(threading.Thread):
 				pxeConfigTemplate = self.config['uefiConfTemplate-x64']
 
 			if product.pxeConfigTemplate:
-				if not elilo:
-					if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
-						logger.error(
-							u"Cannot use more than one pxe config template, got: {0}, {1}",
-							pxeConfigTemplate, product.pxeConfigTemplate
-						)
+				if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
+					logger.error(
+						u"Cannot use more than one pxe config template, got: %s, %s",
+						pxeConfigTemplate, product.pxeConfigTemplate
+					)
+					absolutePathToTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), product.pxeConfigTemplate)
+					if os.path.isfile("%s.efi" % absolutePathToTemplate):
+						logger.notice(u"Using an alternate UEFI template provided by netboot product")
+						pxeConfigTemplate = "%s.efi" % product.pxeConfigTemplate
 					else:
-						pxeConfigTemplate = product.pxeConfigTemplate
-						logger.notice(
-							u"Special pxe config template {0!r} will be used used for host {1!r}, product {2!r}",
-							pxeConfigTemplate, hostId, poc.productId
-						)
+						logger.notice(u"Did not find any alternate UEFI pxeConfigTemplate, will use the default UEFI template")
+
 				else:
-					logger.notice("Ignoring given pxeConfigTemplate because uefi detected for the client.")
+					pxeConfigTemplate = product.pxeConfigTemplate
+					logger.notice(
+						u"Special pxe config template '%s' will be used used for host '%s', product '%s'",
+						pxeConfigTemplate, hostId, poc.productId
+					)
 
 		if not pxeConfigTemplate:
 			logger.debug("Using default config template")
@@ -572,7 +576,7 @@ class Opsipxeconfd(threading.Thread):
 		if not os.path.isabs(pxeConfigTemplate):  # Not an absolute path
 			logger.debug("pxeConfigTemplate is not an absolute path.")
 			pxeConfigTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), pxeConfigTemplate)
-			logger.debug("pxeConfigTemplate changed to {0}", pxeConfigTemplate)
+			logger.debug("pxeConfigTemplate changed to %s", pxeConfigTemplate)
 
 		return pxeConfigTemplate, product
 
@@ -588,7 +592,7 @@ class Opsipxeconfd(threading.Thread):
 		configStates = self._backend.configState_getObjects(configId="clientconfig.dhcpd.filename", objectId=hostId)
 		if configStates:
 			val = configStates[0].getValues()
-			if val and 'elilo' in val[0]:
+			if val and (('elilo' in val[0]) or ('shimx64' in val[0])):
 				if 'x86' in val[0]:
 					eliloMode = ELILO_X86
 				else:
@@ -599,10 +603,10 @@ class Opsipxeconfd(threading.Thread):
 	@staticmethod
 	def _getNameForPXEConfigFile(host):
 		if host.getHardwareAddress():
-			logger.debug(u"Got hardware address {0!r} for host {1!r}", host.getHardwareAddress(), host.id)
+			logger.debug(u"Got hardware address '%s' for host '%s'", host.getHardwareAddress(), host.id)
 			return u"01-%s" % host.getHardwareAddress().replace(u':', u'-')
 		elif host.getIpAddress():
-			logger.warning(u"Failed to get hardware address for host {0!r}, using ip address {1!r}", host.id, host.getIpAddress())
+			logger.warning(u"Failed to get hardware address for host '%s', using ip address '%s'", host.id, host.getIpAddress())
 			return '%02X%02X%02X%02X' % tuple([int(i) for i in host.getIpAddress().split('.')])
 		else:
 			raise Exception(u"Neither hardware address nor ip address known for host '%s'" % host.id)
@@ -671,7 +675,7 @@ class StartupTask(threading.Thread):
 					try:
 						self._opsipxeconfd.updateBootConfiguration(clientId)
 					except Exception as error:
-						logger.error(u"Failed to update PXE boot config for client {0!r}: {1}", clientId, error)
+						logger.error(u"Failed to update PXE boot config for client '%s': %s", clientId, error)
 
 			logger.notice(u"Finished setting initial boot configurations")
 		except Exception as error:
@@ -719,7 +723,7 @@ class PXEConfigWriter(threading.Thread):
 						val = helpermodules[module]
 						if module == 'uefi':
 							if int(val) + 50 <= hostCount:
-								logger.error("UNDERLICENSED: You have more Clients then licensed in modules file. Disabling module: {0!r}", module)
+								logger.error("UNDERLICENSED: You have more Clients then licensed in modules file. Disabling module: '%s'", module)
 								modules[module] = False
 							elif int(val) <= hostCount:
 								logger.warning("UNDERLICENSED WARNING: You have more Clients then licensed in modules file.")
@@ -759,7 +763,7 @@ class PXEConfigWriter(threading.Thread):
 				if modules.get('secureboot'):
 					self._secureBootModule = True
 
-		logger.info(u"PXEConfigWriter initializing: templatefile {0!r}, pxefile {1!r}, hostId {2!r}, append {3}",
+		logger.info(u"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
 					self.templatefile, self.pxefile, self.hostId, self.append)
 
 		if not os.path.exists(self.templatefile):
@@ -781,7 +785,7 @@ class PXEConfigWriter(threading.Thread):
 		os.chmod(self.pxefile, 0o644)
 
 	def _getPXEConfigContent(self, templateFile):
-		logger.debug(u"Reading template {!r}", templateFile)
+		logger.debug(u"Reading template '%s'", templateFile)
 		with open(templateFile, 'r') as infile:
 			templateLines = infile.readlines()
 
@@ -791,12 +795,12 @@ class PXEConfigWriter(threading.Thread):
 			line = line.rstrip()
 
 			for (propertyId, value) in self.productPropertyStates.items():
-				logger.debug2("Property: {0!r}: value: {1!r}", propertyId, value)
+				logger.debug2("Property: '%s': value: '%s'", propertyId, value)
 				line = line.replace(u'%%%s%%' % propertyId, value)
 
 			if line.lstrip().startswith(u'append'):
 				if line.lstrip().startswith(u'append='):
-					logger.notice("elilo configuration detected for {}", self.hostId)
+					logger.notice("elilo configuration detected for %s", self.hostId)
 					self.uefi = True
 					appendLineProperties = ''.join(line.split('="')[1:])[:-1].split()
 				else:
@@ -816,9 +820,9 @@ class PXEConfigWriter(threading.Thread):
 				else:
 					content = '%s  append %s\n' % (content, ' '.join(appendLineProperties))
 			elif line.lstrip().startswith(u'linux'):
-				logger.notice("UEFI GRUB configuration detected for {}", self.hostId)
-				if not self._secureBootModule:
-					raise Exception(u"You have not licensed the secureboot module, please check your modules or contact info@uib.de")
+				logger.notice("UEFI GRUB configuration detected for %s", self.hostId)
+				if not self._uefiModule and self.uefi:
+					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
 
 				self.uefi = True
 				self._usingGrub = True
@@ -848,7 +852,7 @@ class PXEConfigWriter(threading.Thread):
 				time.sleep(1)
 
 		if pipeOpenend:
-			logger.notice(u"Pipe {0!r} opened, piping pxe boot configuration", self.pxefile)
+			logger.notice(u"Pipe '%s' opened, piping pxe boot configuration", self.pxefile)
 			os.write(self._pipe, self.content.encode())
 			if self.uefi and self._usingGrub:
 				time.sleep(5)
@@ -882,15 +886,15 @@ class ClientConnection(threading.Thread):
 			try:
 				cmd = self._socket.recv(4096)
 				cmd = forceUnicode(cmd.strip())
-				logger.info(u"Got command {0!r}", cmd)
+				logger.info(u"Got command '%s'", cmd)
 
 				result = self._processCommand(cmd)
-				logger.info(u"Returning result {0!r}", result)
+				logger.info(u"Returning result '%s'", result)
 
 				try:
 					self._socket.send(result.encode('utf-8'))
 				except Exception as error:
-					logger.warning("Sending result over socket failed: {0!r}", error)
+					logger.warning("Sending result over socket failed: '%s'", error)
 			finally:
 				if self._running and self._callback:
 					self._callback(self)
@@ -931,7 +935,7 @@ class ClientConnection(threading.Thread):
 
 			raise ValueError(u"Command '%s' not supported" % cmd)
 		except Exception as error:
-			logger.error("Processing command {!r} failed: {}", cmd, error)
+			logger.error("Processing command '%s' failed: %s", cmd, error)
 			return u'%s: %s' % (ERROR_MARKER, error)
 
 
