@@ -33,7 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
 
-import base64
 import codecs
 import json
 import getopt
@@ -47,31 +46,21 @@ import time
 from contextlib import contextmanager, closing
 from shlex import split as shlex_split
 from signal import SIGHUP, SIGINT, SIGTERM, signal
-from hashlib import md5
-try:
-	# python3-pycryptodome installs into Cryptodome
-	from Cryptodome.Hash import MD5
-	from Cryptodome.Signature import pkcs1_15
-except ImportError:
-	# PyCryptodome from pypi installs into Crypto
-	from Crypto.Hash import MD5
-	from Crypto.Signature import pkcs1_15
 
 from .logging import logger, init_logging, logging, DEFAULT_FORMAT
 
-from OPSI import __version__ as python_opsi_version
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Exceptions import BackendMissingDataError
 from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, LOG_ERROR, Logger
 from OPSI.System.Posix import execute, which
-from OPSI.Util import deserialize, getfqdn, getPublicKey
+from OPSI.Util import deserialize, getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
 	forceUnicodeList)
 
-from . import __version__
+from .pxeconfigwriter import PXEConfigWriter
 
 ELILO_X86 = 'x86'
 ELILO_X64 = 'x64'
@@ -686,188 +675,6 @@ class StartupTask(threading.Thread):
 	def stop(self):
 		self._stop = True
 
-
-class PXEConfigWriter(threading.Thread):
-	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback=None, backendinfo=None):
-		threading.Thread.__init__(self)
-		self.templatefile = templatefile
-		self.append = append
-		self.productPropertyStates = productPropertyStates
-		self.hostId = hostId
-		self.productOnClients = productOnClients
-		self.pxefile = pxefile
-		self._callback = callback
-		self.startTime = time.time()
-		self._running = False
-		self._pipe = None
-		self.uefi = False
-		self._uefiModule = False
-		self._secureBootModule = False
-		self._usingGrub = False
-
-		if backendinfo:  # expect this to be a dict
-			modules = backendinfo['modules']
-			helpermodules = backendinfo['realmodules']
-			hostCount = backendinfo['hostCount']
-
-			if modules.get('customer'):
-				logger.info("Verifying modules file signature")
-				publicKey = getPublicKey(data=base64.decodebytes(b"AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDojY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDUlk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP"))
-				data = ""
-				mks = list(modules.keys())
-				mks.sort()
-				for module in mks:
-					if module in ("valid", "signature"):
-						continue
-					if module in helpermodules:
-						val = helpermodules[module]
-						if module == 'uefi':
-							if int(val) + 50 <= hostCount:
-								logger.error("UNDERLICENSED: You have more Clients then licensed in modules file. Disabling module: '%s'", module)
-								modules[module] = False
-							elif int(val) <= hostCount:
-								logger.warning("UNDERLICENSED WARNING: You have more Clients then licensed in modules file.")
-						else:
-							if int(val) > 0:
-								modules[module] = True
-					else:
-						val = modules[module]
-						if val is False:
-							val = "no"
-						if val is True:
-							val = "yes"
-					data += "%s = %s\r\n" % (module.lower().strip(), val)
-
-				verified = False
-				if modules["signature"].startswith("{"):
-					s_bytes = int(modules['signature'].split("}", 1)[-1]).to_bytes(256, "big")
-					try:
-						pkcs1_15.new(publicKey).verify(MD5.new(data.encode()), s_bytes)
-						verified = True
-					except ValueError:
-						# Invalid signature
-						pass
-				else:
-					h_int = int.from_bytes(md5(data.encode()).digest(), "big")
-					s_int = publicKey._encrypt(int(modules["signature"]))
-					verified = h_int == s_int
-				
-				if not verified:
-					logger.error("Failed to verify modules signature")
-					return
-
-				logger.debug("Modules file signature verified (customer: %s)", modules.get('customer'))
-				
-				if modules.get('uefi'):
-					self._uefiModule = True
-				if modules.get('secureboot'):
-					self._secureBootModule = True
-
-		logger.info(u"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
-					self.templatefile, self.pxefile, self.hostId, self.append)
-
-		if not os.path.exists(self.templatefile):
-			raise Exception(u"Template file '%s' not found" % self.templatefile)
-
-		self.template = {'pxelinux': []}
-
-		# Set pxe config content
-		self.content = self._getPXEConfigContent(self.templatefile)
-
-		try:
-			del self.append['pckey']
-		except KeyError:
-			pass  # Key may be non-existing
-
-		if os.path.exists(self.pxefile):
-			os.unlink(self.pxefile)
-		os.mkfifo(self.pxefile)
-		os.chmod(self.pxefile, 0o644)
-
-	def _getPXEConfigContent(self, templateFile):
-		logger.debug(u"Reading template '%s'", templateFile)
-		with open(templateFile, 'r') as infile:
-			templateLines = infile.readlines()
-
-		content = u''
-		appendLineProperties = []
-		for line in templateLines:
-			line = line.rstrip()
-
-			for (propertyId, value) in self.productPropertyStates.items():
-				logger.debug2("Property: '%s': value: '%s'", propertyId, value)
-				line = line.replace(u'%%%s%%' % propertyId, value)
-
-			if line.lstrip().startswith(u'append'):
-				if line.lstrip().startswith(u'append='):
-					logger.notice("elilo configuration detected for %s", self.hostId)
-					self.uefi = True
-					appendLineProperties = ''.join(line.split('="')[1:])[:-1].split()
-				else:
-					self.uefi = False
-					appendLineProperties = line.lstrip().split()[1:]
-
-				for key, value in self.append.items():
-					if value:
-						appendLineProperties.append("%s=%s" % (key, value))
-					else:
-						appendLineProperties.append(str(key))
-
-				if self._uefiModule and self.uefi:
-					content = '%sappend="%s"\n' % (content, ' '.join(appendLineProperties))
-				elif not self._uefiModule and self.uefi:
-					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
-				else:
-					content = '%s  append %s\n' % (content, ' '.join(appendLineProperties))
-			elif line.lstrip().startswith(u'linux'):
-				logger.notice("UEFI GRUB configuration detected for %s", self.hostId)
-				if not self._uefiModule and self.uefi:
-					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
-
-				self.uefi = True
-				self._usingGrub = True
-				appendLineProperties = line.lstrip().split()[1:]
-				for key, value in self.append.items():
-					if value:
-						appendLineProperties.append("%s=%s" % (key, value))
-					else:
-						appendLineProperties.append(str(key))
-
-				content = '%slinux %s\n' % (content, ' '.join(appendLineProperties))
-			else:
-				content = "%s%s\n" % (content, line)
-
-		return content
-
-	def run(self):
-		self._running = True
-		pipeOpenend = False
-		while self._running and not pipeOpenend:
-			try:
-				self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
-				pipeOpenend = True
-			except Exception as error:
-				if error.errno != 6:
-					raise
-				time.sleep(1)
-
-		if pipeOpenend:
-			logger.notice(u"Pipe '%s' opened, piping pxe boot configuration", self.pxefile)
-			os.write(self._pipe, self.content.encode())
-			if self.uefi and self._usingGrub:
-				time.sleep(5)
-			os.close(self._pipe)
-
-		if os.path.exists(self.pxefile):
-			os.unlink(self.pxefile)
-
-		if pipeOpenend and self._callback:
-			self._callback(self)
-
-	def stop(self):
-		self._running = False
-
-
 class ClientConnection(threading.Thread):
 	def __init__(self, opsipxeconfd, connectionSocket, callback=None):
 		threading.Thread.__init__(self)
@@ -938,46 +745,45 @@ class ClientConnection(threading.Thread):
 			logger.error("Processing command '%s' failed: %s", cmd, error)
 			return u'%s: %s' % (ERROR_MARKER, error)
 
+def assemble_command(opts):
+	if opts.start:
+		command = ["start"]
+	elif opts.stop:
+		command = ["stop"]
+	elif opts.status:
+		command = ["status"]
+	elif opts.update:
+		command = ["update"]
+	else:
+		raise ValueError("Either start, stop, status or update [exactly one of them] must be provided")
+	if opts.no-fork:
+		command.append("no-fork")
+	command.append("loglevel="+str(opts.loglevel))
+	if opts.conffile is not None:
+		command.append("conffile="+str(opts.conffile))
+	#Theoretically it is possible for the user to specify additional commands, not captured here.
+	return command
 
 class OpsipxeconfdInit(object):
-	def __init__(self):
+	def __init__(self, opts):
 		logger.setLevel(logging.WARNING)
 		logger.debug(u"OpsiPXEConfdInit")
 		# Set umask
 		os.umask(0o077)
 		self._pid = 0
 
-		try:
-			(self.opts, self.args) = getopt.getopt(sys.argv[1:], "vFl:c:", ["no-fork", "version", "loglevel=", "conffile="])
-		except getopt.GetoptError as e:
-			self.usage()
-			sys.exit(1)
-
 		self.config = {}
 		self.setDefaultConfig()
-		# Process command line arguments
-		for (opt, arg) in self.opts:
-			if opt in ("-c", "--conffile"):
-				self.config['configFile'] = forceFilename(arg)
-			elif opt in ("-v", "--version"):
-				print(f"{__version__} [python-opsi={python_opsi_version}]")
-				sys.exit(0)
-		
-		if len(self.args) < 1:
-			self.usage()
-			sys.exit(1)
-		
+
+		if opts.conffile is not None:
+			self.config['configFile'] = forceFilename(arg)
 		self.updateConfigFile()
 		self.readConfigFile()
 		self.setCommandlineConfig()
 
 		init_logging(self.config)
-
-		if self.args[0] == u'version':
-			print(f"{__version__} [python-opsi={python_opsi_version}]")
-			sys.exit(0)
-
-		elif self.args[0] == u'start':
+		
+		if opts.start:
 			# Call signalHandler on signal SIGHUP, SIGTERM, SIGINT
 			signal(SIGHUP, self.signalHandler)
 			signal(SIGTERM, self.signalHandler)
@@ -993,10 +799,10 @@ class OpsipxeconfdInit(object):
 				while self._opsipxeconfd.isRunning():
 					time.sleep(1)
 				self._opsipxeconfd.join(30)
-
 		else:
+			command = assemble_command(opts)
 			con = ServerConnection(self.config['port'], timeout=5.0)
-			result = con.sendCommand(u' '.join(forceUnicodeList(self.args)))
+			result = con.sendCommand(u' '.join(forceUnicodeList(command)))
 			if result:
 				if result.startswith(u'(ERROR)'):
 					print(result, file=sys.stderr)
@@ -1133,22 +939,6 @@ class OpsipxeconfdInit(object):
 			raise
 		logger.notice(u"Config read")
 
-	@staticmethod
-	def usage():
-		print(u"\nUsage: %s [options] <command> [clientId] [args]..." % os.path.basename(sys.argv[0]))
-		print(u"Commands:")
-		print(u"  version         Show version information and exit")
-		print(u"  start           Start main process")
-		print(u"  stop            Stop main process")
-		print(u"  status          Print status information of the main process")
-		print(u"  update          update PXE boot configuration for client")
-		print(u"Options:")
-		print(u"  -F, --no-fork   Do not fork to background")
-		print(u"  -c, --conffile  Location of config file")
-		print(u"  -l, --loglevel  Set log level (default: 5)")
-		print(u"        0=comment, 1=essential, 2=critical, 3=error, 4=warning, 5=notice, 6=info, 7=debug, 8=debug2, 9=confidential")
-		print(u"")
-
 	def daemonize(self):
 		# Fork to allow the shell to return and to call setsid
 		try:
@@ -1240,14 +1030,3 @@ def temporaryPidFile(filepath):
 				logger.error("Failed to remove pid file %r: %s", pidFile, oserr)
 		except Exception as error:
 			logger.error("Failed to remove pid file %r: %s", pidFile, error)
-
-
-def main():
-	try:
-		OpsipxeconfdInit()
-	except SystemExit:
-		pass
-	except Exception as exception:
-		logger.logException(exception)
-		print(u"ERROR: %s" % exception, file=sys.stderr)
-		sys.exit(1)
