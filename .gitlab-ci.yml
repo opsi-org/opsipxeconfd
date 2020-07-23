@@ -33,6 +33,7 @@ stages:
   url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsiconfd.git.*#/opsi-server.git#')
   #branch=$(git rev-parse --abbrev-ref HEAD)
   branch=master
+  echo "attempting git clone --branch" $branch $url "../opsi-server"
   GIT_TERMINAL_PROMPT=0 git clone --branch $branch $url ../opsi-server
   cp -a ../opsi-server/opsi-server_data/etc /etc/opsi
   # Set mysql address in config
