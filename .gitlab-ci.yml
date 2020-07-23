@@ -21,7 +21,7 @@ stages:
   mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "SET GLOBAL sql_mode = 'NO_ENGINE_SUBSTITUTION';"
   #mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "CREATE USER 'opsi'@'%' IDENTIFIED BY 'opsi';"
   mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "GRANT ALL ON *.* TO 'opsi'@'%';"
-  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "CREATE TABLE 'HOST';""
+  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "CREATE TABLE 'HOST';"
   # Get config files from opsi-server package
   [ -e /etc/opsi ] && rm -r /etc/opsi
   [ -e ../opsi-server ] && rm -r ../opsi-server
