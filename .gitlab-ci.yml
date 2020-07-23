@@ -54,6 +54,7 @@ stages:
   echo "${OPSICONFD_STATIC_DIR}"
   mkdir /var/run/opsipxeconfd/
   touch /etc/opsi/opsipxeconfd.conf
+  mkdir /var/log/opsi
   touch /var/log/opsi/opsipxeconfd.log
 
 
