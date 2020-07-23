@@ -1,6 +1,7 @@
 image: python:3.7-stretch
 
 stages:
+  - test
   - build
   - publish
 
@@ -10,6 +11,73 @@ stages:
   apt -y install debhelper osc
   pip3 install --trusted-host pypi.uib.gmbh --index-url http://pypi.uib.gmbh:8080/simple opsi-dev-tools
   pip3 install poetry
+
+.prepare_tests: &prepare_tests |
+  # Install debian packages
+  export DEBIAN_FRONTEND=noninteractive
+  apt update
+  apt -y install wget git python3-pip python3-venv libmysqlclient-dev mysql-client iproute2 net-tools iputils-ping
+  # Deactivate mysql strict mode
+  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "SET GLOBAL sql_mode = 'NO_ENGINE_SUBSTITUTION';"
+  #mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "CREATE USER 'opsi'@'%' IDENTIFIED BY 'opsi';"
+  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "GRANT ALL ON *.* TO 'opsi'@'%';"
+  # Get config files from opsi-server package
+  [ -e /etc/opsi ] && rm -r /etc/opsi
+  [ -e ../opsi-server ] && rm -r ../opsi-server
+  url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsipxeconfd.git.*#/opsi-server.git#')
+  #branch=$(git rev-parse --abbrev-ref HEAD)
+  branch=master
+  GIT_TERMINAL_PROMPT=0 git clone --branch $branch $url ../opsi-server
+  cp -a ../opsi-server/opsi-server_data/etc /etc/opsi
+  # Set mysql address in config
+  sed -i "s/127.0.0.1/mysql/" /etc/opsi/backends/mysql.conf
+  # Use mysql backend only
+  echo ".* : mysql" > /etc/opsi/backendManager/dispatch.conf
+  # Configure opsipxeconfd
+  mkdir -p /var/lib/opsi/repository /var/lib/opsi/depot
+  #echo "redis-internal-url = redis://redis" > /etc/opsi/opsipxeconfd.conf
+  echo "log-level-stderr = 4" >> /etc/opsi/opsipxeconfd.conf
+  echo "log-level-file = 0" >> /etc/opsi/opsipxeconfd.conf
+  # echo "max-session-per-ip = 20" >> /etc/opsi/opsipxeconfd.conf
+  # Installing opsi test modules file
+  echo "${OPSI_TEST_MODULES}" > /etc/opsi/modules
+  # TODO: restore some backend
+  # Install poetry
+  pip3 install poetry
+  poetry install
+  poetry run opsipxeconfd --setup --log-level-stderr=5
+  # Create adminuser used with opsiconfd-perftest.py
+  useradd adminuser
+  echo "adminuser:adminuser" | chpasswd
+  adduser adminuser opsiadmin  
+  # redis-server /etc/redis/redis.conf --maxclients 150000 --loglevel verbose &
+  #redis-server /etc/redis/redis.conf &
+  #sleep 20
+  #echo "Set OPSI STATIC DIR"
+  #export OPSICONFD_STATIC_DIR="opsiconfd_data/static"
+  #echo "${OPSICONFD_STATIC_DIR}"
+
+.pytest: &pytest |
+  poetry run opsipxeconfd start &
+  sleep 20
+  echo "Run tests"
+  poetry run pytest /builds/uib/opsipxeconfd/tests
+
+
+test:pytest:
+  when: manual
+  image: ubuntu:focal
+  services:
+    - mysql:latest
+  variables:
+    MYSQL_ROOT_PASSWORD: "opsi"
+    MYSQL_DATABASE: "opsi"
+    MYSQL_USER: "opsi"
+    MYSQL_PASSWORD: "opsi"
+  stage: test
+  script:
+    - *prepare_tests
+    - *pytest
 
 build:linux-pyinstaller:
   stage: build

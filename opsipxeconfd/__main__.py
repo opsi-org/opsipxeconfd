@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
 	parser.add_argument('status', help="Print status information of the main process.")
 	parser.add_argument('update', help="Update PXE boot configuration for client.")
 
-	parser.add_argument('--no-fork', '-F', help="Do not fork to background.")
+	parser.add_argument('--no-fork', '-F', dest="nofork", help="Do not fork to background.")
 	parser.add_argument('--conffile', '-c', help="Location of config file.")
 
 	opts = parser.parse_args()
