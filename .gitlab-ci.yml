@@ -53,11 +53,13 @@ stages:
   ##poetry run opsiconfd --setup --log-level-stderr=5
   # Create adminuser used with opsiconfd-perftest.py
   groupadd opsiadmin
+  groupadd pcpatch
   useradd adminuser
   useradd opsiconfd
   echo "adminuser:adminuser" | chpasswd
   adduser adminuser opsiadmin
   adduser opsiconfd opsiadmin
+  adduser adminuser pcpatch
   # redis-server /etc/redis/redis.conf --maxclients 150000 --loglevel verbose &
   ##redis-server /etc/redis/redis.conf &
   ##sleep 20
