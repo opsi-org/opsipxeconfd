@@ -20,10 +20,9 @@ def parse_args() -> argparse.Namespace:
 		description="Runs and controls opsipxeconfd.",
 		add_help=False
 	)
-	parser.add_argument('--version', '-v', help="Show version information and exit.")
+	parser.add_argument('--version', '-v', help="Show version information and exit.", action="store_true")
 	parser.add_argument('--help', action="store_true", help="Display help.")
-	parser.add_argument(
-		'--log-level', '--loglevel', '-l', default=LOG_WARNING,
+	parser.add_argument('--log-level', '--loglevel', '-l', default=LOG_WARNING,
 		dest="logLevel", type=int, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 		help="Set the desired loglevel."
 	)
