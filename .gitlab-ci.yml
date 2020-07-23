@@ -58,6 +58,7 @@ stages:
   #echo "${OPSICONFD_STATIC_DIR}"
 
 .pytest: &pytest |
+  mkdir /var/run/opsipxeconfd/
   poetry run opsipxeconfd start &
   sleep 20
   echo "Run tests"

@@ -13,7 +13,7 @@ import os
 
 import opsicommon.logging
 import logging
-from opsicommon.logging import logger, DATETIME_FORMAT, LOG_COLORS
+from opsicommon.logging import logger
 from logging.handlers import WatchedFileHandler, RotatingFileHandler
 import colorlog
 
@@ -29,8 +29,8 @@ def init_logging(config):
 			file_handler.setLevel(config.get("logLevel_file"))
 			logger.addHandler(file_handler)
 
-		if config['daemon']:
-			opsicommon.logging.remove_all_handlers(handler_type=logging.StreamHandler)
+		#if config['daemon']:	#TODO
+		#	opsicommon.logging.remove_all_handlers(handler_type=logging.StreamHandler)
 		
 		logger.setLevel(logLevel)		
 		logging.captureWarnings(True)
