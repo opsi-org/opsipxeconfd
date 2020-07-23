@@ -19,7 +19,7 @@ def test_help_and_version():
 	OpsipxeconfdInit(opts)
 
 def test_OpsipxeconfdInit():
-	opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=None)
+	opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=True)
 	OpsipxeconfdInit(opts)
 	time.sleep(12)
 	opts = argparse.Namespace(help=None, version=None, command="status", conffile=None, logLevel=7, nofork=None)
