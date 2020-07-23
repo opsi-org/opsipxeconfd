@@ -59,10 +59,8 @@ stages:
 
 .pytest: &pytest |
   mkdir /var/run/opsipxeconfd/
-  poetry run opsipxeconfd start &
-  sleep 20
   echo "Run tests"
-  poetry run pytest /builds/uib/opsipxeconfd/tests
+  poetry run pytest
 
 
 test:pytest:
