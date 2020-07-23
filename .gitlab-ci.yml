@@ -30,8 +30,7 @@ stages:
   # Get config files from opsi-server package
   [ -e /etc/opsi ] && rm -r /etc/opsi
   [ -e ../opsi-server ] && rm -r ../opsi-server
-  url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsiconfd.git.*#/opsi-server.git#')
-  #branch=$(git rev-parse --abbrev-ref HEAD)
+  url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsipxeconfd.git.*#/opsi-server.git#')
   branch=master
   echo "attempting git clone --branch" $branch $url "../opsi-server"
   GIT_TERMINAL_PROMPT=0 git clone --branch $branch $url ../opsi-server
