@@ -47,13 +47,14 @@ from contextlib import contextmanager, closing
 from shlex import split as shlex_split
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 
-from .logging import logger, init_logging, logging, DEFAULT_FORMAT
+from .logging import init_logging
+from opsicommon.logging import logger, logging, DEFAULT_FORMAT, LOG_NONE, LOG_NOTICE, LOG_WARNING, LOG_ERROR
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER, ServerConnection
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Exceptions import BackendMissingDataError
-from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, LOG_ERROR, Logger
+#from OPSI.Logger import LOG_NONE, LOG_NOTICE, LOG_WARNING, LOG_ERROR, Logger
 from OPSI.System.Posix import execute, which
 from OPSI.Util import deserialize, getfqdn
 from OPSI.Util.File import ConfigFile
@@ -115,7 +116,8 @@ class Opsipxeconfd(threading.Thread):
 
 	def reload(self):
 		logger.notice(u"Reloading opsipxeconfd")
-		init_logging(self.config)
+		logger.devel("skipped init_logging. TODO: Rotating file handler")
+		#init_logging(self.config)
 		self._createBackendInstance()
 		self._createSocket()
 
@@ -756,17 +758,18 @@ def assemble_command(opts):
 		command = ["update"]
 	else:
 		raise ValueError("Either start, stop, status or update [exactly one of them] must be provided")
-	if opts.no-fork:
-		command.append("no-fork")
-	command.append("loglevel="+str(opts.loglevel))
+	if opts.nofork:
+		command.append("--no-fork")
+	command.append("--logLevel="+str(opts.logLevel))
 	if opts.conffile is not None:
-		command.append("conffile="+str(opts.conffile))
+		command.append("--conffile="+str(opts.conffile))
 	#Theoretically it is possible for the user to specify additional commands, not captured here.
 	return command
 
 class OpsipxeconfdInit(object):
 	def __init__(self, opts):
-		logger.setLevel(logging.WARNING)
+		self.opts = opts
+		logger.setLevel(LOG_WARNING)
 		logger.debug(u"OpsiPXEConfdInit")
 		# Set umask
 		os.umask(0o077)
@@ -776,11 +779,12 @@ class OpsipxeconfdInit(object):
 		self.setDefaultConfig()
 
 		if opts.conffile is not None:
-			self.config['configFile'] = forceFilename(arg)
+			self.config['configFile'] = forceFilename(opts.conffile)
 		self.updateConfigFile()
 		self.readConfigFile()
 		self.setCommandlineConfig()
 
+		logger.devel("skipped init_logging. TODO: Rotating file handler")
 		init_logging(self.config)
 		
 		if opts.start:
@@ -837,11 +841,10 @@ class OpsipxeconfdInit(object):
 		}
 
 	def setCommandlineConfig(self):
-		for (opt, arg) in self.opts:
-			if opt in ("-F", "--no-fork"):
-				self.config['daemon'] = False
-			if opt in ("-l", "--loglevel"):
-				self.config['logLevel'] = forceInt(arg)
+		if self.opts.nofork is not None:
+			self.config['daemon'] = False
+		if self.opts.logLevel is not None:
+			self.config['logLevel'] = forceInt(self.opts.logLevel)
 
 	def signalHandler(self, signo, stackFrame):
 		for thread in threading.enumerate():
@@ -929,6 +932,8 @@ class OpsipxeconfdInit(object):
 					self.config['backendConfigDir'] = forceFilename(value)
 				elif option == 'dispatch config file':
 					self.config['dispatchConfigFile'] = forceFilename(value)
+				elif option == 'port':
+					self.config['port'] = forceFilename(value)
 				else:
 					logger.warning("Ignoring unknown option %s in config file: %s", option, self.config['configFile'])
 
