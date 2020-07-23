@@ -116,8 +116,7 @@ class Opsipxeconfd(threading.Thread):
 
 	def reload(self):
 		logger.notice(u"Reloading opsipxeconfd")
-		logger.devel("skipped init_logging. TODO: Rotating file handler")
-		#init_logging(self.config)
+		init_logging(self.config)
 		self._createBackendInstance()
 		self._createSocket()
 
@@ -748,16 +747,7 @@ class ClientConnection(threading.Thread):
 			return u'%s: %s' % (ERROR_MARKER, error)
 
 def assemble_command(opts):
-	if opts.start:
-		command = ["start"]
-	elif opts.stop:
-		command = ["stop"]
-	elif opts.status:
-		command = ["status"]
-	elif opts.update:
-		command = ["update"]
-	else:
-		raise ValueError("Either start, stop, status or update [exactly one of them] must be provided")
+	command = [opts.command]
 	if opts.nofork:
 		command.append("--no-fork")
 	command.append("--logLevel="+str(opts.logLevel))
@@ -784,10 +774,9 @@ class OpsipxeconfdInit(object):
 		self.readConfigFile()
 		self.setCommandlineConfig()
 
-		logger.devel("skipped init_logging. TODO: Rotating file handler")
 		init_logging(self.config)
 		
-		if opts.start:
+		if opts.command == "start":
 			# Call signalHandler on signal SIGHUP, SIGTERM, SIGINT
 			signal(SIGHUP, self.signalHandler)
 			signal(SIGTERM, self.signalHandler)

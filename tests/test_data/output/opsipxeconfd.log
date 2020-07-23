@@ -1851,3 +1851,69 @@ Traceback (most recent call last):
   File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/MySQL.py", line 244, in _createConnectionPool
     raise BackendUnableToConnectError(u"Failed to connect to database '%s' address '%s': %s" % (self._database, address, error))
 OPSI.Exceptions.BackendUnableToConnectError: Backend I/O error: Failed to connect to database 'opsi' address '127.0.0.1': (1045, "Access denied for user 'opsi'@'localhost' (using password: YES)")
+[1] [2020-07-23 11:52:30,411.411] [               ] opsi pxe configuration service starting   (opsipxeconfd.py:88)
+[3] [2020-07-23 11:52:30,495.495] [               ] No translation file found for language en_US, falling back to en_US   (ConfigData.py:1059)
+[3] [2020-07-23 11:52:30,498.498] [               ] Failed to read translation file for language en_US: [Errno 2] No such file or directory: '/etc/opsi/hwaudit/locales/en_US'   (ConfigData.py:1074)
+[4] [2020-07-23 11:52:30,498.498] [               ] Failed to read audit hardware configuration from file '/etc/opsi/hwaudit/opsihwaudit.conf': [Errno 2] No such file or directory: '/etc/opsi/hwaudit/opsihwaudit.conf'   (ConfigData.py:1145)
+[2] [2020-07-23 11:52:38,645.645] [               ] Backend I/O error: Failed to connect to database 'opsi' address '127.0.0.1': (1045, "Access denied for user 'opsi'@'localhost' (using password: YES)")   (Logger.py:94)
+Traceback (most recent call last):
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/MySQL.py", line 230, in _createConnectionPool
+    recycle=self._connectionPoolRecyclingSeconds,
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/MySQL.py", line 121, in __init__
+    con = ConnectionPool.__instance.connect()
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/base.py", line 364, in connect
+    return _ConnectionFairy._checkout(self)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/base.py", line 778, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/base.py", line 495, in checkout
+    rec = pool._do_get()
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/impl.py", line 140, in _do_get
+    self._dec_overflow()
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/util/langhelpers.py", line 69, in __exit__
+    exc_value, with_traceback=exc_tb,
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/util/compat.py", line 178, in raise_
+    raise exception
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/impl.py", line 137, in _do_get
+    return self._create_connection()
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/base.py", line 309, in _create_connection
+    return _ConnectionRecord(self)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/base.py", line 440, in __init__
+    self.__connect(first_connect_check=True)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/base.py", line 661, in __connect
+    pool.logger.debug("Error on connect(): %s", e)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/util/langhelpers.py", line 69, in __exit__
+    exc_value, with_traceback=exc_tb,
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/util/compat.py", line 178, in raise_
+    raise exception
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/base.py", line 656, in __connect
+    connection = pool._invoke_creator(self)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/sqlalchemy/pool/base.py", line 264, in <lambda>
+    return lambda crec: creator()
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/MySQL.py", line 118, in getConnection
+    return MySQLdb.connect(**kwargs)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/MySQLdb/__init__.py", line 84, in Connect
+    return Connection(*args, **kwargs)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/MySQLdb/connections.py", line 179, in __init__
+    super(Connection, self).__init__(*args, **kwargs2)
+MySQLdb._exceptions.OperationalError: (1045, "Access denied for user 'opsi'@'localhost' (using password: YES)")
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/nils/Documents/opsipxeconfd/opsipxeconfd/opsipxeconfd.py", line 194, in run
+    self._createBackendInstance()
+  File "/home/nils/Documents/opsipxeconfd/opsipxeconfd/opsipxeconfd.py", line 130, in _createBackendInstance
+    extend=True
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/Manager/_Manager.py", line 181, in __init__
+    self._backend = BackendDispatcher(context=self, **kwargs)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/Manager/Dispatcher.py", line 79, in __init__
+    self.__loadBackends(dict(kwargs))
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/Manager/Dispatcher.py", line 145, in __loadBackends
+    self._backends[backend]["instance"] = getattr(b, backendClassName)(**cargs)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/MySQL.py", line 581, in __init__
+    self._sql = MySQL(**kwargs)
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/MySQL.py", line 187, in __init__
+    self._createConnectionPool()
+  File "/home/nils/Documents/opsipxeconfd/.venv/lib/python3.7/site-packages/OPSI/Backend/MySQL.py", line 244, in _createConnectionPool
+    raise BackendUnableToConnectError(u"Failed to connect to database '%s' address '%s': %s" % (self._database, address, error))
+OPSI.Exceptions.BackendUnableToConnectError: Backend I/O error: Failed to connect to database 'opsi' address '127.0.0.1': (1045, "Access denied for user 'opsi'@'localhost' (using password: YES)")

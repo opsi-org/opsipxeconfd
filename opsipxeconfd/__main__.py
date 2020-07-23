@@ -27,13 +27,11 @@ def parse_args() -> argparse.Namespace:
 		dest="logLevel", type=int, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 		help="Set the desired loglevel."
 	)
-	parser.add_argument('start', help="Start main process.")
-	parser.add_argument('stop', help="Stop main process.")
-	parser.add_argument('status', help="Print status information of the main process.")
-	parser.add_argument('update', help="Update PXE boot configuration for client.")
 
-	parser.add_argument('--no-fork', '-F', dest="nofork", help="Do not fork to background.")
+	parser.add_argument('--no-fork', '-F', dest="nofork", help="Do not fork to background.", action='store_true')
 	parser.add_argument('--conffile', '-c', help="Location of config file.")
+	parser.add_argument('command', metavar='<command>', type=str, nargs='+',
+                    help='command - one of: start, stop, status, update')
 
 	opts = parser.parse_args()
 
@@ -45,9 +43,10 @@ def parse_args() -> argparse.Namespace:
 		parser.print_help()
 		sys.exit(0)
 
-	if not (opts.start or opts.stop or opts.status or opts.update):
+	if opts.command is None or len(opts.command) == 0 or opts.command[0] not in ["start", "stop", "update", "status"]:
 		parser.print_help()
 		sys.exit(1)
+	opts.command = opts.command[0]
 
 	return opts
 		
