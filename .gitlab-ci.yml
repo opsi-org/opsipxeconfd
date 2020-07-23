@@ -32,7 +32,6 @@ stages:
   [ -e ../opsi-server ] && rm -r ../opsi-server
   url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsipxeconfd.git.*#/opsi-server.git#')
   branch=master
-  echo "attempting git clone --branch" $branch $url "../opsi-server"
   GIT_TERMINAL_PROMPT=0 git clone --branch $branch $url ../opsi-server
   cp -a ../opsi-server/opsi-server_data/etc /etc/opsi
   # Set mysql address in config
@@ -55,8 +54,10 @@ stages:
   # Create adminuser used with opsiconfd-perftest.py
   groupadd opsiadmin
   useradd adminuser
+  useradd opsiconfd
   echo "adminuser:adminuser" | chpasswd
-  adduser adminuser opsiadmin  
+  adduser adminuser opsiadmin
+  adduser opsiconfd opsiadmin
   # redis-server /etc/redis/redis.conf --maxclients 150000 --loglevel verbose &
   ##redis-server /etc/redis/redis.conf &
   ##sleep 20
