@@ -36,6 +36,7 @@ stages:
   cp -a ../opsi-server/opsi-server_data/etc /etc/opsi
   # Set mysql address in config
   sed -i "s/127.0.0.1/mysql/" /etc/opsi/backends/mysql.conf
+  cat /etc/opsi/backends/mysql.conf
   # Use mysql backend only
   echo ".* : mysql" > /etc/opsi/backendManager/dispatch.conf
   # Configure opsiconfd
