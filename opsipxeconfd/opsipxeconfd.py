@@ -921,8 +921,6 @@ class OpsipxeconfdInit(object):
 					self.config['backendConfigDir'] = forceFilename(value)
 				elif option == 'dispatch config file':
 					self.config['dispatchConfigFile'] = forceFilename(value)
-				elif option == 'port':
-					self.config['port'] = forceFilename(value)
 				else:
 					logger.warning("Ignoring unknown option %s in config file: %s", option, self.config['configFile'])
 
