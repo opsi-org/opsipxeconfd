@@ -46,6 +46,7 @@ stages:
   pip3 install poetry
   poetry install
   # Create adminuser used with opsiconfd-perftest.py
+  groupadd opsiadmin
   useradd adminuser
   echo "adminuser:adminuser" | chpasswd
   adduser adminuser opsiadmin  
