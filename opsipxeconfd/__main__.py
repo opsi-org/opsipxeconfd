@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
 
 	parser.add_argument('--no-fork', '-F', dest="nofork", help="Do not fork to background.", action='store_true')
 	parser.add_argument('--conffile', '-c', help="Location of config file.")
-	parser.add_argument('command', metavar='<command>', type=str, nargs='+',
+	parser.add_argument('command', metavar='<command>', type=str, nargs='?',
                     help='command - one of: start, stop, status, update')
 
 	opts = parser.parse_args()
