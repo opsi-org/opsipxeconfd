@@ -56,6 +56,7 @@ stages:
   mkdir /var/run/opsipxeconfd/
   cp tests/test_data/opsipxeconfd.conf /etc/opsi/
   mkdir /var/log/opsi
+  ls -lah /etc/opsi/
 
 .pytest: &pytest |
   #poetry run opsipxeconfd start &
