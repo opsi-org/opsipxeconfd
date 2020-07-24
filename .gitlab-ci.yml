@@ -61,7 +61,7 @@ stages:
 
 .pytest: &pytest |
   poetry run opsipxeconfd start &
-  sleep(10)
+  sleep 10
   echo "Run tests"
   poetry run pytest -s
 
