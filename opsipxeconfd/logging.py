@@ -34,7 +34,7 @@ def init_logging(config):
 		
 		logger.setLevel(logLevel)		
 		logging.captureWarnings(True)
-		opsicommon.logging.set_format(stderr_format = opsicommon.logging.DEFAULT_COLORED_FORMAT)
+		opsicommon.logging.logging_config(stderr_format = opsicommon.logging.DEFAULT_COLORED_FORMAT, stderr_level=config.get("logLevel_stderr"))
 
 	except Exception as exc:
 		opsicommon.logging.handle_log_exception(exc)
