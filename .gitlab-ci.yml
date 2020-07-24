@@ -36,12 +36,7 @@ stages:
   mkdir -p /var/lib/opsi/repository /var/lib/opsi/depot
   # Installing opsi test modules file
   echo "${OPSI_TEST_MODULES}" > /etc/opsi/modules
-  # TODO: restore some backend
-  # Install poetry
-  pip3 install poetry
-  poetry install
-  poetry run opsipxeconfd --setup
-  # Create adminuser used with opsiconfd-perftest.py
+
   groupadd opsiadmin
   groupadd pcpatch
   useradd adminuser
@@ -50,11 +45,18 @@ stages:
   adduser adminuser opsiadmin
   adduser opsiconfd opsiadmin
   adduser adminuser pcpatch
+
+  # TODO: restore some backend
+  # Install poetry
+  pip3 install poetry
+  poetry install
+  touch /etc/opsi/opsipxeconfd.conf
+  poetry run opsipxeconfd --setup
+  # Create adminuser used with opsiconfd-perftest.py
   echo "Set OPSI STATIC DIR"
   export OPSICONFD_STATIC_DIR="opsiconfd_data/static"
   echo "${OPSICONFD_STATIC_DIR}"
   mkdir /var/run/opsipxeconfd/
-  cp tests/test_data/opsipxeconfd.conf /etc/opsi/
   mkdir /var/log/opsi
   ls -lah /etc/opsi/
 
