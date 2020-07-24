@@ -60,8 +60,9 @@ stages:
   echo "${OPSICONFD_STATIC_DIR}"
 
 .pytest: &pytest |
-  poetry run opsipxeconfd start --log-level 7
+  poetry run opsipxeconfd start --log-level 6
   sleep 10
+  ls -lah /var/run/opsipxeconfd/
   echo "Run tests"
   poetry run pytest -s
 
