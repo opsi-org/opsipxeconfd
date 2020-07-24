@@ -21,11 +21,6 @@ stages:
   mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "SET GLOBAL sql_mode = 'NO_ENGINE_SUBSTITUTION';"
   #mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "CREATE USER 'opsi'@'%' IDENTIFIED BY 'opsi';"
   mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "GRANT ALL ON *.* TO 'opsi'@'%';"
-  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "CREATE TABLE opsi.HOST(\
-    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,\
-    OpsiDepotserver VARCHAR(30),\
-    OpsiClient VARCHAR(30)\
-  );"
   # Get config files from opsi-server package
   [ -e /etc/opsi ] && rm -r /etc/opsi
   [ -e ../opsi-server ] && rm -r ../opsi-server
@@ -45,6 +40,7 @@ stages:
   # Install poetry
   pip3 install poetry
   poetry install
+  poetry run opsipxeconfd --setup --log-level-stderr=5
   # Create adminuser used with opsiconfd-perftest.py
   groupadd opsiadmin
   groupadd pcpatch
@@ -60,8 +56,6 @@ stages:
   mkdir /var/run/opsipxeconfd/
   touch /etc/opsi/opsipxeconfd.conf
   mkdir /var/log/opsi
-  touch /var/log/opsi/opsipxeconfd.log
-
 
 .pytest: &pytest |
   #poetry run opsipxeconfd start &

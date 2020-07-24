@@ -48,6 +48,7 @@ from shlex import split as shlex_split
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 
 from .logging import init_logging
+from .setup import setup
 from opsicommon.logging import logger, logging, DEFAULT_FORMAT, LOG_NONE, LOG_NOTICE, LOG_WARNING, LOG_ERROR
 
 from OPSI.Backend.BackendManager import BackendManager
@@ -775,6 +776,8 @@ class OpsipxeconfdInit(object):
 		self.setCommandlineConfig()
 
 		init_logging(self.config)
+		if opts.setup is not None:
+			setup(self.config)
 		
 		if opts.command == "start":
 			# Call signalHandler on signal SIGHUP, SIGTERM, SIGINT
