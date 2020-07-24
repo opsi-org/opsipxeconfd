@@ -779,7 +779,7 @@ class OpsipxeconfdInit(object):
 		self.config['logLevel_stderr'] = opts.logLevel
 		self.config['logLevel_file'] = opts.logLevel
 		init_logging(self.config)
-		if opts.setup is not None:
+		if opts.setup:
 			setup(self.config)
 			sys.exit(0)
 		
