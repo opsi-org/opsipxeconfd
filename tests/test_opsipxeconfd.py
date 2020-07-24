@@ -13,7 +13,7 @@ from opsipxeconfd.opsipxeconfd import OpsipxeconfdInit
 CONFFILE = "tests/test_data/opsipxeconfd.conf"
 
 def test_OpsipxeconfdInit():
-	opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=True, setup=None)
+	opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=None, setup=None)
 	OpsipxeconfdInit(opts)
 	time.sleep(12)
 	opts = argparse.Namespace(help=None, version=None, command="status", conffile=None, logLevel=7, nofork=None, setup=None)
