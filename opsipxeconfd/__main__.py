@@ -29,6 +29,7 @@ def parse_args() -> argparse.Namespace:
 
 	parser.add_argument('--no-fork', '-F', dest="nofork", help="Do not fork to background.", action='store_true')
 	parser.add_argument('--conffile', '-c', help="Location of config file.")
+	parser.add_argument('--setup', action="store_true", help="Set up the environment and exit.")
 	parser.add_argument('command', metavar='<command>', type=str, nargs='?',
                     help='command - one of: start, stop, status, update')
 
@@ -42,10 +43,14 @@ def parse_args() -> argparse.Namespace:
 		parser.print_help()
 		sys.exit(0)
 
-	if opts.command is None or len(opts.command) == 0 or opts.command[0] not in ["start", "stop", "update", "status"]:
+	has_command = (opts.command and opts.command[0] in ["start", "stop", "update", "status"])
+	if has_command:
+		opts.command = opts.command[0]
+		return opts
+
+	if not opts.setup:
 		parser.print_help()
 		sys.exit(1)
-	opts.command = opts.command[0]
 
 	return opts
 		
