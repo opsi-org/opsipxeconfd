@@ -36,6 +36,7 @@ stages:
   echo ".* : mysql" > /etc/opsi/backendManager/dispatch.conf
   # Configure opsiconfd
   mkdir -p /var/lib/opsi/repository /var/lib/opsi/depot
+  touch /etc/opsi/opsipxeconfd.conf
   # Installing opsi test modules file
   echo "${OPSI_TEST_MODULES}" > /etc/opsi/modules
 
@@ -52,7 +53,6 @@ stages:
   # Install poetry
   pip3 install poetry
   poetry install
-  touch /etc/opsi/opsipxeconfd.conf
   poetry run opsipxeconfd --setup
   # Create adminuser used with opsiconfd-perftest.py
   echo "Set OPSI STATIC DIR"
@@ -60,7 +60,7 @@ stages:
   echo "${OPSICONFD_STATIC_DIR}"
 
 .pytest: &pytest |
-  poetry run opsipxeconfd start &
+  poetry run opsipxeconfd start --log-level 7
   sleep 10
   echo "Run tests"
   poetry run pytest -s
