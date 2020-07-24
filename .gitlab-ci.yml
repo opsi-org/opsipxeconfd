@@ -39,7 +39,7 @@ stages:
   # Installing opsi test modules file
   echo "${OPSI_TEST_MODULES}" > /etc/opsi/modules
 
-  #groupadd opsiadmin
+  groupadd opsiadmin
   #groupadd pcpatch
   useradd adminuser
   #useradd opsiconfd
