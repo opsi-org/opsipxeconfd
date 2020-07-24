@@ -110,7 +110,7 @@ def setup_backend(config):
 	initializeBackends()
 
 def setup(config):
-	logger.notice("Running opsiconfd setup")
+	logger.notice("Running opsipxeconfd setup")
 	po_setup_users_and_groups()
 	#setup_users_and_groups(config)
 	#setup_systemd
