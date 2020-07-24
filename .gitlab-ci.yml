@@ -40,13 +40,13 @@ stages:
   echo "${OPSI_TEST_MODULES}" > /etc/opsi/modules
 
   groupadd opsiadmin
-  #groupadd pcpatch
+  groupadd pcpatch
   useradd adminuser
-  #useradd opsiconfd
+  useradd opsiconfd
   echo "adminuser:adminuser" | chpasswd
   adduser adminuser opsiadmin
-  #adduser opsiconfd opsiadmin
-  #adduser adminuser pcpatch
+  adduser opsiconfd opsiadmin
+  adduser adminuser pcpatch
 
   # TODO: restore some backend
   # Install poetry
