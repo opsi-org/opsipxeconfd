@@ -10,8 +10,6 @@ import time
 from opsicommon.logging import LOG_WARNING
 from opsipxeconfd.opsipxeconfd import OpsipxeconfdInit
 
-CONFFILE = "tests/test_data/opsipxeconfd.conf"
-
 def test_OpsipxeconfdInit():
 	#opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=None, setup=None)
 	#OpsipxeconfdInit(opts)
