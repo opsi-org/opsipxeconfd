@@ -776,8 +776,11 @@ class OpsipxeconfdInit(object):
 		self.setCommandlineConfig()
 
 		#TODO: separate command line arguments for stderr and file
-		self.config['logLevel_stderr'] = opts.logLevel
-		self.config['logLevel_file'] = opts.logLevel
+		self.config['logLevel'] = opts.logLevel
+		self.config['logLevel_stderr'] = opts.logLevelStderr
+		self.config['logLevel_file'] = opts.logLevelFile
+		self.config['maxBytesLog'] = opts.maxLogSize
+		self.config['backupCountLog'] = opts.keepRotatedLogs
 		init_logging(self.config)
 		if opts.setup:
 			setup(self.config)
