@@ -43,12 +43,9 @@ def parse_args() -> argparse.Namespace:
 		parser.print_help()
 		sys.exit(0)
 
-	has_command = (opts.command and opts.command[0] in ["start", "stop", "update", "status"])
-	if has_command:
-		opts.command = opts.command[0]
-		return opts
+	has_command = (opts.command and (opts.command in ["start", "stop", "update", "status"]))
 
-	if not opts.setup:
+	if not opts.setup and not has_command:
 		parser.print_help()
 		sys.exit(1)
 
