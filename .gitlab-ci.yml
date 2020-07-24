@@ -28,6 +28,8 @@ stages:
   branch=master
   GIT_TERMINAL_PROMPT=0 git clone --branch $branch $url ../opsi-server
   cp -a ../opsi-server/opsi-server_data/etc /etc/opsi
+  mkdir /var/run/opsipxeconfd/
+  mkdir /var/log/opsi
   # Set mysql address in config
   sed -i "s/127.0.0.1/mysql/" /etc/opsi/backends/mysql.conf
   # Use mysql backend only
@@ -56,9 +58,6 @@ stages:
   echo "Set OPSI STATIC DIR"
   export OPSICONFD_STATIC_DIR="opsiconfd_data/static"
   echo "${OPSICONFD_STATIC_DIR}"
-  mkdir /var/run/opsipxeconfd/
-  mkdir /var/log/opsi
-  ls -lah /etc/opsi/
 
 .pytest: &pytest |
   #poetry run opsipxeconfd start &
