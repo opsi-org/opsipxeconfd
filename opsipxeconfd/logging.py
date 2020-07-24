@@ -42,4 +42,3 @@ def init_logging(config):
 
 	except Exception as exc:
 		opsicommon.logging.handle_log_exception(exc)
-	opsicommon.logging.print_logger_info()
