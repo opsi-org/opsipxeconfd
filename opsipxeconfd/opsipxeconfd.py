@@ -803,14 +803,16 @@ class OpsipxeconfdInit(object):
 			command = assemble_command(opts)
 			con = ServerConnection(self.config['port'], timeout=5.0)
 			result = con.sendCommand(u' '.join(forceUnicodeList(command)))
-			if result:
-				if result.startswith(u'(ERROR)'):
-					print(result, file=sys.stderr)
-					sys.exit(1)
-				print(result, file=sys.stdout)
-				sys.exit(0)
-			else:
-				sys.exit(1)
+			return	#TODO: exit code handling
+#			if result:
+#				if result.startswith(u'(ERROR)'):
+#					print(result, file=sys.stderr)
+#					sys.exit(1)
+#				print(result, file=sys.stdout)
+#				sys.exit(0)
+#			else:
+#				sys.exit(1)
+			
 
 	def setDefaultConfig(self):
 		self.config = {
