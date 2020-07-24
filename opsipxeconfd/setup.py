@@ -120,4 +120,4 @@ def setup(config):
 		# This can happen during package installation
 		# where backend config files are missing
 		logger.warning("Failed to setup backend: %s", e)
-	setup_files(config['log_file'])
+	setup_files(config['logFile'])
