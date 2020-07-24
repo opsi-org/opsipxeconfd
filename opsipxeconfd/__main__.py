@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
                     help='command - one of: start, stop, status, update')
 
 	parser.add(
-		"--log-level", "--loglevel", "--l"
+		"--log-level", "--loglevel", "--l",
 		env_var="OPSIPXECONFD_LOG_LEVEL",
 		type=int,
 		default=5,
