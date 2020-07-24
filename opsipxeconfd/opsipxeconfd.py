@@ -775,7 +775,9 @@ class OpsipxeconfdInit(object):
 		self.readConfigFile()
 		self.setCommandlineConfig()
 
-		self.config['logLevel'] = opts.logLevel
+		#TODO: separate command line arguments for stderr and file
+		self.config['logLevel_stderr'] = opts.logLevel
+		self.config['logLevel_file'] = opts.logLevel
 		init_logging(self.config)
 		if opts.setup is not None:
 			setup(self.config)

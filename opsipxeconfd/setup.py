@@ -99,7 +99,7 @@ def get_backend(config):
 def setup_backend(config):
 	fqdn = getLocalFqdn()
 	try:
-		backend = get_backend()
+		backend = get_backend(config)
 		depot = backend.host_getObjects(type='OpsiDepotserver', id=fqdn)
 		if depot:
 			return
