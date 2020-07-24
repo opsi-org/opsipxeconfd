@@ -775,6 +775,7 @@ class OpsipxeconfdInit(object):
 		self.readConfigFile()
 		self.setCommandlineConfig()
 
+		self.config['logLevel'] = opts.logLevel
 		init_logging(self.config)
 		if opts.setup is not None:
 			setup(self.config)
