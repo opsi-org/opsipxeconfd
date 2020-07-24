@@ -23,8 +23,8 @@ stages:
   mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "GRANT ALL ON *.* TO 'opsi'@'%';"
   mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "CREATE TABLE HOST(\
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,\
-    OpsiDepotserver VARCHAR(30) NOT NULL,\
-    OpsiClient VARCHAR(30) NOT NULL,\
+    OpsiDepotserver VARCHAR(30),\
+    OpsiClient VARCHAR(30)\
   );"
   # Get config files from opsi-server package
   [ -e /etc/opsi ] && rm -r /etc/opsi
