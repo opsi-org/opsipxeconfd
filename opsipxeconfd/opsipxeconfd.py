@@ -781,6 +781,8 @@ class OpsipxeconfdInit(object):
 		self.config['logLevel_file'] = opts.logLevelFile
 		self.config['maxBytesLog'] = opts.maxLogSize
 		self.config['backupCountLog'] = opts.keepRotatedLogs
+		if opts.logFilter:
+			opsicommon.logging.set_filter_from_string(opts.logFilter)
 		init_logging(self.config)
 		if opts.setup:
 			setup(self.config)
@@ -805,7 +807,7 @@ class OpsipxeconfdInit(object):
 		else:
 			command = assemble_command(opts)
 			con = ServerConnection(self.config['port'], timeout=5.0)
-			result = con.sendCommand(u' '.join(forceUnicodeList(command)))
+			result = con.sendCommand(" ".join(forceUnicodeList(command)))
 			return	#TODO: exit code handling
 #			if result:
 #				if result.startswith(u'(ERROR)'):
