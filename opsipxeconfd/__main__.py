@@ -8,7 +8,8 @@ See LICENSES/README.md for more Information
 """
 
 import sys
-import argparse
+from argparse import ArgumentDefaultsHelpFormatter
+import configargparse
 
 from OPSI import __version__ as python_opsi_version
 from .opsipxeconfd import OpsipxeconfdInit
@@ -16,20 +17,20 @@ from opsicommon.logging import logger
 from . import __version__
 
 def parse_args() -> argparse.Namespace:
-	parser = argparse.ArgumentParser(
-		description="Runs and controls opsipxeconfd.",
-		add_help=False
+parser = configargparse.ArgParser(
+		formatter_class=lambda prog: ArgumentDefaultsHelpFormatter(
+		prog, max_help_position=30, width=100
 	)
-	parser.add_argument('--version', '-v', help="Show version information and exit.", action="store_true")
-	parser.add_argument('--help', action="store_true", help="Display help.")
+)	parser.add('--version', '-v', help="Show version information and exit.", action="store_true")
+	parser.add('--help', action="store_true", help="Display help.")
 
-	parser.add_argument('--no-fork', '-F', dest="nofork", help="Do not fork to background.", action='store_true')
-	parser.add_argument('--conffile', '-c', help="Location of config file.")
-	parser.add_argument('--setup', action="store_true", help="Set up the environment and exit.")
-	parser.add_argument('command', metavar='<command>', type=str, nargs='?',
+	parser.add('--no-fork', '-F', dest="nofork", help="Do not fork to background.", action='store_true')
+	parser.add('--conffile', '-c', help="Location of config file.")
+	parser.add('--setup', action="store_true", help="Set up the environment and exit.")
+	parser.add('command', metavar='<command>', type=str, nargs='?',
                     help='command - one of: start, stop, status, update')
 
-	parser.add_argument(
+	parser.add(
 		"--log-level", "--loglevel", "--l",
 		env_var="OPSIPXECONFD_LOG_LEVEL",
 		type=int,
@@ -40,14 +41,14 @@ def parse_args() -> argparse.Namespace:
 			+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 			+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets"
 	)
-	parser.add_argument(
+	parser.add(
 		"--log-file",
 		env_var="OPSIPXECONFD_LOG_FILE",
 		default="/var/log/opsi/opsipxeconfd.log",
 		dest="logFile",
 		help="Log file to use."
 	)
-	parser.add_argument(
+	parser.add(
 		"--max-log-size",
 		env_var="OPSIPXECONFD_MAX_LOG_SIZE",
 		type=float,
@@ -58,7 +59,7 @@ def parse_args() -> argparse.Namespace:
 			+ "If you set this to 0 we recommend using a proper logrotate configuration"
 			+ "so that your disk does not get filled by the logs."
 	)
-	parser.add_argument(
+	parser.add(
 		"--keep-rotated-logs",
 		env_var="OPSIPXECONFD_KEEP_ROTATED_LOGS",
 		type=int,
@@ -66,7 +67,7 @@ def parse_args() -> argparse.Namespace:
 		dest="keepRotatedLogs",
 		help="Number of rotated log files to keep."
 	)
-	parser.add_argument(
+	parser.add(
 		"--log-level-file",
 		env_var="OPSIPXECONFD_LOG_LEVEL_FILE",
 		type=int,
@@ -77,7 +78,7 @@ def parse_args() -> argparse.Namespace:
 			+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 			+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets"
 	)
-	parser.add_argument(
+	parser.add(
 		"--log-level-stderr",
 		env_var="OPSIPXECONFD_LOG_LEVEL_STDERR",
 		type=int,
@@ -88,7 +89,7 @@ def parse_args() -> argparse.Namespace:
 			+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 			+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets"
 	)
-	parser.add_argument(
+	parser.add(
 		"--log-filter",
 		env_var="OPSIPXECONFD_LOG_FILTER",
 		dest="logFilter",
