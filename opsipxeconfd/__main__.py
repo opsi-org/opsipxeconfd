@@ -8,8 +8,8 @@ See LICENSES/README.md for more Information
 """
 
 import sys
-from argparse import ArgumentDefaultsHelpFormatter
 import configargparse
+import argparse
 
 from OPSI import __version__ as python_opsi_version
 from .opsipxeconfd import OpsipxeconfdInit
@@ -17,11 +17,12 @@ from opsicommon.logging import logger
 from . import __version__
 
 def parse_args() -> argparse.Namespace:
-parser = configargparse.ArgParser(
-		formatter_class=lambda prog: ArgumentDefaultsHelpFormatter(
-		prog, max_help_position=30, width=100
+	parser = configargparse.ArgParser(
+			formatter_class=lambda prog: argparse.ArgumentDefaultsHelpFormatter(
+			prog, max_help_position=30, width=100
+		)
 	)
-)	parser.add('--version', '-v', help="Show version information and exit.", action="store_true")
+	parser.add('--version', '-v', help="Show version information and exit.", action="store_true")
 	parser.add('--help', action="store_true", help="Display help.")
 
 	parser.add('--no-fork', '-F', dest="nofork", help="Do not fork to background.", action='store_true')
