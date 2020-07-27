@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
 	parser.add_argument('command', metavar='<command>', type=str, nargs='?',
                     help='command - one of: start, stop, status, update')
 
-	parser.add(
+	parser.add_argument(
 		"--log-level", "--loglevel", "--l",
 		env_var="OPSIPXECONFD_LOG_LEVEL",
 		type=int,
@@ -40,14 +40,14 @@ def parse_args() -> argparse.Namespace:
 			+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 			+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets"
 	)
-	parser.add(
+	parser.add_argument(
 		"--log-file",
 		env_var="OPSIPXECONFD_LOG_FILE",
 		default="/var/log/opsi/opsipxeconfd.log",
 		dest="logFile",
 		help="Log file to use."
 	)
-	parser.add(
+	parser.add_argument(
 		"--max-log-size",
 		env_var="OPSIPXECONFD_MAX_LOG_SIZE",
 		type=float,
@@ -58,7 +58,7 @@ def parse_args() -> argparse.Namespace:
 			+ "If you set this to 0 we recommend using a proper logrotate configuration"
 			+ "so that your disk does not get filled by the logs."
 	)
-	parser.add(
+	parser.add_argument(
 		"--keep-rotated-logs",
 		env_var="OPSIPXECONFD_KEEP_ROTATED_LOGS",
 		type=int,
@@ -66,7 +66,7 @@ def parse_args() -> argparse.Namespace:
 		dest="keepRotatedLogs",
 		help="Number of rotated log files to keep."
 	)
-	parser.add(
+	parser.add_argument(
 		"--log-level-file",
 		env_var="OPSIPXECONFD_LOG_LEVEL_FILE",
 		type=int,
@@ -77,7 +77,7 @@ def parse_args() -> argparse.Namespace:
 			+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 			+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets"
 	)
-	parser.add(
+	parser.add_argument(
 		"--log-level-stderr",
 		env_var="OPSIPXECONFD_LOG_LEVEL_STDERR",
 		type=int,
@@ -88,7 +88,7 @@ def parse_args() -> argparse.Namespace:
 			+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 			+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets"
 	)
-	parser.add(
+	parser.add_argument(
 		"--log-filter",
 		env_var="OPSIPXECONFD_LOG_FILTER",
 		dest="logFilter",
