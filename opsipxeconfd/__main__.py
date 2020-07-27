@@ -23,8 +23,6 @@ def parse_args() -> argparse.Namespace:
 		)
 	)
 	parser.add('--version', '-v', help="Show version information and exit.", action="store_true")
-	parser.add('--help', action="store_true", help="Display help.")
-
 	parser.add('--no-fork', '-F', dest="nofork", help="Do not fork to background.", action='store_true')
 	parser.add('--conffile', '-c', help="Location of config file.")
 	parser.add('--setup', action="store_true", help="Set up the environment and exit.")
@@ -102,10 +100,6 @@ def parse_args() -> argparse.Namespace:
 
 	if opts.version:
 		print(f"{__version__} [python-opsi={python_opsi_version}]")
-		sys.exit(0)
-
-	if opts.help:
-		parser.print_help()
 		sys.exit(0)
 
 	has_command = (opts.command and (opts.command in ["start", "stop", "update", "status"]))
