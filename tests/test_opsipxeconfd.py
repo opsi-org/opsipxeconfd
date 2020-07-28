@@ -137,4 +137,4 @@ def test_pxeconfigwriter():
 	kernel install-x64
 	append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0 hn=test dn=uib.gmbh product service
 	"""
-	assert " ".join("kernel", PXE_TEMPLATE_FILE) in content
+	assert " ".join(["kernel", PXE_TEMPLATE_FILE]) in content
