@@ -1,0 +1,7 @@
+default=opsi
+timeout=0
+
+image=/linux/install-x64
+label=opsi
+append="initrd=/linux/miniroot-x64.bz2 debug video=vesa:ywrap,mtrr vga=normal --no-log console=tty1 console=ttyS0"
+initrd=/linux/miniroot-x64.bz2
