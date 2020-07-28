@@ -12,7 +12,7 @@ import configargparse
 import argparse
 
 from OPSI import __version__ as python_opsi_version
-from .opsipxeconfd import OpsipxeconfdInit
+from .opsipxeconfdinit import OpsipxeconfdInit
 from opsicommon.logging import logger
 from . import __version__
 

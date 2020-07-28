@@ -20,25 +20,25 @@ import colorlog
 def init_logging(config):
 	try:
 		logLevel = max(config.get("logLevel"), config.get("logLevel_stderr"), config.get("logLevel_file"))
-		#logLevel = logging._opsiLevelToLevel[logLevel]	# log level is handled by constants LOG_WARNING etc.
+		logLevel = logging._opsiLevelToLevel[logLevel]
 		if config['logFile']:
 			plain_formatter = logging.Formatter(opsicommon.logging.DEFAULT_FORMAT)
 			formatter = opsicommon.logging.ContextSecretFormatter(plain_formatter)
 			file_handler = RotatingFileHandler(config['logFile'], maxBytes=config['maxBytesLog'], backupCount=config['backupCountLog'])
 			file_handler.setFormatter(formatter)
-			file_handler.setLevel(config.get("logLevel_file"))
+			file_handler.setLevel(logging._opsiLevelToLevel[config.get("logLevel_file")])
 			logger.addHandler(file_handler)
-
-		#if config['daemon']:	#TODO
-		#	opsicommon.logging.remove_all_handlers(handler_type=logging.StreamHandler)
 		
 		logger.setLevel(logLevel)		
 		logging.captureWarnings(True)
 		opsicommon.logging.logging_config(
 					stderr_format = opsicommon.logging.DEFAULT_COLORED_FORMAT,
-					stderr_level=config.get("logLevel_stderr"),
-					file_level=config.get("logLevel_file")
+					stderr_level=logging._opsiLevelToLevel[config.get("logLevel_stderr")],
+					file_level=logging._opsiLevelToLevel[config.get("logLevel_file")]
 		)
+
+		if config['daemon']:
+			opsicommon.logging.logging.remove_all_handlers(handler_type=logging.StreamHandler)
 
 	except Exception as exc:
 		opsicommon.logging.handle_log_exception(exc)
