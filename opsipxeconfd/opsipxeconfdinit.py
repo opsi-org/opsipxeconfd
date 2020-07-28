@@ -51,6 +51,7 @@ from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
 	forceUnicodeList)
+from .opsipxeconfd import Opsipxeconfd
 
 def assemble_command(opts):
 	command = [opts.command]
