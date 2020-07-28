@@ -125,6 +125,6 @@ def test_pxeconfigwriter():
 	}
 	productPropertyStates = {}
 	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile)
-	content = pcw._getPXEConfigContent()
+	content = pcw._getPXEConfigContent(pxeConfigTemplate)
 	print(content)
 	assert 0
