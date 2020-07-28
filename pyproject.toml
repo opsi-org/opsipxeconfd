@@ -30,6 +30,7 @@ opsi-dev-tools = "^1.0.4"
 #poetry add git+<protocol>://git@<repository>/<owner>/<project>.git#<git_ref>
 
 
+pytest-cov = "^2.10.0"
 [tool.poetry.scripts]
 opsipxeconfd = "opsipxeconfd.__main__:main"
 
