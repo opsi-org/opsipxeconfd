@@ -8,7 +8,11 @@ This file is part of opsi - https://www.opsi.org
 import argparse
 import time
 from opsicommon.logging import LOG_WARNING
-from opsipxeconfd.opsipxeconfd import OpsipxeconfdInit
+from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit
+from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
+
+from OPSI.Types import forceHostId
+from OPSI.Util import getfqdn
 
 default_opts = argparse.Namespace(	help=None,
 									version=None,
@@ -36,3 +40,64 @@ def test_OpsipxeconfdInit():
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.command = "stop"
 	OpsipxeconfdInit(opts)
+
+def test_pxeconfigwriter():
+	hostId = forceHostId(getfqdn())
+	productOnClients = None
+	#host = cachedData["host"]
+	depotId = forceHostId(getfqdn())
+
+#	newProductOnClients = []
+#	productOnClients = self._backend.productOnClient_getObjects(
+#		productType=u'NetbootProduct',
+#		clientId=hostId,
+#		actionRequest=['setup', 'uninstall', 'update', 'always', 'once', 'custom']
+#	)
+#	for poc in productOnClients:
+#		try:
+#			productOnDepot = cachedData["productOnDepot"]
+#		except KeyError:
+#			logger.debug("Searching for product '%s' on depot '%s'", poc.productId, depotId)
+#			productOnDepot = self._backend.productOnDepot_getObjects(
+#				productType=u'NetbootProduct',
+#				productId=poc.productId,
+#				depotId=depotId
+#			)
+#
+#			try:
+#				productOnDepot = productOnDepot[0]
+#			except IndexError:
+#				logger.info(u"Product %s not available on depot '%s'", poc.productId, depotId)
+#				continue
+#
+#		if productOnDepot:
+#			poc.productVersion = productOnDepot.productVersion
+#			poc.packageVersion = productOnDepot.packageVersion
+#			newProductOnClients.append(poc)
+#
+#	productOnClients = newProductOnClients
+
+	#product = cachedData["product"]
+	#elilo = cachedData['elilo'] or ''
+	#product = None
+	#elilo = None
+	#pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients, product, elilo)
+	pxeConfigTemplate = 'tests/test_data/install-elilo-x64'
+
+	pxefile = '/etc/opsi/opsipxeconfd.conf'
+		
+	append = {
+		'pckey': None,	#host.getOpsiHostKey(),
+		'hn': hostId.split('.')[0],
+		'dn': u'.'.join(hostId.split('.')[1:]),
+		'product': None,
+		'service': None
+	}
+
+#	productPropertyStates = cachedData["productPropertyStates"]
+	productPropertyStates = {}
+	#backendInfo = cachedData["backendInfo"]
+#	backendInfo = self._backend.backend_info()
+#	backendInfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
+
+	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile)
