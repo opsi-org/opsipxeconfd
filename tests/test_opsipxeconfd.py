@@ -14,11 +14,11 @@ from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
 from OPSI.Types import forceHostId
 from OPSI.Util import getfqdn
 
-default_opts = argparse.Namespace(	help=None,
-									version=None,
-									nofork=None,
+default_opts = argparse.Namespace(	help=False,
+									version=False,
+									nofork=False,
 									conffile=None,
-									setup=None,
+									setup=False,
 									command="start",
 									logLevel=7,
 									logFile="/var/log/opsi/opsipxeconfd.log",
@@ -82,7 +82,7 @@ def test_pxeconfigwriter():
 	#product = None
 	#elilo = None
 	#pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients, product, elilo)
-	pxeConfigTemplate = 'tests/test_data/install-elilo-x64'
+	pxeConfigTemplate = 'tests/test_data/install-x64'
 
 	pxefile = '/etc/opsi/opsipxeconfd.conf'
 		
