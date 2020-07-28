@@ -64,7 +64,7 @@ stages:
 
 .pytest: &pytest |
   poetry run opsipxeconfd start --log-level 6 &
-  sleep 10
+  sleep 15
   echo "Run tests"
   poetry run pytest --cov opsipxeconfd --cov-report term
 
