@@ -29,6 +29,12 @@ default_opts = argparse.Namespace(	help=False,
 									logFilter=None
 )
 
+def test_setup():
+	opts = argparse.Namespace(**vars(default_opts))
+	opts.setup = True
+	opts.command = None
+	OpsipxeconfdInit(opts)
+
 def test_OpsipxeconfdInit():
 	#opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=None, setup=None)
 	#OpsipxeconfdInit(opts)
@@ -41,6 +47,7 @@ def test_OpsipxeconfdInit():
 	opts.command = "stop"
 	OpsipxeconfdInit(opts)
 
+"""
 def test_pxeconfigwriter():
 	hostId = forceHostId(getfqdn())
 	productOnClients = None
@@ -101,3 +108,23 @@ def test_pxeconfigwriter():
 #	backendInfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))
 
 	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile)
+"""
+
+def test_pxeconfigwriter():
+	hostId = forceHostId(getfqdn())
+	productOnClients = None
+	depotId = forceHostId(getfqdn())
+	pxeConfigTemplate = 'tests/test_data/install-x64'
+	pxefile = '/etc/opsi/opsipxeconfd.conf'
+	append = {
+		'pckey': None,	#host.getOpsiHostKey(),
+		'hn': hostId.split('.')[0],
+		'dn': u'.'.join(hostId.split('.')[1:]),
+		'product': None,
+		'service': None
+	}
+	productPropertyStates = {}
+	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile)
+	content = pcw._getPXEConfigContent()
+	print(content)
+	assert 0
