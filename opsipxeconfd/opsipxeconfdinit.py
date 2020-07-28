@@ -95,7 +95,7 @@ class OpsipxeconfdInit(object):
 		init_logging(self.config)
 		if opts.setup:
 			setup(self.config)
-			sys.exit(0)
+			return		#TODO: exit code handling
 		
 		if opts.command == "start":
 			# Call signalHandler on signal SIGHUP, SIGTERM, SIGINT

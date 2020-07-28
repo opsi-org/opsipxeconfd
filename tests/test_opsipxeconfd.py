@@ -7,6 +7,7 @@ This file is part of opsi - https://www.opsi.org
 """
 import argparse
 import time
+import os
 from opsicommon.logging import LOG_WARNING
 from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
@@ -28,6 +29,10 @@ default_opts = argparse.Namespace(	help=False,
 									logLevelStderr=7,
 									logFilter=None
 )
+
+TEST_DATA = 'tests/test_data/'
+PXE_TEMPLATE_FILE = 'install-x64'
+CONFFILE = '/etc/opsi/opsipxeconfd.conf'
 
 def test_setup():
 	opts = argparse.Namespace(**vars(default_opts))
@@ -114,8 +119,8 @@ def test_pxeconfigwriter():
 	hostId = forceHostId(getfqdn())
 	productOnClients = None
 	depotId = forceHostId(getfqdn())
-	pxeConfigTemplate = 'tests/test_data/install-x64'
-	pxefile = '/etc/opsi/opsipxeconfd.conf'
+	pxeConfigTemplate = os.path.join(TEST_DATA, PXE_TEMPLATE_FILE)
+	pxefile = CONFFILE
 	append = {
 		'pckey': None,	#host.getOpsiHostKey(),
 		'hn': hostId.split('.')[0],
@@ -126,5 +131,10 @@ def test_pxeconfigwriter():
 	productPropertyStates = {}
 	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile)
 	content = pcw._getPXEConfigContent(pxeConfigTemplate)
-	print(content)
-	assert 0
+	"""
+	default opsi-install-x64
+	label opsi-install-x64
+	kernel install-x64
+	append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0 hn=test dn=uib.gmbh product service
+	"""
+	assert " ".join("kernel", PXE_TEMPLATE_FILE) in content
