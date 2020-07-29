@@ -44,6 +44,7 @@ from contextlib import closing
 from shlex import split as shlex_split
 
 from .logging import init_logging
+import opsicommon.logging
 from opsicommon.logging import logger
 
 from OPSI.Backend.BackendManager import BackendManager
@@ -178,21 +179,22 @@ class Opsipxeconfd(threading.Thread):
 					pass  # Element not in list
 
 	def run(self):
-		self._running = True
-		logger.notice(u"Starting opsipxeconfd main thread")
-		try:
-			self._createBackendInstance()
-			logger.info("Setting needed boot configurations")
-			self._startupTask = StartupTask(self)
-			self._startupTask.start()
-			self._createSocket()
-			while self._running:
-				self._getConnection()
-			logger.notice(u"Opsipxeconfd main thread exiting...")
-		except Exception as error:
-			logger.logException(error)
-		finally:
-			self._running = False
+		with opsicommon.logging.log_context({'instance' : 'opsipxeconfd'}):
+			self._running = True
+			logger.notice(u"Starting opsipxeconfd main thread")
+			try:
+				self._createBackendInstance()
+				logger.info("Setting needed boot configurations")
+				self._startupTask = StartupTask(self)
+				self._startupTask.start()
+				self._createSocket()
+				while self._running:
+					self._getConnection()
+				logger.notice(u"Opsipxeconfd main thread exiting...")
+			except Exception as error:
+				logger.logException(error)
+			finally:
+				self._running = False
 
 	def clientConnectionCallback(self, connection):
 		"""
