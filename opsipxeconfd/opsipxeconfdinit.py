@@ -94,7 +94,8 @@ class OpsipxeconfdInit(object):
 			opsicommon.logging.set_filter_from_string(opts.logFilter)
 		init_logging(self.config)
 		if opts.setup:
-			setup(self.config)
+			with opsicommon.logging.log_context({'instance' : 'opsipxeconfd setup'}):
+				setup(self.config)
 			return		#TODO: exit code handling
 		
 		if opts.command == "start":
@@ -105,18 +106,19 @@ class OpsipxeconfdInit(object):
 
 			if self.config['daemon']:
 				self.daemonize()
-			
-			with temporaryPidFile(self.config['pidFile']):
-				self._opsipxeconfd = Opsipxeconfd(self.config)
-				self._opsipxeconfd.start()
-				time.sleep(3)
-				while self._opsipxeconfd.isRunning():
-					time.sleep(1)
-				self._opsipxeconfd.join(30)
+			with opsicommon.logging.log_context({'instance' : 'opsipxeconfd start'}):
+				with temporaryPidFile(self.config['pidFile']):
+					self._opsipxeconfd = Opsipxeconfd(self.config)
+					self._opsipxeconfd.start()
+					time.sleep(3)
+					while self._opsipxeconfd.isRunning():
+						time.sleep(1)
+					self._opsipxeconfd.join(30)
 		else:
-			command = assemble_command(opts)
-			con = ServerConnection(self.config['port'], timeout=5.0)
-			result = con.sendCommand(" ".join(forceUnicodeList(command)))
+			with opsicommon.logging.log_context({'instance' : " ".join(['opsipxeconfd', opts.command])}):
+				command = assemble_command(opts)
+				con = ServerConnection(self.config['port'], timeout=5.0)
+				result = con.sendCommand(" ".join(forceUnicodeList(command)))
 			return	#TODO: exit code handling
 #			if result:
 #				if result.startswith(u'(ERROR)'):

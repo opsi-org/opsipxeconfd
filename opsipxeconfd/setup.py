@@ -117,7 +117,5 @@ def setup(config):
 	try:
 		setup_backend(config)
 	except Exception as e:
-		# This can happen during package installation
-		# where backend config files are missing
 		logger.warning("Failed to setup backend: %s", e)
 	setup_files(config['logFile'])

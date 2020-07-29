@@ -169,29 +169,30 @@ class PXEConfigWriter(threading.Thread):
 		return content
 
 	def run(self):
-		self._running = True
-		pipeOpenend = False
-		while self._running and not pipeOpenend:
-			try:
-				self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
-				pipeOpenend = True
-			except Exception as error:
-				if error.errno != 6:
-					raise
-				time.sleep(1)
+		with opsicommon.logging.log_context({'instance' : 'pxeconfigwriter'}):
+			self._running = True
+			pipeOpenend = False
+			while self._running and not pipeOpenend:
+				try:
+					self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
+					pipeOpenend = True
+				except Exception as error:
+					if error.errno != 6:
+						raise
+					time.sleep(1)
 
-		if pipeOpenend:
-			logger.notice(u"Pipe '%s' opened, piping pxe boot configuration", self.pxefile)
-			os.write(self._pipe, self.content.encode())
-			if self.uefi and self._usingGrub:
-				time.sleep(5)
-			os.close(self._pipe)
+			if pipeOpenend:
+				logger.notice(u"Pipe '%s' opened, piping pxe boot configuration", self.pxefile)
+				os.write(self._pipe, self.content.encode())
+				if self.uefi and self._usingGrub:
+					time.sleep(5)
+				os.close(self._pipe)
 
-		if os.path.exists(self.pxefile):
-			os.unlink(self.pxefile)
+			if os.path.exists(self.pxefile):
+				os.unlink(self.pxefile)
 
-		if pipeOpenend and self._callback:
-			self._callback(self)
+			if pipeOpenend and self._callback:
+				self._callback(self)
 
 	def stop(self):
 		self._running = False
