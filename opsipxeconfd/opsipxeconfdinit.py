@@ -41,8 +41,8 @@ from signal import SIGHUP, SIGINT, SIGTERM, signal
 
 from .logging import init_logging
 from .setup import setup
-import opsicommon.logging
-from opsicommon.logging import logger, DEFAULT_FORMAT, LOG_NONE, LOG_NOTICE, LOG_WARNING
+from opsicommon.logging import (logger, DEFAULT_FORMAT, LOG_NONE,
+			LOG_NOTICE, LOG_WARNING, log_context, set_filter_from_string)
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ServerConnection
@@ -91,10 +91,10 @@ class OpsipxeconfdInit(object):
 		self.config['maxBytesLog'] = opts.maxLogSize
 		self.config['backupCountLog'] = opts.keepRotatedLogs
 		if opts.logFilter:
-			opsicommon.logging.set_filter_from_string(opts.logFilter)
+			set_filter_from_string(opts.logFilter)
 		init_logging(self.config)
 		if opts.setup:
-			with opsicommon.logging.log_context({'instance' : 'opsipxeconfd setup'}):
+			with log_context({'instance' : 'opsipxeconfd setup'}):
 				setup(self.config)
 			return		#TODO: exit code handling
 		
@@ -106,7 +106,7 @@ class OpsipxeconfdInit(object):
 
 			if self.config['daemon']:
 				self.daemonize()
-			with opsicommon.logging.log_context({'instance' : 'opsipxeconfd start'}):
+			with log_context({'instance' : 'opsipxeconfd start'}):
 				with temporaryPidFile(self.config['pidFile']):
 					self._opsipxeconfd = Opsipxeconfd(self.config)
 					self._opsipxeconfd.start()
@@ -115,7 +115,7 @@ class OpsipxeconfdInit(object):
 						time.sleep(1)
 					self._opsipxeconfd.join(30)
 		else:
-			with opsicommon.logging.log_context({'instance' : " ".join(['opsipxeconfd', opts.command])}):
+			with log_context({'instance' : " ".join(['opsipxeconfd', opts.command])}):
 				command = assemble_command(opts)
 				con = ServerConnection(self.config['port'], timeout=5.0)
 				result = con.sendCommand(" ".join(forceUnicodeList(command)))

@@ -12,8 +12,7 @@ except ImportError:
 	from Crypto.Hash import MD5
 	from Crypto.Signature import pkcs1_15
 
-import opsicommon.logging
-from opsicommon.logging import logger
+from opsicommon.logging import logger, log_context
 from OPSI.Util import getPublicKey
 
 class PXEConfigWriter(threading.Thread):
@@ -169,7 +168,7 @@ class PXEConfigWriter(threading.Thread):
 		return content
 
 	def run(self):
-		with opsicommon.logging.log_context({'instance' : 'pxeconfigwriter'}):
+		with log_context({'instance' : 'pxeconfigwriter'}):
 			self._running = True
 			pipeOpenend = False
 			while self._running and not pipeOpenend:
