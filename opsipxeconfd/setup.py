@@ -28,13 +28,11 @@ import subprocess
 from OPSI.Config import OPSI_ADMIN_GROUP, FILE_ADMIN_GROUP, DEFAULT_DEPOT_USER
 from OPSI.setup import (
 	setup_users_and_groups as po_setup_users_and_groups,
-	setup_file_permissions as po_setup_file_permissions,
 	get_users, get_groups, add_user_to_group, create_user
 )
 from OPSI.System.Posix import getLocalFqdn
 from OPSI.Util.Task.Rights import setRights
 from OPSI.Util.Task.InitializeBackend import initializeBackends
-from OPSI.System import get_subprocess_environment
 from OPSI.Backend.BackendManager import BackendManager
 
 from opsicommon.logging import logger
@@ -68,22 +66,6 @@ def setup_files(log_file):
 		os.makedirs(log_dir)
 	setRights(log_dir)
 
-"""
-def setup_systemd():
-	systemd_running = False
-	for proc in psutil.process_iter():
-		if proc.name() == "systemd":
-			systemd_running = True
-			break
-	if not systemd_running:
-		logger.debug("Systemd not running")
-		return
-	
-	logger.info("Setup systemd")
-	subprocess.call(["systemctl", "daemon-reload"], env=get_subprocess_environment())
-	subprocess.call(["systemctl", "enable", "opsipxeconfd.service"], env=get_subprocess_environment())
-"""
-
 def get_backend(config):
 	bc = {
 		'dispatchConfigFile': config['dispatchConfigFile'],
@@ -113,7 +95,6 @@ def setup(config):
 	logger.notice("Running opsipxeconfd setup")
 	po_setup_users_and_groups()
 	#setup_users_and_groups(config)
-	#setup_systemd
 	try:
 		setup_backend(config)
 	except Exception as e:
