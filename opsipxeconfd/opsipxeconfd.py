@@ -44,8 +44,7 @@ from contextlib import closing
 from shlex import split as shlex_split
 
 from .logging import init_logging
-import opsicommon.logging
-from opsicommon.logging import logger
+from opsicommon.logging import logger, log_context
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER
@@ -179,7 +178,7 @@ class Opsipxeconfd(threading.Thread):
 					pass  # Element not in list
 
 	def run(self):
-		with opsicommon.logging.log_context({'instance' : 'opsipxeconfd'}):
+		with log_context({'instance' : 'opsipxeconfd'}):
 			self._running = True
 			logger.notice(u"Starting opsipxeconfd main thread")
 			try:
