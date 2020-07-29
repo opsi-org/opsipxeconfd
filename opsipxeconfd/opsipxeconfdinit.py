@@ -36,21 +36,22 @@ import os
 import sys
 import threading
 import time
+import argparse
+from typing import Dict, Any
 from contextlib import contextmanager
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 
 from .logging import init_logging
 from .setup import setup
+from .util import temporaryPidFile
 from opsicommon.logging import (logger, DEFAULT_FORMAT, LOG_NONE,
 			LOG_NOTICE, LOG_WARNING, log_context, set_filter_from_string)
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Backend.OpsiPXEConfd import ServerConnection
-from OPSI.System.Posix import execute, which
 from OPSI.Util import getfqdn
 from OPSI.Util.File import ConfigFile
-from OPSI.Types import (forceFilename, forceHostId, forceInt, forceUnicode,
-	forceUnicodeList)
+from OPSI.Types import (forceHostId, forceInt, forceUnicode, forceUnicodeList, forceFilename)
 from .opsipxeconfd import Opsipxeconfd
 
 def assemble_command(opts):
@@ -67,7 +68,27 @@ def assemble_command(opts):
 	return command
 
 class OpsipxeconfdInit(object):
-	def __init__(self, opts):
+	"""
+	class OpsipxeconfdInit.
+
+	This class sets up all preconditions for an Opsipxeconfd thread.
+	Settings are loaded from config files and command line and
+	logging is set up. This class also handles command calls which
+	are passed to a running instance of Opsipxeconfd.
+	"""
+	def __init__(self, opts : argparse.Namespace) -> None:
+		"""
+		OpsipxeconfdInit constructor.
+
+		This constructor creates an OpsipxeconfdInit instance. The settings are
+		determined by values in the config file and command line arguments
+		(previously parsed and converted into an argparse.Namespace).
+		Depending on the command specified on command line, an action is triggered.
+		This could be start, stop, update or status.
+
+		:param opts: Parsed command line arguments as argparse.Namespace.
+		:type opts: argparse.Namespace.
+		"""
 		self.opts = opts
 		logger.setLevel(LOG_WARNING)
 		logger.debug(u"OpsiPXEConfdInit")
@@ -130,7 +151,14 @@ class OpsipxeconfdInit(object):
 #				sys.exit(1)
 			
 
-	def setDefaultConfig(self):
+	def setDefaultConfig(self) -> None:
+		"""
+		Initializes config with default.
+
+		This method creates a config dictionary.
+		It fills it with default values for the different settings of
+		the opsipxeconfd.
+		"""
 		self.config = {
 			'pidFile': u'/var/run/opsipxeconfd/opsipxeconfd.pid',
 			'configFile': u'/etc/opsi/opsipxeconfd.conf',
@@ -154,7 +182,20 @@ class OpsipxeconfdInit(object):
 			'dispatchConfigFile': u'/etc/opsi/backendManager/dispatch.conf',
 		}
 
-	def signalHandler(self, signo, stackFrame):
+	def signalHandler(self, signo, stackFrame)-> None:
+		"""
+		Signal Handler for OpsipxeconfdInit.
+
+		This method can be hooked to OS-signals. Depending of the type
+		of signal it acts accordingly. For signal SIGHUP it reloads the config
+		from file and attempts to reload the Opsipxeconfd. For signal
+		SIGTERM and SIGINT the Opsipxeconfd is stopped.
+
+		:param signo: Number of the signal to process.
+		:type signo: int
+		:param stackFrame: unused
+		:type stackFrame: Any
+		"""
 		for thread in threading.enumerate():
 			logger.debug("Running thread before signal: %s", thread)
 
@@ -178,6 +219,12 @@ class OpsipxeconfdInit(object):
 			logger.debug("Running thread after signal: %s", thread)
 
 	def updateConfigFile(self):
+		"""
+		Updates Opsipxeconfd config file.
+
+		This method modifies the data written in the configFile to conform to
+		the standard logging format.
+		"""
 		with codecs.open(self.config['configFile'], 'r', "utf-8") as f:
 			data = f.read()
 		new_data = data.replace("[%l] [%D] %M (%F|%N)", DEFAULT_FORMAT)
@@ -194,7 +241,12 @@ class OpsipxeconfdInit(object):
 				f.write(new_data)
 
 	def readConfigFile(self):
-		''' Get settings from config file '''
+		"""
+		Gets settings from config file.
+
+		The config file specified in config['configFile'] is read and its contents
+		are used to fill the config.
+		"""
 		logger.notice("Trying to read config from file: %s", self.config['configFile'])
 
 		try:
@@ -250,6 +302,12 @@ class OpsipxeconfdInit(object):
 		logger.notice(u"Config read")
 
 	def daemonize(self):
+		"""
+		Lets process run as daemon.
+
+		This method forks the current process and closes the parent.
+		For the child stdout and stderr data streams are uncoupled.
+		"""
 		# Fork to allow the shell to return and to call setsid
 		try:
 			self._pid = os.fork()
@@ -290,53 +348,3 @@ class OpsipxeconfdInit(object):
 		os.dup2(0, 2)
 		# sys.stdout = logger.getStdout()
 		# sys.stderr = logger.getStderr()
-	
-
-
-@contextmanager
-def temporaryPidFile(filepath):
-	'''
-	Create a file containing the current pid for 'opsipxeconfd' at `filepath`.
-	Leaving the context will remove the file.
-	'''
-	pidFile = filepath
-
-	logger.debug("Reading old pidFile %r...", pidFile)
-	try:
-		with open(pidFile, 'r') as pf:
-			oldPid = pf.readline().strip()
-
-		if oldPid:
-			running = False
-			try:
-				pids = execute("%s -x opsipxeconfd" % which("pidof"))[0].strip().split()
-				for runningPid in pids:
-					if runningPid == oldPid:
-						running = True
-						break
-			except Exception as error:
-				logger.error(error)
-
-			if running:
-				raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % oldPid)
-	except IOError as ioerr:
-		if ioerr.errno != 2:  # errno 2 == no such file
-			raise ioerr
-
-	logger.info(u"Creating pid file %r", pidFile)
-	pid = os.getpid()
-	with open(pidFile, "w") as pf:
-		pf.write(str(pid))
-
-	try:
-		yield
-	finally:
-		try:
-			logger.debug("Removing pid file %r...")
-			os.unlink(pidFile)
-			logger.info("Removed pid file %r", pidFile)
-		except OSError as oserr:
-			if oserr.errno != 2:
-				logger.error("Failed to remove pid file %r: %s", pidFile, oserr)
-		except Exception as error:
-			logger.error("Failed to remove pid file %r: %s", pidFile, error)
