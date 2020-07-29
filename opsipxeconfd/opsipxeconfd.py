@@ -37,22 +37,19 @@ import grp
 import os
 import socket
 import stat
-import sys
 import threading
 import time
-from contextlib import closing
-from shlex import split as shlex_split
 
 from .logging import init_logging
+from .util import StartupTask, ClientConnection
 from opsicommon.logging import logger, log_context
 
 from OPSI.Backend.BackendManager import BackendManager
-from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Exceptions import BackendMissingDataError
-from OPSI.Util import deserialize, getfqdn
+from OPSI.Util import deserialize
 from OPSI.Util.File import ConfigFile
-from OPSI.Types import (forceFilename, forceHostId, forceUnicode, forceUnicodeList)
+from OPSI.Types import forceFilename, forceHostId, forceUnicode, forceUnicodeList
 
 from .pxeconfigwriter import PXEConfigWriter
 
@@ -622,117 +619,3 @@ class Opsipxeconfd(threading.Thread):
 					yield keyValue[0].strip().lower(), u''
 				else:
 					yield keyValue[0].strip().lower(), keyValue[1].strip()
-
-
-class StartupTask(threading.Thread):
-	def __init__(self, opsipxeconfd):
-		threading.Thread.__init__(self)
-		self._opsipxeconfd = opsipxeconfd
-		self._running = False
-		self._stop = False
-
-	def run(self):
-		self._running = True
-		logger.notice(u"Start setting initial boot configurations")
-		try:
-			clientIds = [clientToDepot['clientId'] for clientToDepot in
-						self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds=[self._opsipxeconfd.config['depotId']])]
-
-			if clientIds:
-				productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(
-					productType=u'NetbootProduct',
-					clientId=clientIds,
-					actionRequest=['setup', 'uninstall', 'update', 'always', 'once', 'custom']
-				)
-
-				clientIds = set()
-				for poc in productOnClients:
-					clientIds.add(poc.clientId)
-
-				for clientId in clientIds:
-					if self._stop:
-						return
-
-					try:
-						self._opsipxeconfd.updateBootConfiguration(clientId)
-					except Exception as error:
-						logger.error(u"Failed to update PXE boot config for client '%s': %s", clientId, error)
-
-			logger.notice(u"Finished setting initial boot configurations")
-		except Exception as error:
-			logger.logException(error)
-		finally:
-			self._running = False
-
-	def stop(self):
-		self._stop = True
-
-class ClientConnection(threading.Thread):
-	def __init__(self, opsipxeconfd, connectionSocket, callback=None):
-		threading.Thread.__init__(self)
-		self._opsipxeconfd = opsipxeconfd
-		self._socket = connectionSocket
-		self._callback = callback
-		self._running = False
-		self.startTime = time.time()
-
-	def run(self):
-		self._running = True
-		self._socket.settimeout(2.0)
-
-		logger.debug("Receiving data...")
-		with closing(self._socket):
-			try:
-				cmd = self._socket.recv(4096)
-				cmd = forceUnicode(cmd.strip())
-				logger.info(u"Got command '%s'", cmd)
-
-				result = self._processCommand(cmd)
-				logger.info(u"Returning result '%s'", result)
-
-				try:
-					self._socket.send(result.encode('utf-8'))
-				except Exception as error:
-					logger.warning("Sending result over socket failed: '%s'", error)
-			finally:
-				if self._running and self._callback:
-					self._callback(self)
-
-	def stop(self):
-		self._running = False
-		try:
-			self._socket.close()
-		except AttributeError:
-			pass  # Probably none
-
-	def _processCommand(self, cmd):
-		try:
-			try:
-				command, arguments = cmd.split(None, 1)
-				arguments = shlex_split(arguments)
-			except ValueError:
-				command = cmd.split()[0]
-
-			command = command.strip()
-
-			if command == u'stop':
-				self._opsipxeconfd.stop()
-				return u'opsipxeconfd is going down'
-			elif command == u'status':
-				return self._opsipxeconfd.status()
-			elif command == u'update':
-				if len(arguments) == 2:
-					# We have an update path
-					hostId = forceHostId(arguments[0])
-					cacheFilePath = forceFilename(arguments[1])
-					return self._opsipxeconfd.updateBootConfiguration(hostId, cacheFilePath)
-				elif len(arguments) == 1:
-					hostId = forceHostId(arguments[0])
-					return self._opsipxeconfd.updateBootConfiguration(hostId)
-				else:
-					raise ValueError(u"bad arguments for command 'update', needs <hostId>")
-
-			raise ValueError(u"Command '%s' not supported" % cmd)
-		except Exception as error:
-			logger.error("Processing command '%s' failed: %s", cmd, error)
-			return u'%s: %s' % (ERROR_MARKER, error)

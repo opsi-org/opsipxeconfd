@@ -24,6 +24,7 @@ import os
 import psutil
 import getpass
 import subprocess
+from typing import Dict
 
 from OPSI.Config import OPSI_ADMIN_GROUP, FILE_ADMIN_GROUP, DEFAULT_DEPOT_USER
 from OPSI.setup import (
@@ -59,14 +60,36 @@ def setup_users_and_groups(config):
 			add_user_to_group(config.run_as_user, OPSI_ADMIN_GROUP)
 """
 
-def setup_files(log_file):
+def setup_files(log_file : str) -> None:
+	"""
+	Setup for log file.
+
+	This method creates a log file (and directories in its path if necessary).
+	Afterwards permissions are set.
+
+	:param log_file: Name and path of the logfile to set up.
+	:type log_file: str
+	"""
 	logger.info("Setup files and permissions")
 	log_dir = os.path.dirname(log_file)
 	if not os.path.isdir(log_dir):
 		os.makedirs(log_dir)
 	setRights(log_dir)
 
-def get_backend(config):
+def get_backend(config : Dict) -> BackendManager:
+	"""
+	Creates a BackendManager for current backend.
+
+	This method extracts dispactConfig and backendConfig from
+	an opsipxeconfd config dictionary and creates a BackendManager
+	with respect to those.
+
+	:param config: opsipxeconfd configuration dictionary as created by opsipxeconfdinit.
+	:type config: Dict
+
+	:returns: BackendManager for the given configuration
+	:rtype: BackendManager
+	"""
 	bc = {
 		'dispatchConfigFile': config['dispatchConfigFile'],
 		'backendConfigDir': config['backendConfigDir'],
@@ -78,7 +101,16 @@ def get_backend(config):
 	return BackendManager(**bc)
 
 
-def setup_backend(config):
+def setup_backend(config : Dict) -> None:
+	"""
+	Sets up the backend.
+
+	This method retrieves a BackendManager for the current Backend and
+	calls initializeBackends.
+
+	:param config: opsipxeconfd configuration dictionary as created by opsipxeconfdinit.
+	:type config: Dict
+	"""
 	fqdn = getLocalFqdn()
 	try:
 		backend = get_backend(config)
@@ -91,7 +123,16 @@ def setup_backend(config):
 	logger.info("Setup backend")
 	initializeBackends()
 
-def setup(config):
+def setup(config : Dict) -> None:
+	"""
+	Setup method for opsipxeconfd.
+
+	This method sets up the environment for the opsipxeconfd to run.
+	It creates necessary users and groups, initializes the backend and log file.
+
+	:param config: opsipxeconfd configuration dictionary as created by opsipxeconfdinit.
+	:type config: Dict
+	"""
 	logger.notice("Running opsipxeconfd setup")
 	po_setup_users_and_groups()
 	#setup_users_and_groups(config)
