@@ -39,6 +39,7 @@ import socket
 import stat
 import threading
 import time
+from typing import Dict, List, Any, Tuple
 
 from .logging import init_logging
 from .util import StartupTask, ClientConnection
@@ -48,6 +49,7 @@ from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Exceptions import BackendMissingDataError
 from OPSI.Util import deserialize
+from OPSI.Object import NetbootProduct, Host
 from OPSI.Util.File import ConfigFile
 from OPSI.Types import forceFilename, forceHostId, forceUnicode, forceUnicodeList
 
@@ -57,7 +59,22 @@ ELILO_X86 = 'x86'
 ELILO_X64 = 'x64'
 
 class Opsipxeconfd(threading.Thread):
-	def __init__(self, config):
+	"""
+	class Opsipxeconfd
+
+	This class handles installation of NetbootProducts via network.
+	"""
+	def __init__(self, config : Dict) -> None:
+		"""
+		Opsipxeconfd constructor.
+
+		This constructor initializes a new Opsipxeconfd instance.
+		Settings are set according to the proveded config dictionary.
+
+		:param config: Opsipxeconfd configuration dictionary as loaded from file
+			or specified on command line at execution time.
+		:type config: Dict
+		"""
 		threading.Thread.__init__(self)
 
 		self.config = config
@@ -74,14 +91,38 @@ class Opsipxeconfd(threading.Thread):
 
 		logger.comment("opsi pxe configuration service starting")
 
-	def setConfig(self, config):
+	def setConfig(self, config : Dict) -> None:
+		"""
+		Sets new configuration.
+
+		This method expects a configuration dictionary and overrides
+		the existing configuration with the new one.
+
+		:param config: Opsipxeconfd configuration dictionary.
+		:type config: Dict
+		"""
 		logger.notice(u"Got new config")
 		self.config = config
 
-	def isRunning(self):
+	def isRunning(self) -> bool:
+		"""
+		Execution status request.
+
+		This method returns whether this instance of Opsipxeconfd is running.
+
+		:returns: True if Opsipxeconfd is running, else False.
+		:rtype: bool
+		"""
 		return self._running
 
-	def stop(self):
+	def stop(self) -> None:
+		"""
+		Request to stop Opsipxeconfd thread.
+
+		This method requests a stop and join for the associated
+		StartupTask instance. Afterwards it requests a stop
+		for the current Opsipxeconfd thread.
+		"""
 		logger.notice(u"Stopping opsipxeconfd main thread")
 
 		try:
@@ -101,14 +142,28 @@ class Opsipxeconfd(threading.Thread):
 		except Exception as error:
 			logger.error(u"Failed to close socket: %s", error)
 
-	def reload(self):
+	def reload(self) -> None:
+		"""
+		Reloads the Opsipxeconfd config.
+
+		This method reinitializes logging for the
+		(possibly altered) configuration dictionary.
+		Then recreates the backend and the socket.
+		"""
 		logger.notice(u"Reloading opsipxeconfd")
 		init_logging(self.config)
 		self._createBackendInstance()
 		self._createSocket()
 
 
-	def _createBackendInstance(self):
+	def _createBackendInstance(self) -> None:
+		"""
+		Creates BackendManager instance.
+
+		This method creates a new BackendManager instance and stores it.
+		To configure the BackendManager, the dispatchConfig and the
+		backendConfig are read.
+		"""
 		logger.info(u"Creating backend instance")
 		self._backend = BackendManager(
 			dispatchConfigFile=self.config['dispatchConfigFile'],
@@ -118,10 +173,24 @@ class Opsipxeconfd(threading.Thread):
 		)
 		self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
 
-	def _createSocket(self):
-		return self._createUnixSocket()
+	def _createSocket(self) -> None:
+		"""
+		Creates new Socket.
 
-	def _createUnixSocket(self):
+		This method instantiates a new UnixSocket and binds it to a file
+		specified in config['port']. Theoretically this UnixSocket could
+		be substituted by a network socket bound to a network port.
+		"""
+		self._createUnixSocket()
+
+	def _createUnixSocket(self) -> None:
+		"""
+		Creates new UnixSocket.
+
+		This method instantiates a new UnixSocket and binds it to a file
+		specified in config['port']. Access rights are adjusted for the
+		resulting socket file.
+		"""
 		logger.notice(u"Creating unix socket %s", self.config['port'])
 		if os.path.exists(self.config['port']):
 			os.unlink(self.config['port'])
@@ -135,7 +204,16 @@ class Opsipxeconfd(threading.Thread):
 
 		self._setAccessRightsForSocket(self.config['port'])
 
-	def _setAccessRightsForSocket(self, path):
+	def _setAccessRightsForSocket(self, path : str) -> None:
+		"""
+		Sets access rights for UnixSocket.
+
+		This method adjusts the permissions of a UnixSocket file to o*66
+		and gives group ownership to opsiadmin group.
+
+		:param path: Path of the UnixSocket.
+		:type path: str
+		"""
 		logger.debug("Setting rights on socket '%s'", path)
 		mode = os.stat(path)[0]
 		# Adding read + write access for group and other.
@@ -143,7 +221,14 @@ class Opsipxeconfd(threading.Thread):
 		os.chown(path, -1, self._opsi_admin_gid)
 		logger.debug("Done setting rights on socket '%s'", path)
 
-	def _getConnection(self):
+	def _getConnection(self) -> None:
+		"""
+		Creates and starts ClientConnection thread.
+
+		This method initializes a ClientConnection thread, passing
+		the associated socket and clientConnectionCallback.
+		Afterwards, the ClientConnection is run.
+		"""
 		try:
 			sock, _ = self._socket.accept()
 		except socket.error as error:
@@ -174,8 +259,14 @@ class Opsipxeconfd(threading.Thread):
 				except ValueError:
 					pass  # Element not in list
 
-	def run(self):
-		with log_context({'instance' : 'opsipxeconfd'}):
+	def run(self) -> None:
+		"""
+		Opsipxeconfd thread main method.
+
+		This method is run on Opsipxeconfd execution.
+		It creates backend, StartupTask and socket.
+		"""
+		with log_context({'instance' : 'Opsipxeconfd'}):
 			self._running = True
 			logger.notice(u"Starting opsipxeconfd main thread")
 			try:
@@ -192,8 +283,16 @@ class Opsipxeconfd(threading.Thread):
 			finally:
 				self._running = False
 
-	def clientConnectionCallback(self, connection):
+	def clientConnectionCallback(self, connection : ClientConnection) -> None:
 		"""
+		Callback method for ClientConnection.
+
+		This method is meant to be hooked to ClientConnection instances.
+		Upon end of their run method, this is called.
+		It logs the time of life of the Clientconnection and removes the
+		ClientConnection instance, so that it can be garbage collected.
+
+		:param connection: ClientConnection that the callback is hooked to.
 		:type connection: ClientConnection
 		"""
 		logger.info(
@@ -212,8 +311,16 @@ class Opsipxeconfd(threading.Thread):
 		except Exception as error:
 			logger.error(u"Failed to remove ClientConnection: %s", error)
 
-	def pxeConfigWriterCallback(self, pcw):
+	def pxeConfigWriterCallback(self, pcw : PXEConfigWriter) -> None:
 		"""
+		Callback for PXEConfigWriter
+
+		This method is hooked to a PXEConfigWriter instance.
+		It is run at the end of PXEConfigWriter thread execution.
+		The PXEConfigWriter is removed from the Opsipxeconfd instance
+		and backend and pxebootconfiguration are updated.
+
+		:param pcw: PXEConfigWriter this method should be hooked to.
 		:type pcw: PXEConfigWriter
 		"""
 		logger.info(
@@ -256,7 +363,16 @@ class Opsipxeconfd(threading.Thread):
 		if gotAlways:
 			self.updateBootConfiguration(pcw.hostId)
 
-	def status(self):
+	def status(self) -> str:
+		"""
+		Returns status information.
+
+		This method collects status information about a running
+		Opsipxeconfd instance. The result is returned as a string.
+
+		:returns: Status information about running Opsipxeconfd.
+		:rtype: str
+		"""
 		logger.notice(u"Getting opsipxeconfd status")
 		result = u'opsipxeconfd status:\n'
 
@@ -277,7 +393,19 @@ class Opsipxeconfd(threading.Thread):
 		logger.notice(result)
 		return result
 
-	def updateBootConfiguration(self, hostId, cacheFile=None):
+	def updateBootConfiguration(self, hostId : str, cacheFile : str=None) -> None:
+		"""
+		Updates Boot Configuration.
+
+		This method is called for a specifig host. It updates the PXE boot
+		configuration for it. For NetbootProducts with pending action requests,
+		a PXEConfigWriter is created and run.
+
+		:param hostId: fqdn of a host in the network.
+		:type hostId: str
+		:param cacheFile: Path of a cache file (optional)
+		:type cacheFile: str
+		"""
 		try:
 			hostId = forceHostId(hostId)
 			logger.info(u"Updating PXE boot configuration for host '%s'", hostId)
@@ -443,9 +571,15 @@ class Opsipxeconfd(threading.Thread):
 			logger.logException(error)
 			raise error
 
-	def _removeCurrentConfigWriters(self, hostId):
+	def _removeCurrentConfigWriters(self, hostId : str) -> None:
 		"""
-		Remove eventually running PXE config writers for the given `hostId`.
+		Remove PXEConfigWriters for host.
+
+		This method removes all registered PXEConfigWriters that are registered
+		for a given host.
+
+		:param hostId: fqdn of the host for which PXEConfigWriters should be removed.
+		:type hostId: str
 		"""
 		with self._pxeConfigWritersLock:
 			currentPcws = [pcw for pcw in self._pxeConfigWriters if pcw.hostId == hostId]
@@ -469,7 +603,19 @@ class Opsipxeconfd(threading.Thread):
 			logger.notice(u"PXE boot configuration for host '%s' removed", hostId)
 
 	@staticmethod
-	def _readCachedData(cacheFile):
+	def _readCachedData(cacheFile : str) -> Any:
+		"""
+		Reads data from cache.
+
+		This method loads contents of a cache file and parses them
+		as json. The result is deserialized and returned as either List or Dict.
+
+		:param cacheFile: Path of a cache file (optional)
+		:type cacheFile: str
+
+		:returns: deserialized cache content as List or Dict.
+		:rtype: Any
+		"""
 		if not cacheFile:
 			return {}
 		elif not os.path.exists(cacheFile):
@@ -482,9 +628,20 @@ class Opsipxeconfd(threading.Thread):
 
 		return deserialize(data)
 
-	def _getHostObject(self, hostId):
+	def _getHostObject(self, hostId : str) -> Any:
 		"""
 		Get the object for `hostId`.
+
+		This method requests a host object from backend, stored
+		under given hostId.
+
+		:param hostId: fqdn of host.
+		:type hostId: str
+
+		:returns: Host instance requested with hostId.
+		:rtype: Any
+
+		:raises ValueError: In case the given host is not found.
 		"""
 		logger.debug("Searching for host with id '%s'", hostId)
 
@@ -494,11 +651,23 @@ class Opsipxeconfd(threading.Thread):
 		except IndexError:
 			raise ValueError(u"Host '%s' not found" % hostId)
 
-	def _getPxeConfigTemplate(self, hostId, productOnClients, product=None, elilo=None):
+	def _getPxeConfigTemplate(self, hostId : str, productOnClients : List, product : NetbootProduct=None, elilo : str=None) -> Tuple:
 		"""
-		Get the pxe template to use for `hostId`
+		Get pxe template to use for `hostId`.
 
+		This method determines the pxe template file that should be used for a client
+		specified by fqdn in hostId. This depends on the architecture and the type
+		of NetbootProduct and action request.
+
+		:param hostId: fqdn of host.
 		:type hostId: str
+		:param productOnClients: list of Products on Clients.
+		:type productOnClients: List
+		:param product: Product to check for.
+		:type product: NetbootProduct
+		:param elilo: Type of architecture (x64 or x86)
+		:type elilo: str
+
 		:raises BackendMissingDataError: In case no matching product is found.
 		:rtype: str
 		:returns: The absolute path to the template that should be used for the client.
@@ -558,9 +727,15 @@ class Opsipxeconfd(threading.Thread):
 
 		return pxeConfigTemplate, product
 
-	def _detectEliloMode(self, hostId):
+	def _detectEliloMode(self, hostId : str) -> str:
 		"""
 		Checks if elilo mode is set for client.
+
+		This method searches the backend configStates for the host for
+		hints regarding the system architecture. It returns the elilo mode as string.
+
+		:param hostId: fqdn of the client.
+		:type hostId: str
 
 		:rtype: str or None
 		:returns: The elilo mode of the client represented as either
@@ -579,7 +754,19 @@ class Opsipxeconfd(threading.Thread):
 		return eliloMode
 
 	@staticmethod
-	def _getNameForPXEConfigFile(host):
+	def _getNameForPXEConfigFile(host : Host) -> str:
+		"""
+		Gets network address information.
+
+		This method requests the ipv4 and the hardware address of
+		a host and returns it as string.
+
+		:param host: Host instance to get network address information from.
+		:type host: Host
+
+		:returns: String containing network address information of the host.
+		:rtype: str
+		"""
 		if host.getHardwareAddress():
 			logger.debug(u"Got hardware address '%s' for host '%s'", host.getHardwareAddress(), host.id)
 			return u"01-%s" % host.getHardwareAddress().replace(u':', u'-')
@@ -589,9 +776,18 @@ class Opsipxeconfd(threading.Thread):
 		else:
 			raise Exception(u"Neither hardware address nor ip address known for host '%s'" % host.id)
 
-	def _getConfigServiceAddress(self, hostId):
+	def _getConfigServiceAddress(self, hostId : str) -> str:
 		"""
 		Returns the config serive address for `hostId`.
+
+		This method requests the url of the configserver, ensures
+		that it ends with /rpc and returns it as a string.
+
+		:param hostId: fqdn of client.
+		:type hostId: str
+
+		:returns: url of the configserver.
+		:rtype: str
 		"""
 		address = u''
 
@@ -604,9 +800,19 @@ class Opsipxeconfd(threading.Thread):
 
 		return address
 
-	def _getAdditionalBootimageParameters(self, hostId, configStates=None):
+	def _getAdditionalBootimageParameters(self, hostId : str, configStates : List=None) -> Tuple:
 		"""
-		Returns any additional bootimage parameters that may be set for `hostId`.
+		Returns additional bootimage parameters.
+
+		This method requests additional bootimage parameters set for hostId
+		and yields them (generator!).
+
+		:param hostId: fqdn of client.
+		:type hostId: str
+		:param configStates: Config States of hostId as List (optional).
+		:type configStates: List
+		:returns: key-value pairs as tuple (value possibly empty) as yield.
+		:rtype: Tuple
 		"""
 		if configStates is None:
 			configStates = self._backend.configState_getObjects(objectId=hostId, configId=u'opsi-linux-bootimage.append')
