@@ -57,6 +57,7 @@ def test_setup():
 	opts.command = None
 	OpsipxeconfdInit(opts)
 
+"""
 def test_OpsipxeconfdInit():
 	#opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=None, setup=None)
 	#OpsipxeconfdInit(opts)
@@ -68,9 +69,10 @@ def test_OpsipxeconfdInit():
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.command = "stop"
 	OpsipxeconfdInit(opts)
+"""
 
 def test_OpsipxeconfdInit2(run_opsipxeconfd):
-	with run_opsipxeconfd():
+	with run_opsipxeconfd:
 		time.sleep(15)
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.command = "status"
