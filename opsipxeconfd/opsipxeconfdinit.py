@@ -115,7 +115,7 @@ class OpsipxeconfdInit(object):
 			set_filter_from_string(opts.logFilter)
 		init_logging(self.config)
 		if opts.setup:
-			with log_context({'instance' : 'opsipxeconfd setup'}):
+			with log_context({'instance' : 'Opsipxeconfd setup'}):
 				setup(self.config)
 			return		#TODO: exit code handling
 		
@@ -127,7 +127,7 @@ class OpsipxeconfdInit(object):
 
 			if self.config['daemon']:
 				self.daemonize()
-			with log_context({'instance' : 'opsipxeconfd start'}):
+			with log_context({'instance' : 'Opsipxeconfd start'}):
 				with temporaryPidFile(self.config['pidFile']):
 					self._opsipxeconfd = Opsipxeconfd(self.config)
 					self._opsipxeconfd.start()
@@ -136,7 +136,7 @@ class OpsipxeconfdInit(object):
 						time.sleep(1)
 					self._opsipxeconfd.join(30)
 		else:
-			with log_context({'instance' : " ".join(['opsipxeconfd', opts.command])}):
+			with log_context({'instance' : " ".join(['Opsipxeconfd', opts.command])}):
 				command = assemble_command(opts)
 				con = ServerConnection(self.config['port'], timeout=5.0)
 				result = con.sendCommand(" ".join(forceUnicodeList(command)))
@@ -218,7 +218,7 @@ class OpsipxeconfdInit(object):
 		for thread in threading.enumerate():
 			logger.debug("Running thread after signal: %s", thread)
 
-	def updateConfigFile(self):
+	def updateConfigFile(self) -> None:
 		"""
 		Updates Opsipxeconfd config file.
 
@@ -240,7 +240,7 @@ class OpsipxeconfdInit(object):
 			with codecs.open(self.config['configFile'], 'w', "utf-8") as f:
 				f.write(new_data)
 
-	def readConfigFile(self):
+	def readConfigFile(self) -> None:
 		"""
 		Gets settings from config file.
 
@@ -301,7 +301,7 @@ class OpsipxeconfdInit(object):
 			raise
 		logger.notice(u"Config read")
 
-	def daemonize(self):
+	def daemonize(self) -> None:
 		"""
 		Lets process run as daemon.
 
