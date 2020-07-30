@@ -140,7 +140,7 @@ class OpsipxeconfdInit(object):
 				command = assemble_command(opts)
 				con = ServerConnection(self.config['port'], timeout=5.0)
 				result = con.sendCommand(" ".join(forceUnicodeList(command)))
-			return	#TODO: exit code handling
+				#TODO: exit code handling
 #			if result:
 #				if result.startswith(u'(ERROR)'):
 #					print(result, file=sys.stderr)
