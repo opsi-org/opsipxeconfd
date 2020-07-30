@@ -8,6 +8,10 @@ This file is part of opsi - https://www.opsi.org
 import argparse
 import time
 import os
+import threading
+from pytest import fixture
+from contextlib import contextmanager
+
 from opsicommon.logging import LOG_WARNING
 from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
@@ -34,6 +38,19 @@ TEST_DATA = 'tests/test_data/'
 PXE_TEMPLATE_FILE = 'install-x64'
 CONFFILE = '/etc/opsi/opsipxeconfd.conf'
 
+@contextmanager
+@fixture
+def run_opsipxeconfd():
+	pxeinit = threading.Thread(target=OpsipxeconfdInit, args=(default_opts,))
+	try:
+		pxeinit.start()
+		yield
+	finally:
+		opts = argparse.Namespace(**vars(default_opts))
+		opts.command = "stop"
+		OpsipxeconfdInit(opts)
+
+
 def test_setup():
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.setup = True
@@ -46,14 +63,19 @@ def test_OpsipxeconfdInit():
 	#time.sleep(12)
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.command = "status"
-	result = OpsipxeconfdInit(opts)
-	print(result)
+	OpsipxeconfdInit(opts)
 	time.sleep(3)
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.command = "stop"
-	result = OpsipxeconfdInit(opts)
-	print(result)
-	assert 0
+	OpsipxeconfdInit(opts)
+
+def test_OpsipxeconfdInit2(run_opsipxeconfd):
+	with run_opsipxeconfd():
+		time.sleep(15)
+		opts = argparse.Namespace(**vars(default_opts))
+		opts.command = "status"
+		OpsipxeconfdInit(opts)
+		time.sleep(5)
 
 def test_pxeconfigwriter():
 	hostId = forceHostId(getfqdn())
