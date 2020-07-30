@@ -46,11 +46,14 @@ def test_OpsipxeconfdInit():
 	#time.sleep(12)
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.command = "status"
-	OpsipxeconfdInit(opts)
+	result = OpsipxeconfdInit(opts)
+	print(result)
 	time.sleep(3)
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.command = "stop"
-	OpsipxeconfdInit(opts)
+	result = OpsipxeconfdInit(opts)
+	print(result)
+	assert 0
 
 def test_pxeconfigwriter():
 	hostId = forceHostId(getfqdn())
