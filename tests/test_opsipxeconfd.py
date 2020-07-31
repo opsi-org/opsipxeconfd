@@ -8,7 +8,6 @@ This file is part of opsi - https://www.opsi.org
 import argparse
 import time
 import os
-import threading
 from pytest import fixture
 from contextlib import contextmanager
 
@@ -43,7 +42,7 @@ CONFFILE = '/etc/opsi/opsipxeconfd.conf'
 def run_opsipxeconfd():
 	try:
 		opts = argparse.Namespace(**vars(default_opts))
-		opts.command = "stop"
+		opts.nofork = True
 
 		self._pid = os.fork()
 		if self._pid > 0:
@@ -54,7 +53,7 @@ def run_opsipxeconfd():
 			time.sleep(12)
 			yield
 	except OSError as error:
-		raise Exception("First fork failed: %e", error)
+		raise Exception("Fork failed: %e", error)
 	finally:
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.command = "stop"
