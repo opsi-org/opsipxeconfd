@@ -41,15 +41,24 @@ CONFFILE = '/etc/opsi/opsipxeconfd.conf'
 @contextmanager
 @fixture
 def run_opsipxeconfd():
-	pxeinit = threading.Thread(target=OpsipxeconfdInit, args=(default_opts,))
 	try:
-		pxeinit.start()
-		yield
+		opts = argparse.Namespace(**vars(default_opts))
+		opts.command = "stop"
+
+		self._pid = os.fork()
+		if self._pid > 0:
+			# Parent calls init
+			OpsipxeconfdInit(opts)
+		else:
+			# Child yields
+			time.sleep(12)
+			yield
+	except OSError as error:
+		raise Exception("First fork failed: %e", error)
 	finally:
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.command = "stop"
 		OpsipxeconfdInit(opts)
-
 
 def test_setup():
 	opts = argparse.Namespace(**vars(default_opts))
@@ -73,7 +82,6 @@ def test_OpsipxeconfdInit():
 
 def test_OpsipxeconfdInit2(run_opsipxeconfd):
 	with run_opsipxeconfd:
-		time.sleep(15)
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.command = "status"
 		OpsipxeconfdInit(opts)
