@@ -44,8 +44,8 @@ def run_opsipxeconfd():
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.nofork = True
 
-		self._pid = os.fork()
-		if self._pid > 0:
+		pid = os.fork()
+		if pid > 0:
 			# Parent calls init
 			OpsipxeconfdInit(opts)
 		else:
