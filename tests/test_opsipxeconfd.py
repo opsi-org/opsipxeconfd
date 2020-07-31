@@ -8,6 +8,7 @@ This file is part of opsi - https://www.opsi.org
 import argparse
 import time
 import os
+import signal
 from pytest import fixture
 from contextlib import contextmanager
 
@@ -58,6 +59,8 @@ def run_opsipxeconfd():
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.command = "stop"
 		OpsipxeconfdInit(opts)
+		time.sleep(5)
+		os.kill(pid, signal.SIGTERM)
 
 def test_setup():
 	opts = argparse.Namespace(**vars(default_opts))
