@@ -54,12 +54,11 @@ def run_opsipxeconfd():
 			time.sleep(5)
 			os.kill(pid, signal.SIGTERM)
 			print("after killing opsipxeconfd")
-		else:
-			# Child yields
-			time.sleep(12)
-			print("before yield")
-			yield
-			print("after yield")
+		# Child yields
+		time.sleep(12)
+		print("before yield")
+		yield
+		print("after yield")
 
 	except OSError as error:
 		raise Exception("Fork failed: %e", error)
