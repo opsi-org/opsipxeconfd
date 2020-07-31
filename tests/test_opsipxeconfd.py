@@ -45,16 +45,19 @@ def run_opsipxeconfd():
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.nofork = True
 
-		pid = os.fork()
-		if pid > 0:
-			# Parent calls init
-			OpsipxeconfdInit(opts)
-		else:
-			# Child yields
-			time.sleep(12)
-			yield
-	except OSError as error:
-		raise Exception("Fork failed: %e", error)
+		#pid = os.fork()
+		#if pid > 0:
+		#	# Parent calls init
+		#	OpsipxeconfdInit(opts)
+		#else:
+		#	# Child yields
+		#	time.sleep(12)
+		#	yield
+		OpsipxeconfdInit(opts)
+		time.sleep(12)
+		yield
+	#except OSError as error:
+	#	raise Exception("Fork failed: %e", error)
 	finally:
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.command = "stop"
