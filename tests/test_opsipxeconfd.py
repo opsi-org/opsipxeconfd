@@ -45,25 +45,27 @@ def run_opsipxeconfd():
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.nofork = True
 
-		#pid = os.fork()
-		#if pid > 0:
-		#	# Parent calls init
-		#	OpsipxeconfdInit(opts)
-		#else:
-		#	# Child yields
-		#	time.sleep(12)
-		#	yield
-		OpsipxeconfdInit(opts)
-		time.sleep(12)
-		yield
-	#except OSError as error:
-	#	raise Exception("Fork failed: %e", error)
+		pid = os.fork()
+		if pid > 0:
+			# Parent calls init
+			OpsipxeconfdInit(opts)
+			print("after start - should never be printed")
+		else:
+			# Child yields
+			time.sleep(12)
+			print("before yield")
+			yield
+			print("after yield")
+	except OSError as error:
+		raise Exception("Fork failed: %e", error)
 	finally:
+		print("before teardown")
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.command = "stop"
 		OpsipxeconfdInit(opts)
 		time.sleep(5)
 		os.kill(pid, signal.SIGTERM)
+		print("after teardown")
 
 def test_setup():
 	opts = argparse.Namespace(**vars(default_opts))
