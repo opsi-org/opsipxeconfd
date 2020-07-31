@@ -54,6 +54,7 @@ def run_opsipxeconfd():
 			time.sleep(5)
 			os.kill(pid, signal.SIGTERM)
 			print("after killing opsipxeconfd")
+			return
 		# Child yields
 		time.sleep(12)
 		print("before yield")
@@ -90,7 +91,7 @@ def test_OpsipxeconfdInit():
 """
 
 def test_OpsipxeconfdInit2(run_opsipxeconfd):
-	with run_opsipxeconfd:
+	with run_opsipxeconfd():
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.command = "status"
 		OpsipxeconfdInit(opts)
