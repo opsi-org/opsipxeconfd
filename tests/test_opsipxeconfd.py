@@ -38,6 +38,7 @@ TEST_DATA = 'tests/test_data/'
 PXE_TEMPLATE_FILE = 'install-x64'
 CONFFILE = '/etc/opsi/opsipxeconfd.conf'
 
+"""
 @contextmanager
 @fixture
 def run_opsipxeconfd():
@@ -69,6 +70,7 @@ def run_opsipxeconfd():
 		opts.command = "stop"
 		OpsipxeconfdInit(opts)
 		print("after teardown")
+"""
 
 def test_setup():
 	opts = argparse.Namespace(**vars(default_opts))
@@ -76,7 +78,7 @@ def test_setup():
 	opts.command = None
 	OpsipxeconfdInit(opts)
 
-"""
+
 def test_OpsipxeconfdInit():
 	#opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=None, setup=None)
 	#OpsipxeconfdInit(opts)
@@ -88,14 +90,15 @@ def test_OpsipxeconfdInit():
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.command = "stop"
 	OpsipxeconfdInit(opts)
-"""
 
+"""
 def test_OpsipxeconfdInit2(run_opsipxeconfd):
-	with run_opsipxeconfd():
+	with run_opsipxeconfd:
 		opts = argparse.Namespace(**vars(default_opts))
 		opts.command = "status"
 		OpsipxeconfdInit(opts)
 		time.sleep(5)
+"""
 
 def test_pxeconfigwriter():
 	hostId = forceHostId(getfqdn())
