@@ -116,7 +116,8 @@ def test_pxeconfigwriter():
 	productPropertyStates = {}
 	backendinfo = {}
 	backendinfo['hostCount'] = 0
-	backendinfo['modules'] = {'customer' : 'dummy', "signature" : "{dummy}1234"}
+	backendinfo['modules'] = {'customer' : 'dummy', 'signature' : '{dummy}1234'}
+	backendinfo['realmodules'] = []
 	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append,
 								productPropertyStates, pxefile, backendinfo=backendinfo)
 	content = pcw._getPXEConfigContent(pxeConfigTemplate)
