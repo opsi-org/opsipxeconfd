@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from opsicommon.logging import LOG_WARNING
 from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
+from opsipxeconfd.util import temporaryPidFile
 
 from OPSI.Types import forceHostId
 from OPSI.Util import getfqdn
@@ -37,6 +38,7 @@ default_opts = argparse.Namespace(	help=False,
 TEST_DATA = 'tests/test_data/'
 PXE_TEMPLATE_FILE = 'install-x64'
 CONFFILE = '/etc/opsi/opsipxeconfd.conf'
+PID_FILE = 'tests/test_data/pidfile.pid'
 
 """
 @contextmanager
@@ -128,3 +130,12 @@ def test_pxeconfigwriter():
 	append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0 hn=test dn=uib.gmbh product service
 	"""
 	assert " ".join(["kernel", PXE_TEMPLATE_FILE]) in content
+
+def test_temporarypidfile():
+	if os.path.exists(PID_FILE):
+		os.remove(PID_FILE)
+	with temporaryPidFile(PID_FILE):
+		with open(PID_FILE) as filehandle:
+			pid = filehandle.readline().strip()
+		assert not pid == ""
+	assert not os.path.exists(PID_FILE)
