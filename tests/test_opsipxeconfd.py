@@ -114,7 +114,11 @@ def test_pxeconfigwriter():
 		'service': None
 	}
 	productPropertyStates = {}
-	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile)
+	backendinfo = {}
+	backendinfo['hostCount'] = 0
+	backendinfo['modules'] = {'customer' : 'dummy', "signature" : "{dummy}1234"}
+	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append,
+								productPropertyStates, pxefile, backendinfo=backendinfo)
 	content = pcw._getPXEConfigContent(pxeConfigTemplate)
 	"""
 	default opsi-install-x64
