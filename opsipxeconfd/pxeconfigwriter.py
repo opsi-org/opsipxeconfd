@@ -2,6 +2,7 @@ import threading
 import time
 import base64
 import os
+from typing import Any, List, Dict, Tuple, Callable
 from hashlib import md5
 try:
 	# python3-pycryptodome installs into Cryptodome
@@ -16,7 +17,46 @@ from opsicommon.logging import logger, log_context
 from OPSI.Util import getPublicKey
 
 class PXEConfigWriter(threading.Thread):
-	def __init__(self, templatefile, hostId, productOnClients, append, productPropertyStates, pxefile, callback=None, backendinfo=None):
+	"""
+	class PXEConfigWriter
+
+	This class handles the sending of PXE boot information to clients.
+	"""
+	def __init__(self,
+				templatefile : str,
+				hostId : str,
+				productOnClients : List,
+				append : Dict,
+				productPropertyStates : Dict,
+				pxefile : str,
+				callback : Callable=None,
+				backendinfo : Dict=None
+	) -> None:
+		"""
+		PXEConfigWriter constructor.
+
+		This constructor initializes a new PXEConfigWriter thread.
+		Template- and PXE-file paths as well as, hostID, products and their states
+		are stored.
+
+		:param templatefile: Path of the PXE template file.
+		:type templatefile: str
+		:param hostId: fqdn of client.
+		:type hostId:str
+		:param productOnClients: List of Products on Clients.
+		:type productOnClients: List
+		:param append: Dictionary of additional Information (pckey).
+		:type append: Dict
+		:param productPropertyStates: Data to be collected by _getPXEConfigContent.
+		:type productPropertyStates: Dict
+		:param pxefile: Path of the PXEfile.
+		:type pxefile: str
+		:param callback: Optional Callback (executed after running PXEConfigWriter).
+		:type callback: Callable
+		:param backendinfo: Dictionary with information about the backend.
+				This data is parsed for uifi module license at init.
+		:type backendinfo: Dict
+		"""
 		threading.Thread.__init__(self)
 		self.templatefile = templatefile
 		self.append = append
@@ -112,7 +152,22 @@ class PXEConfigWriter(threading.Thread):
 		os.mkfifo(self.pxefile)
 		os.chmod(self.pxefile, 0o644)
 
-	def _getPXEConfigContent(self, templateFile):
+	def _getPXEConfigContent(self, templateFile : str) -> str:
+		"""
+		Gets PXEConfig string.
+
+		This method extracts information about the PXEConfig from the
+		template file, parses it using information from the
+		productPropertyStates and assemples the data as a string.
+
+		:param templateFile: Path of the PXE template file.
+		:type templateFile: str
+
+		:returns: PXE configuration information as string.
+		:rtype: str
+
+		:raises Exception: In case uefi module is not licensed.
+		"""
 		logger.debug(u"Reading template '%s'", templateFile)
 		with open(templateFile, 'r') as infile:
 			templateLines = infile.readlines()
@@ -167,8 +222,14 @@ class PXEConfigWriter(threading.Thread):
 
 		return content
 
-	def run(self):
-		with log_context({'instance' : 'pxeconfigwriter'}):
+	def run(self) -> None:
+		"""
+		PXEConfigWriter main method.
+
+		This method opens a pipe and sends the PXE boot configuration through
+		that pipe. At the end the hooked callback is executed.
+		"""
+		with log_context({'instance' : 'PXEConfigWriter'}):
 			self._running = True
 			pipeOpenend = False
 			while self._running and not pipeOpenend:
@@ -194,4 +255,9 @@ class PXEConfigWriter(threading.Thread):
 				self._callback(self)
 
 	def stop(self):
+		"""
+		Stop PXEConfigWriter thread.
+
+		This method requests a stop for the current PXEConfigWriter instance.
+		"""
 		self._running = False

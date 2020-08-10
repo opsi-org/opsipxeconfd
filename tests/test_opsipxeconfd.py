@@ -8,9 +8,14 @@ This file is part of opsi - https://www.opsi.org
 import argparse
 import time
 import os
+import signal
+from pytest import fixture
+from contextlib import contextmanager
+
 from opsicommon.logging import LOG_WARNING
 from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
+from opsipxeconfd.util import temporaryPidFile
 
 from OPSI.Types import forceHostId
 from OPSI.Util import getfqdn
@@ -33,12 +38,48 @@ default_opts = argparse.Namespace(	help=False,
 TEST_DATA = 'tests/test_data/'
 PXE_TEMPLATE_FILE = 'install-x64'
 CONFFILE = '/etc/opsi/opsipxeconfd.conf'
+PID_FILE = 'tests/test_data/pidfile.pid'
+
+"""
+@contextmanager
+@fixture
+def run_opsipxeconfd():
+	try:
+		opts = argparse.Namespace(**vars(default_opts))
+		opts.nofork = True
+
+		pid = os.fork()
+		if pid > 0:
+			# Parent calls init
+			print("before starting opsipxeconfd")
+			OpsipxeconfdInit(opts)
+			print("after starting opsipxeconfd")
+			time.sleep(5)
+			os.kill(pid, signal.SIGTERM)
+			print("after killing opsipxeconfd")
+			return
+		# Child yields
+		time.sleep(12)
+		print("before yield")
+		yield
+		print("after yield")
+
+	except OSError as error:
+		raise Exception("Fork failed: %e", error)
+	finally:
+		print("before teardown")
+		opts = argparse.Namespace(**vars(default_opts))
+		opts.command = "stop"
+		OpsipxeconfdInit(opts)
+		print("after teardown")
+"""
 
 def test_setup():
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.setup = True
 	opts.command = None
 	OpsipxeconfdInit(opts)
+
 
 def test_OpsipxeconfdInit():
 	#opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=None, setup=None)
@@ -51,6 +92,15 @@ def test_OpsipxeconfdInit():
 	opts = argparse.Namespace(**vars(default_opts))
 	opts.command = "stop"
 	OpsipxeconfdInit(opts)
+
+"""
+def test_OpsipxeconfdInit2(run_opsipxeconfd):
+	with run_opsipxeconfd:
+		opts = argparse.Namespace(**vars(default_opts))
+		opts.command = "status"
+		OpsipxeconfdInit(opts)
+		time.sleep(5)
+"""
 
 def test_pxeconfigwriter():
 	hostId = forceHostId(getfqdn())
@@ -66,7 +116,12 @@ def test_pxeconfigwriter():
 		'service': None
 	}
 	productPropertyStates = {}
-	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile)
+	backendinfo = {}
+	backendinfo['hostCount'] = 0
+	backendinfo['modules'] = {'customer' : 'dummy', 'signature' : '{dummy}1234'}
+	backendinfo['realmodules'] = []
+	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append,
+								productPropertyStates, pxefile, backendinfo=backendinfo)
 	content = pcw._getPXEConfigContent(pxeConfigTemplate)
 	"""
 	default opsi-install-x64
@@ -75,3 +130,12 @@ def test_pxeconfigwriter():
 	append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0 hn=test dn=uib.gmbh product service
 	"""
 	assert " ".join(["kernel", PXE_TEMPLATE_FILE]) in content
+
+def test_temporarypidfile():
+	if os.path.exists(PID_FILE):
+		os.remove(PID_FILE)
+	with temporaryPidFile(PID_FILE):
+		with open(PID_FILE) as filehandle:
+			pid = filehandle.readline().strip()
+		assert not pid == ""
+	assert not os.path.exists(PID_FILE)
