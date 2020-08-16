@@ -23,6 +23,11 @@ pyinstaller-poetry:
     - src: opsipxeconfd_data/**/*
       dst: opsipxeconfd_data
   dirname: opsipxeconfd
+  after_script: |
+    find dist/opsipxeconfd -iname "*.c" -delete
+    find dist/opsipxeconfd -iname "*.h" -delete
+    find dist/opsipxeconfd -iname "*.so" -exec chmod -x "{}" \;
+    rm -r dist/opsipxeconfd/site-packages/Crypto/SelfTest
 
 package:
   name: opsipxeconfd
