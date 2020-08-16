@@ -17,6 +17,15 @@ from opsicommon.logging import logger
 from . import __version__
 
 def parse_args() -> argparse.Namespace:
+	"""
+	Parses command line arguments.
+
+	This method takes command line arguments provided as sys.argv and parses them
+	to extract keywords and values to set for certain variables.
+
+	:returns: Namespace object containing all provided settings (or defaults).
+	:rtype: argparse.Namespace
+	"""
 	parser = configargparse.ArgParser(
 			formatter_class=lambda prog: argparse.ArgumentDefaultsHelpFormatter(
 			prog, max_help_position=30, width=100
@@ -110,7 +119,12 @@ def parse_args() -> argparse.Namespace:
 
 	return opts
 		
-def main():
+def main() -> None:
+	"""
+	Main method.
+
+	This method controls the execution flow of the opsipxeconfd.
+	"""
 	opts = parse_args()
 	try:
 		OpsipxeconfdInit(opts)
