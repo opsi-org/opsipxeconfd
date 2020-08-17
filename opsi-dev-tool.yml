@@ -53,4 +53,6 @@ package:
     mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
     mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
     rm -r ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data
-
+  postinst_script: |
+    # remove obsolete files
+    [ -e /etc/logrotate.d/opsipxeconfd ] && rm /etc/logrotate.d/opsipxeconfd || true
