@@ -55,4 +55,4 @@ package:
   postinst_script: |
     # remove obsolete files
     [ -e /etc/logrotate.d/opsipxeconfd ] && rm /etc/logrotate.d/opsipxeconfd || true
-    [ -e /var/lib/tftpboot/opsi ] && sed -i s'#/tftpboot/linux#/var/lib/tftpboot/opsi#' /etc/opsi/opsipxeconfd.conf
+
