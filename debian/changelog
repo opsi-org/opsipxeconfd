@@ -47,6 +47,99 @@ opsipxeconfd (4.2.0.1-1) stable; urgency=medium
 
  -- Niko Wenselowski <n.wenselowski@uib.de>  Wed, 21 Nov 2018 09:53:39 +0100
 
+opsipxeconfd (4.1.1.20-3) testing; urgency=medium
+
+  * corrected typo
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 17 Jun 2020 14:03:09 +0200
+
+opsipxeconfd (4.1.1.20-2) testing; urgency=medium
+
+  * opsipxeconfd.conf: grub template is now default for UEFI netboot
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 17 Jun 2020 09:25:10 +0200
+
+opsipxeconfd (4.1.1.20-1) testing; urgency=medium
+
+  * opsipxeconfd: check if any pxeConfigTemplate.efi file exists to overwrite
+    uefi netboot config template
+
+ -- Mathias Radtke <m.radtke@uib.de>  Mon, 18 May 2020 20:06:31 +0200
+
+opsipxeconfd (4.1.1.19-2) testing; urgency=medium
+
+  * opsipxeconfd: removed check for empty value when checking eliloMode config
+
+ -- Mathias Radtke <m.radtke@uib.de>  Mon, 06 Apr 2020 18:11:36 +0200
+
+opsipxeconfd (4.1.1.19-1) testing; urgency=medium
+
+  * opsipxeconfd: made it compatible with new clientconfig.dhcpd.filename
+    setting in configed 4.1.9.1.0
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 01 Apr 2020 16:20:01 +0200
+
+opsipxeconfd (4.1.1.18-1) testing; urgency=medium
+
+  * opsipxeconfd: removed secureboot module check when using grub uefi netboot
+    template
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 26 Mar 2020 18:52:03 +0100
+
+opsipxeconfd (4.1.1.17-6) testing; urgency=medium
+
+  * spec: using python2 on install steps
+
+ -- Mathias Radtke <m.radtke@uib.de>  Tue, 17 Dec 2019 16:38:23 +0100
+
+opsipxeconfd (4.1.1.17-5) testing; urgency=medium
+
+  * spec: using python2
+
+ -- Mathias Radtke <m.radtke@uib.de>  Tue, 17 Dec 2019 16:09:02 +0100
+
+opsipxeconfd (4.1.1.17-4) testing; urgency=medium
+
+  * using python2 packages on CentOS/RHEL 8
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 07 Nov 2019 10:32:09 +0100
+
+opsipxeconfd (4.1.1.17-3) testing; urgency=medium
+
+  * rpm: installing python36-devel on centos 8 / rhel 8
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 07 Nov 2019 10:11:32 +0100
+
+opsipxeconfd (4.1.1.17-2) testing; urgency=medium
+
+  * rpm: using python3-devel / python3-setuptools on CentOS 8 / RHEL 8
+
+ -- Mathias Radtke <m.radtke@uib.de>  Wed, 06 Nov 2019 14:38:21 +0100
+
+opsipxeconfd (4.1.1.17-1) testing; urgency=medium
+
+  * postinst: UCS replacing /var/lib/univention-client-boot with /tftpboot/linux
+
+ -- Mathias Radtke <m.radtke@uib.de>  Thu, 05 Sep 2019 13:44:23 +0200
+
+opsipxeconfd (4.1.1.16-1) stable; urgency=medium
+
+  * Removed dependency to twisted.conch.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Wed, 28 Aug 2019 10:48:03 +0200
+
+opsipxeconfd (4.1.1.15-1) testing; urgency=medium
+
+  * Added support for UEFI secure boot.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 09 Aug 2019 13:21:33 +0200
+
+opsipxeconfd (4.1.1.14-2) stable; urgency=medium
+
+  * deb: Remove adjustment for Univention Corporate Client (UCC) tftp root.
+
+ -- Niko Wenselowski <n.wenselowski@uib.de>  Fri, 05 Jul 2019 14:47:03 +0200
+
 opsipxeconfd (4.1.1.14-1) stable; urgency=medium
 
   * Make print Python 3 compatible.
