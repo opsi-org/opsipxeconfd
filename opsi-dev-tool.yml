@@ -1,0 +1,58 @@
+pyinstaller-poetry:
+  update_version_in:
+    - opsipxeconfd/__init__.py
+  one_file: no
+  hidden_imports:
+    all:
+      - OPSI.Backend.DHCPD
+      - OPSI.Backend.File
+      - OPSI.Backend.HostControl
+      - OPSI.Backend.HostControlSafe
+      - OPSI.Backend.JSONRPC
+      - OPSI.Backend.MySQL
+      - OPSI.Backend.OpsiPXEConfd
+      - OPSI.Backend.Replicator
+      - OPSI.Backend.SQLite
+      - MySQLdb
+  scripts:
+    - script: run-opsipxeconfd
+      binaries:
+        - opsipxeconfd
+  data_files:
+    - src: opsipxeconfd_data/**/*
+      dst: opsipxeconfd_data
+  dirname: opsipxeconfd
+  after_script: |
+    find dist/opsipxeconfd -iname "*.c" -delete
+    find dist/opsipxeconfd -iname "*.h" -delete
+    find dist/opsipxeconfd -iname "*.so" -exec chmod -x "{}" \;
+    find dist/opsipxeconfd -iname "*.so.*" -exec chmod -x "{}" \;
+    rm -r dist/opsipxeconfd/site-packages/Crypto/SelfTest
+
+package:
+  name: opsipxeconfd
+  architecture: amd64
+  type: binary
+  systemd: yes
+  debpendencies: []
+  source_script: |
+    pyi_src="${SRC}"
+    if [ -e "${SRC}/dist/opsipxeconfd/opsipxeconfd" ]; then pyi_src="${SRC}/dist"; fi
+    mkdir -p ${DST}/rootfs/etc/opsi
+    mkdir -p ${DST}/rootfs/usr/bin
+    mkdir -p ${DST}/rootfs/usr/lib
+    mkdir -p ${DST}/rootfs/var/log/opsi/opsipxeconfd
+    mkdir -p ${DST}/systemd_units
+    cp -a ${pyi_src}/opsipxeconfd ${DST}/rootfs/usr/lib/
+    echo "#!/bin/sh"                    > ${DST}/rootfs/usr/bin/opsipxeconfd
+    echo "cd /usr/lib/opsipxeconfd"    >> ${DST}/rootfs/usr/bin/opsipxeconfd
+    echo "exec ./opsipxeconfd \"\$@\"" >> ${DST}/rootfs/usr/bin/opsipxeconfd
+    #cp ${SRC}/dist/opsipxeconfd/opsipxeconfd ${DST}/rootfs/usr/bin
+    chmod 755 ${DST}/rootfs/usr/bin/opsipxeconfd
+    mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
+    mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
+    rm -r ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data
+  postinst_script: |
+    # remove obsolete files
+    [ -e /etc/logrotate.d/opsipxeconfd ] && rm /etc/logrotate.d/opsipxeconfd || true
+

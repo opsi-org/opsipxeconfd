@@ -1,31 +1,120 @@
-image: ubuntu:latest
+image: python:3.7-stretch
 
 stages:
-  - package
+  - test
+  - build
+  - publish
 
-package for OBS:
-  stage: package
-  before_script:
-    - export DEBIAN_FRONTEND noninteractive
-    - export DEBCONF_NONINTERACTIVE_SEEN true
-    - echo "tzdata tzdata/Areas select Europe" > /tmp/preseed.txt
-    - echo "tzdata tzdata/Zones/Europe select Berlin" >> /tmp/preseed.txt
-    - debconf-set-selections /tmp/preseed.txt
-    - apt update
-    - apt install -y tzdata
-    - apt install -y devscripts debhelper dh-systemd dh-python python python-setuptools
+.install_tools: &install_tools |
+  export DEBIAN_FRONTEND=noninteractive
+  apt update
+  apt -y install debhelper osc
+  pip3 install --trusted-host pypi.uib.gmbh --index-url http://pypi.uib.gmbh:8080/simple opsi-dev-tools
+  pip3 install poetry
+
+.prepare_tests: &prepare_tests |
+  # Install debian packages
+  export DEBIAN_FRONTEND=noninteractive
+  apt update
+  apt -y install wget git python3-pip python3-venv libmysqlclient-dev mysql-client iproute2 net-tools iputils-ping
+
+  groupadd opsiadmin
+  groupadd pcpatch
+  useradd adminuser
+  useradd opsiconfd
+  echo "adminuser:adminuser" | chpasswd
+  adduser adminuser opsiadmin
+  adduser opsiconfd opsiadmin
+  adduser adminuser pcpatch
+
+  # Deactivate mysql strict mode
+  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "SET GLOBAL sql_mode = 'NO_ENGINE_SUBSTITUTION';"
+  #mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "CREATE USER 'opsi'@'%' IDENTIFIED BY 'opsi';"
+  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "GRANT ALL ON *.* TO 'opsi'@'%';"
+  # Get config files from opsi-server package
+  [ -e /etc/opsi ] && rm -r /etc/opsi
+  [ -e ../opsi-server ] && rm -r ../opsi-server
+  url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsipxeconfd.git.*#/opsi-server.git#')
+  branch=master
+  GIT_TERMINAL_PROMPT=0 git clone --branch $branch $url ../opsi-server
+  cp -a ../opsi-server/opsi-server_data/etc /etc/opsi
+  mkdir /var/run/opsipxeconfd/
+  chown adminuser:opsiadmin /var/run/opsipxeconfd
+  chmod 775 /var/run/opsipxeconfd
+  mkdir /var/log/opsi
+  # Set mysql address in config
+  sed -i "s/127.0.0.1/mysql/" /etc/opsi/backends/mysql.conf
+  # Use mysql backend only
+  echo ".* : mysql" > /etc/opsi/backendManager/dispatch.conf
+  # Configure opsiconfd
+  mkdir -p /var/lib/opsi/repository /var/lib/opsi/depot
+  touch /etc/opsi/opsipxeconfd.conf
+  # Installing opsi test modules file
+  echo "${OPSI_TEST_MODULES}" > /etc/opsi/modules
+
+  # Install poetry
+  pip3 install poetry
+  poetry install
+  poetry run opsipxeconfd --setup
+  # Create adminuser used with opsiconfd-perftest.py
+  echo "Set OPSI STATIC DIR"
+  export OPSICONFD_STATIC_DIR="opsiconfd_data/static"
+  echo "${OPSICONFD_STATIC_DIR}"
+
+.pytest: &pytest |
+  poetry run opsipxeconfd start --log-level 6 &
+  sleep 10
+  #ls -lah /var/run/opsipxeconfd
+  echo "Run tests"
+  poetry run pytest -s --cov opsipxeconfd --cov-report term --cov-report term-missing
+
+
+test:pytest:
+  image: ubuntu:focal
+  services:
+    - mysql:latest
+  variables:
+    MYSQL_ROOT_PASSWORD: "opsi"
+    MYSQL_DATABASE: "opsi"
+    MYSQL_USER: "opsi"
+    MYSQL_PASSWORD: "opsi"
+  stage: test
   script:
-    - ./create_source.sh
-    - test -f opsipxeconfd_*.dsc
-    - test -f opsipxeconfd_*.tar.gz
-    - test -f opsipxeconfd.spec
+    - *prepare_tests
+    - *pytest
+
+build:linux-pyinstaller:
+  stage: build
+  script:
+    - *install_tools
+    - poetry install
+    - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
+    - mv opsipxeconfd opsipxeconfd.src
+    - mv dist/opsipxeconfd .
+    # Check if binary is working
+    - ./opsipxeconfd/opsipxeconfd -c opsipxeconfd_data/opsipxeconfd.conf --version
   artifacts:
+    name: 'opsipxeconfd-linux-pyinstaller'
     paths:
-      - opsipxeconfd_*.dsc
-      - opsipxeconfd_*.tar.gz
-      - opsipxeconfd.spec
-    expire_in: 2 days
+      - opsipxeconfd
+    expire_in: 2 day
+
+publish:obs_int:
+  stage: publish
+  dependencies:
+    - build:linux-pyinstaller
+  script:
+    - *install_tools
+    - opsi-dev-tool -l info --obs-update-package https://obs.uib.gmbh home:uibmz:opsi:4.2:development
   only:
-      - /^release/.*$/i
-      - tags
-      - web
+    - tags
+
+publish:obs_ext:
+  stage: publish
+  dependencies:
+    - build:linux-pyinstaller
+  script:
+    - *install_tools
+    - opsi-dev-tool -l info --obs-update-package https://build.opensuse.org home:uibmz:opsi:4.2:development
+  only:
+    - tags
