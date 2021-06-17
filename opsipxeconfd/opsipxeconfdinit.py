@@ -371,6 +371,7 @@ class OpsipxeconfdInit(object):
 				command = assemble_command(self.config)
 				con = ServerConnection(self.config["port"], timeout=5.0)
 				result = con.sendCommand(" ".join(forceUnicodeList(command)))
+				print(result)
 
 	def signalHandler(self, signo, stackFrame)-> None:
 		"""
