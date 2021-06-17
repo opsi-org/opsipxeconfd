@@ -1,6 +1,4 @@
 pyinstaller-poetry:
-  update_version_in:
-    - opsipxeconfd/__init__.py
   one_file: no
   hidden_imports:
     all:
@@ -27,7 +25,6 @@ pyinstaller-poetry:
     find dist/opsipxeconfd -iname "*.h" -delete
     find dist/opsipxeconfd -iname "*.so" -exec chmod -x "{}" \;
     find dist/opsipxeconfd -iname "*.so.*" -exec chmod -x "{}" \;
-    rm -r dist/opsipxeconfd/site-packages/Crypto/SelfTest
 
 package:
   name: opsipxeconfd
