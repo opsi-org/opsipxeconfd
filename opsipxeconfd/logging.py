@@ -25,7 +25,8 @@ def init_logging(config : Dict) -> None:
 	:type config: Dict
 	"""
 	try:
-		stderr_level = config.get("logLevel_stderr")
+		stderr_level = max(config.get("logLevel_stderr"), config.get("logLevel"))
+		file_level = max(config.get("logLevel_file"), config.get("logLevel"))
 		if config["daemon"]:
 			stderr_level = None
 		logging_config(
@@ -33,7 +34,7 @@ def init_logging(config : Dict) -> None:
 					stderr_level=stderr_level,
 					log_file=config["logFile"],
 					file_format=DEFAULT_FORMAT,
-					file_level=config.get("logLevel_file"),
+					file_level=file_level,
 					file_rotate_max_bytes=config.get("maxBytesLog", 0)*1000*1000,
 					file_rotate_backup_count=config.get("backupCountLog")
 		)
