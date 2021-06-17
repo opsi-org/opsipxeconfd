@@ -294,7 +294,7 @@ def parse_args() -> argparse.Namespace:
 
 def assemble_command(config):
 	command = [config["command"]]
-	if config.nofork:
+	if config.get("nofork"):
 		command.append("--no-fork")
 	command.append(f"--log-level-stderr={config['logLevelStderr']}")
 	command.append(f"--log-level-file={config['logLevelFile']}")
