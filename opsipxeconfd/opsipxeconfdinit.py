@@ -300,7 +300,7 @@ def assemble_command(config):
 	command.append(f"--log-level-file={config['logLevelFile']}")
 	command.append(f"--logLevel={config['logLevel']}")
 
-	if config.conffile is not None:
+	if config.get("conffile") is not None:
 		command.append(f"--conffile={config['conffile']}")
 	# Theoretically it is possible for the user to specify additional commands, not captured here.
 	return command
