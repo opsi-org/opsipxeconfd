@@ -6,16 +6,11 @@ This file is part of opsi - https://www.opsi.org
 :license: GNU Affero General Public License version 3
 """
 
-import traceback
-import time
-import sys
-import os
 from typing import Dict
-import logging
 
-import opsicommon.logging
-from opsicommon.logging import logger
-from logging.handlers import WatchedFileHandler, RotatingFileHandler
+from opsicommon.logging import (
+	DEFAULT_FORMAT, DEFAULT_COLORED_FORMAT, logger, logging_config, handle_log_exception
+)
 
 def init_logging(config : Dict) -> None:
 	"""
@@ -30,30 +25,17 @@ def init_logging(config : Dict) -> None:
 	:type config: Dict
 	"""
 	try:
-		logLevel = max(config.get("logLevel"), config.get("logLevel_stderr"), config.get("logLevel_file"))
-		logLevel = logging._opsiLevelToLevel[logLevel]
-		if config['logFile']:
-			plain_formatter = logging.Formatter(opsicommon.logging.DEFAULT_FORMAT)
-			formatter = opsicommon.logging.ContextSecretFormatter(plain_formatter)
-			file_handler = RotatingFileHandler(
-						config['logFile'],
-						maxBytes=config['maxBytesLog'],
-						backupCount=config['backupCountLog']
-			)
-			file_handler.setFormatter(formatter)
-			file_handler.setLevel(logging._opsiLevelToLevel[config.get("logLevel_file")])
-			logger.addHandler(file_handler)
-		
-		logger.setLevel(logLevel)		
-		logging.captureWarnings(True)
-		opsicommon.logging.logging_config(
-					stderr_format = opsicommon.logging.DEFAULT_COLORED_FORMAT,
-					stderr_level=logging._opsiLevelToLevel[config.get("logLevel_stderr")],
-					file_level=logging._opsiLevelToLevel[config.get("logLevel_file")]
+		stderr_level = config.get("logLevel_stderr")
+		if config["daemon"]:
+			stderr_level = None
+		logging_config(
+					stderr_format=DEFAULT_COLORED_FORMAT,
+					stderr_level=stderr_level,
+					log_file=config["logFile"],
+					file_format=DEFAULT_FORMAT,
+					file_level=config.get("logLevel_file"),
+					file_rotate_max_bytes=config.get("maxBytesLog", 0)*1000*1000,
+					file_rotate_backup_count=config.get("backupCountLog")
 		)
-
-		if config['daemon']:
-			opsicommon.logging.logging.remove_all_handlers(handler_type=logging.StreamHandler)
-
-	except Exception as exc:
-		opsicommon.logging.handle_log_exception(exc)
+	except Exception as err:
+		handle_log_exception(err)
