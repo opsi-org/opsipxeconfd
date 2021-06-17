@@ -692,9 +692,9 @@ class Opsipxeconfd(threading.Thread):
 				raise BackendMissingDataError(u"Product not found: %s_%s-%s" % (poc.productId, poc.productVersion, poc.packageVersion))
 
 			if ELILO_X86 == elilo:
-				pxeConfigTemplate = self.config['uefiConfTemplate-x86']
+				pxeConfigTemplate = self.config['uefiConfTemplateX86']
 			elif ELILO_X64 == elilo:
-				pxeConfigTemplate = self.config['uefiConfTemplate-x64']
+				pxeConfigTemplate = self.config['uefiConfTemplateX64']
 
 			if product.pxeConfigTemplate:
 				if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):

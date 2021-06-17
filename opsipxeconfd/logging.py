@@ -25,8 +25,8 @@ def init_logging(config : Dict) -> None:
 	:type config: Dict
 	"""
 	try:
-		stderr_level = max(config.get("logLevel_stderr"), config.get("logLevel"))
-		file_level = max(config.get("logLevel_file"), config.get("logLevel"))
+		stderr_level = max(config.get("logLevelStderr"), config.get("logLevel"))
+		file_level = max(config.get("logLevelFile"), config.get("logLevel"))
 		if config["daemon"]:
 			stderr_level = None
 		logging_config(

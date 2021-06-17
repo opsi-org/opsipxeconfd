@@ -43,7 +43,7 @@ def setup_users_and_groups(config):
 	logger.info("Setup users and groups")
 	groups = get_groups()
 	users = get_users()
-	
+
 	if config.run_as_user != "root":
 		if config.run_as_user not in users:
 			create_user(
@@ -119,7 +119,7 @@ def setup_backend(config : Dict) -> None:
 			return
 	except Exception as e:
 		logger.debug(e)
-	
+
 	logger.info("Setup backend")
 	initializeBackends()
 

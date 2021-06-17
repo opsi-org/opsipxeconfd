@@ -8,13 +8,74 @@ See LICENSES/README.md for more Information
 """
 
 import sys
+from collections import OrderedDict
 import configargparse
 import argparse
 
 from OPSI import __version__ as python_opsi_version
-from .opsipxeconfdinit import OpsipxeconfdInit
 from opsicommon.logging import logger
+
+from .opsipxeconfdinit import OpsipxeconfdInit
 from . import __version__
+
+DEFAULT_CONFIG_FILE = "/etc/opsi/opsipxeconfd.conf"
+
+class OpsipxeconfdConfigFileParser(configargparse.ConfigFileParser):
+	def get_syntax_description(self):
+		return ""
+
+	def parse(self, stream):
+		items = OrderedDict()
+		for i, line in enumerate(stream):
+			line = line.strip()
+			if not line or line.startswith(("#", ";", "/")):
+				continue
+			if '=' not in line:
+				raise configargparse.ConfigFileParserException(
+					f"Unexpected line {i} in {getattr(stream, 'name', 'stream')}: {line}"
+				)
+
+			(option, value) = line.split('=', 1)
+			option = option.strip()
+			value = value.strip()
+			if option == 'pid file':
+				items['pid-file'] = value
+			elif option == 'log level':
+				items['log-level'] = value
+			elif option == 'log level stderr':
+				items['log-level-stderr'] = value
+			elif option == 'log level file':
+				items['log-level-file'] = value
+			elif option == 'max byte log':
+				items['max-log-size'] = value
+			elif option == 'backup count log':
+				items['keep-rotated-logs'] = value
+			elif option == 'log file':
+				items['log-file'] = value
+			elif option == 'log format':
+				# Ignore
+				pass
+			elif option == 'pxe config dir':
+				items['pxe-dir'] = value
+			elif option == 'pxe config template':
+				items['pxe-conf-template'] = value
+			elif option == 'uefi netboot config template x86':
+				items['uefi-conf-template-x86'] = value
+			elif option == 'uefi netboot config template x64':
+				items['uefi-conf-template-x64'] = value
+			elif option == 'max pxe config writers':
+				items['max-pxe-config-writers'] = value
+			elif option == 'max control connections':
+				items['max-connections'] = value
+			elif option == 'backend config dir':
+				items['backend-config-dir'] = value
+			elif option == 'dispatch config file':
+				items['dispatch-config-file'] = value
+			else:
+				raise configargparse.ConfigFileParserException(
+					f"Unexpected option in line {i} in {getattr(stream, 'name', 'stream')}: {option}"
+				)
+		return items
 
 def parse_args() -> argparse.Namespace:
 	"""
@@ -27,17 +88,21 @@ def parse_args() -> argparse.Namespace:
 	:rtype: argparse.Namespace
 	"""
 	parser = configargparse.ArgParser(
-			formatter_class=lambda prog: argparse.ArgumentDefaultsHelpFormatter(
+		config_file_parser_class=OpsipxeconfdConfigFileParser,
+		formatter_class=lambda prog: argparse.ArgumentDefaultsHelpFormatter(
 			prog, max_help_position=30, width=100
 		)
 	)
 	parser.add('--version', '-v', help="Show version information and exit.", action="store_true")
 	parser.add('--no-fork', '-F', dest="nofork", help="Do not fork to background.", action='store_true')
-	parser.add('--conffile', '-c', help="Location of config file.")
+	parser.add(
+		"-c", "--conffile",
+		required=False,
+		is_config_file=True,
+		default=DEFAULT_CONFIG_FILE,
+		help="Path to config file."
+	)
 	parser.add('--setup', action="store_true", help="Set up the environment and exit.")
-	parser.add('command', metavar='<command>', type=str, nargs='?',
-                    help='command - one of: start, stop, status, update')
-
 	parser.add(
 		"--log-level", "--loglevel", "--l",
 		env_var="OPSIPXECONFD_LOG_LEVEL",
@@ -103,7 +168,77 @@ def parse_args() -> argparse.Namespace:
 		dest="logFilter",
 		help="Filter log records contexts (<ctx-name-1>=<val1>[,val2][;ctx-name-2=val3])"
 	)
-
+	parser.add(
+		"--backend-config-dir",
+		dest="backendConfigDir",
+		env_var="OPSIPXECONFD_BACKEND_CONFIG_DIR",
+		default="/etc/opsi/backends",
+		help="Location of the backend config dir."
+	)
+	parser.add(
+		"--dispatch-config-file",
+		dest="dispatchConfigFile",
+		env_var="OPSIPXECONFD_DISPATCH_CONFIG_FILE",
+		default="/etc/opsi/backendManager/dispatch.conf",
+		help="Location of the backend dispatcher config file."
+	)
+	parser.add(
+		"--pid-file",
+		dest="pidFile",
+		env_var="OPSIPXECONFD_PID_FILE",
+		default="/var/run/opsipxeconfd/opsipxeconfd.pid",
+		help="Location of the pid file."
+	)
+	parser.add(
+		"--pxe-dir",
+		dest="pxeDir",
+		env_var="OPSIPXECONFD_PXE_DIR",
+		default="/tftpboot/linux/pxelinux.cfg",
+		help="Location of the pxe directory."
+	)
+	parser.add(
+		"--pxe-conf-template",
+		dest="pxeConfTemplate",
+		env_var="OPSIPXECONFD_PXE_CONF_TEMPLATE",
+		default="/tftpboot/linux/pxelinux.cfg/install",
+		help="Location of the pxe config template."
+	)
+	parser.add(
+		"--uefi-conf-template-x86",
+		dest="uefiConfTemplateX86",
+		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X86",
+		default="/tftpboot/linux/pxelinux.cfg/install-elilo-x86",
+		help="Location of the uefi x86 config template."
+	)
+	parser.add(
+		"--uefi-conf-template-x64",
+		dest="uefiConfTemplateX64",
+		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X64",
+		default="/tftpboot/linux/pxelinux.cfg/install-grub-x64",
+		help="Location of the uefi x64 config template."
+	)
+	parser.add(
+		"--max-connections",
+		env_var="OPSIPXECONFD_MAX_CONNECTIONS",
+		type=int,
+		default=5,
+		dest="maxConnections",
+		help="Number of maximum simultaneous control connections."
+	)
+	parser.add(
+		"--max-pxe-config-writers",
+		env_var="OPSIPXECONFD_MAX_PXE_CONFIG_WRITERS",
+		type=int,
+		default=100,
+		dest="maxPxeConfigWriters",
+		help="Number of maximum simultaneous pxe config writer threads."
+	)
+	parser.add(
+		"command",
+		nargs="?",
+		choices=("start", "stop", "status", "update"),
+		metavar="<command>",
+	)
 
 	opts = parser.parse_args()
 
@@ -118,7 +253,7 @@ def parse_args() -> argparse.Namespace:
 		sys.exit(1)
 
 	return opts
-		
+
 def main() -> None:
 	"""
 	Main method.
@@ -130,9 +265,9 @@ def main() -> None:
 		OpsipxeconfdInit(opts)
 	except SystemExit:
 		pass
-	except Exception as exception:
-		logger.logException(exception)
-		print(u"ERROR: %s" % exception, file=sys.stderr)
+	except Exception as err:
+		logger.error(err, exc_info=True)
+		print(f"ERROR: {err}", file=sys.stderr)
 		sys.exit(1)
 
 
