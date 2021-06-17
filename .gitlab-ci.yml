@@ -54,6 +54,7 @@ stages:
 
   # Install poetry
   pip3 install poetry
+  poetry config experimental.new-installer false
   poetry install
   poetry run opsipxeconfd --setup
   # Create adminuser used with opsiconfd-perftest.py
