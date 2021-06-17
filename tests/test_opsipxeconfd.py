@@ -74,34 +74,6 @@ def run_opsipxeconfd():
 		print("after teardown")
 """
 
-def test_setup():
-	opts = argparse.Namespace(**vars(default_opts))
-	opts.setup = True
-	opts.command = None
-	OpsipxeconfdInit(opts)
-
-
-def test_OpsipxeconfdInit():
-	#opts = argparse.Namespace(help=None, version=None, command="start", conffile=None, logLevel=7, nofork=None, setup=None)
-	#OpsipxeconfdInit(opts)
-	#time.sleep(12)
-	opts = argparse.Namespace(**vars(default_opts))
-	opts.command = "status"
-	OpsipxeconfdInit(opts)
-	time.sleep(3)
-	opts = argparse.Namespace(**vars(default_opts))
-	opts.command = "stop"
-	OpsipxeconfdInit(opts)
-
-"""
-def test_OpsipxeconfdInit2(run_opsipxeconfd):
-	with run_opsipxeconfd:
-		opts = argparse.Namespace(**vars(default_opts))
-		opts.command = "status"
-		OpsipxeconfdInit(opts)
-		time.sleep(5)
-"""
-
 def test_pxeconfigwriter():
 	hostId = forceHostId(getfqdn())
 	productOnClients = None
