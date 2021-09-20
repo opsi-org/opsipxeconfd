@@ -56,9 +56,9 @@ package:
     echo "exec ./opsipxeconfd \"\$@\"" >> ${DST}/rootfs/usr/bin/opsipxeconfd
     #cp ${SRC}/dist/opsipxeconfd/opsipxeconfd ${DST}/rootfs/usr/bin
     chmod 755 ${DST}/rootfs/usr/bin/opsipxeconfd
-    mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
-    mv ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
-    rm -r ${DST}/rootfs/usr/lib/opsipxeconfd/opsipxeconfd_data
+    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
+    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
+
   postinst_script: |
     # remove obsolete files
     [ -e /etc/logrotate.d/opsipxeconfd ] && rm /etc/logrotate.d/opsipxeconfd || true
