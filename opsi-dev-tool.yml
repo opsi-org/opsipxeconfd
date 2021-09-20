@@ -28,7 +28,6 @@ pyinstaller-poetry:
 
 package:
   name: opsipxeconfd
-  architecture: amd64
   type: binary
   systemd: yes
   debpendencies: []
@@ -40,6 +39,17 @@ package:
     mkdir -p ${DST}/rootfs/usr/lib
     mkdir -p ${DST}/rootfs/var/log/opsi/opsipxeconfd
     mkdir -p ${DST}/systemd_units
+    if [ -d ${pyi_src}/opsipxeconfd ]; then
+      cp -a ${pyi_src}/opsipxeconfd ${DST}/rootfs/usr/lib/
+    fi;
+    if [ -d ${pyi_src}/opsipxeconfd-amd64 ]; then
+      mkdir -p ${DST}/rootfs-amd64/usr/lib
+      cp -a ${pyi_src}/opsipxeconfd-amd64 ${DST}/rootfs-amd64/usr/lib/opsipxeconfd
+    fi;
+    if [ -d ${pyi_src}/opsipxeconfd-arm64 ]; then
+      mkdir -p ${DST}/rootfs-arm64/usr/lib
+      cp -a ${pyi_src}/opsipxeconfd-arm64 ${DST}/rootfs-arm64/usr/lib/opsipxeconfd
+    fi;
     cp -a ${pyi_src}/opsipxeconfd ${DST}/rootfs/usr/lib/
     echo "#!/bin/sh"                    > ${DST}/rootfs/usr/bin/opsipxeconfd
     echo "cd /usr/lib/opsipxeconfd"    >> ${DST}/rootfs/usr/bin/opsipxeconfd
