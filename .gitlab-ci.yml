@@ -71,19 +71,19 @@ stages:
   poetry run pytest -s --cov opsipxeconfd --cov-report term --cov-report term-missing
 
 
-test:pytest:
-  image: ubuntu:focal
-  services:
-    - mysql:latest
-  variables:
-    MYSQL_ROOT_PASSWORD: "opsi"
-    MYSQL_DATABASE: "opsi"
-    MYSQL_USER: "opsi"
-    MYSQL_PASSWORD: "opsi"
-  stage: test
-  script:
-    - *prepare_tests
-    - *pytest
+# test:pytest:
+#   image: ubuntu:focal
+#   services:
+#     - mysql:latest
+#   variables:
+#     MYSQL_ROOT_PASSWORD: "opsi"
+#     MYSQL_DATABASE: "opsi"
+#     MYSQL_USER: "opsi"
+#     MYSQL_PASSWORD: "opsi"
+#   stage: test
+#   script:
+#     - *prepare_tests
+#     - *pytest
 
 build:linux-pyinstaller:
   stage: build
@@ -140,6 +140,8 @@ publish:obs_ext:
     - build:linux-pyinstaller
     - build:arm64-pyinstaller
   script:
+    -  opsi-dev-tool -l info --version
+    -  opsi-dev-tool -l info --help
     - opsi-dev-tool -l info --obs-update-package https://build.opensuse.org home:uibmz:opsi:4.2:development
   when: manual
   # only:
