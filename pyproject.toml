@@ -23,7 +23,7 @@ mysqlclient = "^2.0.3"
 distro = {platform = "linux", version = "^1.5.0"}
 
 [tool.poetry.dev-dependencies]
-opsi-dev-tools = "^1.0.62"
+opsi-dev-tools = "^1.0.78"
 pytest = "^5.4.3"
 pytest-cov = "^2.10.0"
 pyinstaller = "^4.0"

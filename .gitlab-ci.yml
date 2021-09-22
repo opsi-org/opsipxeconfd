@@ -1,9 +1,17 @@
 image: docker.uib.gmbh/opsi/dev/pybuilder:uib-python-default
+# image: python:3.7-stretch
 
 stages:
   - test
   - build
   - publish
+
+.install_tools: &install_tools |
+  export DEBIAN_FRONTEND=noninteractive
+  apt update
+  apt -y install debhelper osc
+  pip3 install --trusted-host pypi.uib.gmbh --index-url http://pypi.uib.gmbh:8080/simple opsi-dev-tools
+  pip3 install poetry
 
 .prepare_tests: &prepare_tests |
   # Install debian packages
@@ -84,31 +92,58 @@ build:linux-pyinstaller:
     - poetry install
     - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
     - mv opsipxeconfd opsipxeconfd.src
-    - mv dist/opsipxeconfd .
+    - mv dist/opsipxeconfd ./opsipxeconfd-amd64
     # Check if binary is working
-    - ./opsipxeconfd/opsipxeconfd -c opsipxeconfd_data/opsipxeconfd.conf --version
-    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-tool -l info --binary-push opsipxeconfd/opsipxeconfd "$CI_JOB_ID"'
-    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-tool -l info --binary-push opsipxeconfd/opsipxeconfd'
+    - ./opsipxeconfd-amd64/opsipxeconfd -c opsipxeconfd_data/opsipxeconfd.conf --version
+    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-tool -l info --binary-push opsipxeconfd-amd64/opsipxeconfd "$CI_JOB_ID"'
+    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-tool -l info --binary-push opsipxeconfd-amd64/opsipxeconfd'
   artifacts:
     name: 'opsipxeconfd-linux-pyinstaller'
     paths:
-      - opsipxeconfd
+      - opsipxeconfd-amd64
+    expire_in: 2 day
+
+build:arm64-pyinstaller:
+  image: python:3.7-stretch
+  stage: build
+  tags:
+    - arm64
+  script:
+    - *install_tools
+    - poetry config experimental.new-installer false
+    - poetry install
+    - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
+    - mv dist/opsipxeconfd ./opsipxeconfd-arm64
+    # Check if binary is working
+    - ./opsipxeconfd-arm64/opsipxeconfd -c opsipxeconfd_data/opsipxeconfd.conf --version
+    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-tool -l info --binary-push opsipxeconfd-arm64/opsipxeconfd "$CI_JOB_ID"'
+    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-tool -l info --binary-push opsipxeconfd-arm64/opsipxeconfd'
+  artifacts:
+    name: 'opsipxeconfd-arm64-pyinstaller'
+    paths:
+      - opsipxeconfd-arm64
     expire_in: 2 day
 
 publish:obs_int:
+  image: python:3.7-stretch
   stage: publish
   dependencies:
     - build:linux-pyinstaller
+    - build:arm64-pyinstaller
   script:
-    - opsi-dev-tool -l info --obs-update-package https://obs.uib.gmbh home:uibmz:opsi:4.2:development
+    - *install_tools
+    - poetry run opsi-dev-tool -l info --obs-update-package https://obs.uib.gmbh home:uibmz:opsi:4.2:development
   only:
     - tags
 
 publish:obs_ext:
+  image: python:3.7-stretch
   stage: publish
   dependencies:
     - build:linux-pyinstaller
+    - build:arm64-pyinstaller
   script:
-    - opsi-dev-tool -l info --obs-update-package https://build.opensuse.org home:uibmz:opsi:4.2:development
+    - *install_tools
+    - poetry run opsi-dev-tool -l info --obs-update-package https://build.opensuse.org home:uibmz:opsi:4.2:development
   only:
     - tags
