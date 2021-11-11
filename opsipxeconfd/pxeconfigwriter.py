@@ -9,24 +9,12 @@
 pxeconfigwriter
 """
 
-import threading
-import time
-import base64
 import os
+import time
+import threading
 from typing import List, Dict, Callable
-from hashlib import md5
-
-try:
-	# python3-pycryptodome installs into Cryptodome
-	from Cryptodome.Hash import MD5 # type: ignore
-	from Cryptodome.Signature import pkcs1_15 # type: ignore
-except ImportError:
-	# PyCryptodome from pypi installs into Crypto
-	from Crypto.Hash import MD5
-	from Crypto.Signature import pkcs1_15
 
 from opsicommon.logging import logger, log_context
-from OPSI.Util import getPublicKey
 
 class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-attributes
 	"""
@@ -42,8 +30,9 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		append: Dict,
 		productPropertyStates: Dict,
 		pxefile: str,
-		callback: Callable=None,
-		backendinfo: Dict=None
+		secureBootModule: bool,
+		uefiModule: bool,
+		callback: Callable=None
 	) -> None:
 		"""
 		PXEConfigWriter constructor.
@@ -77,78 +66,14 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		self.hostId = hostId
 		self.productOnClients = productOnClients
 		self.pxefile = pxefile
+		self._secureBootModule = bool(secureBootModule)
+		self._uefiModule = bool(uefiModule)
 		self._callback = callback
 		self.startTime = time.time()
 		self._running = False
 		self._pipe = None
 		self.uefi = False
-		self._uefiModule = False
-		self._secureBootModule = False
 		self._usingGrub = False
-
-		# backendinfo: expect this to be a dict
-		if backendinfo:  # pylint: disable=too-many-nested-blocks
-			modules = backendinfo['modules']
-			helpermodules = backendinfo['realmodules']
-			hostCount = backendinfo['hostCount']
-
-			if modules.get('customer'):
-				logger.info("Verifying modules file signature")
-				public_key = getPublicKey(
-					data=base64.decodebytes(
-						b"AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDo"
-						b"jY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8"
-						b"S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDU"
-						b"lk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP"
-					)
-				)
-				data = ""
-				mks = list(modules.keys())
-				mks.sort()
-				for module in mks:
-					if module in ("valid", "signature"):
-						continue
-					if module in helpermodules:
-						val = helpermodules[module]
-						if module == 'uefi':
-							if int(val) + 50 <= hostCount:
-								logger.error("UNDERLICENSED: You have more Clients then licensed in modules file. Disabling module: '%s'", module)
-								modules[module] = False
-							elif int(val) <= hostCount:
-								logger.warning("UNDERLICENSED WARNING: You have more Clients then licensed in modules file.")
-						else:
-							if int(val) > 0:
-								modules[module] = True
-					else:
-						val = modules[module]
-						if isinstance(val, bool):
-							val = "yes" if val else "no"
-					data += f"{module.lower().strip()} = {val}\r\n"
-
-				verified = False
-				if modules["signature"].startswith("{"):
-					s_bytes = int(modules['signature'].split("}", 1)[-1]).to_bytes(256, "big")
-					try:
-						pkcs1_15.new(public_key).verify(MD5.new(data.encode()), s_bytes)
-						verified = True
-					except ValueError:
-						# Invalid signature
-						pass
-				else:
-					h_int = int.from_bytes(md5(data.encode()).digest(), "big")
-					s_int = public_key._encrypt(int(modules["signature"]))
-					verified = h_int == s_int
-
-				if not verified:
-					logger.error("Failed to verify modules signature")
-					return
-
-				logger.debug("Modules file signature verified (customer: %s)", modules.get('customer'))
-
-				if modules.get('uefi'):
-					self._uefiModule = True
-				if modules.get('secureboot'):
-					self._secureBootModule = True
 
 		logger.info("PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
 					self.templatefile, self.pxefile, self.hostId, self.append)

@@ -9,22 +9,32 @@
 opsipxeconfd
 """
 
-import codecs
-import json
-import grp
 import os
-import socket
+import grp
+import json
 import stat
-import threading
 import time
+import base64
+import codecs
+import socket
+import threading
 from typing import Dict, List, Any, Tuple
+
+try:
+	# python3-pycryptodome installs into Cryptodome
+	from Cryptodome.Hash import MD5 # type: ignore
+	from Cryptodome.Signature import pkcs1_15 # type: ignore
+except ImportError:
+	# PyCryptodome from pypi installs into Crypto
+	from Crypto.Hash import MD5
+	from Crypto.Signature import pkcs1_15
 
 from opsicommon.logging import logger, log_context
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Config import OPSI_ADMIN_GROUP
 from OPSI.Exceptions import BackendMissingDataError
-from OPSI.Util import deserialize
+from OPSI.Util import deserialize, getPublicKey
 from OPSI.Object import NetbootProduct, Host
 from OPSI.Types import forceHostId, forceUnicodeList
 
@@ -65,6 +75,8 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		self._pxeConfigWriters = []
 		self._startupTask = None
 		self._opsi_admin_gid = grp.getgrnam(OPSI_ADMIN_GROUP)[2]
+		self._secureBootModule = False
+		self._uefiModule = False
 
 		logger.comment("opsi pxe configuration service starting")
 
@@ -227,8 +239,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			cc.start()
 			logger.debug("Connection %s started.", cc.name)
 		except Exception as err:  # pylint: disable=broad-except
-			logger.error("Failed to create control connection: %s", err)
-			logger.error(err, exc_info=True)
+			logger.error("Failed to create control connection: %s", err, exc_info=True)
 
 			with self._clientConnectionLock:
 				try:
@@ -367,11 +378,77 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		logger.notice(result)
 		return result
 
+	def _check_modules(self, cached_data: dict):  # pylint: disable=too-many-branches
+		try:
+			backend_info = cached_data["backendInfo"]
+		except KeyError:
+			backend_info = self._backend.backend_info()
+
+		modules = backend_info['modules']
+		helpermodules = backend_info['realmodules']
+		public_key = getPublicKey(
+			data=base64.decodebytes(
+				b"AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDo"
+				b"jY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8"
+				b"S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDU"
+				b"lk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP"
+			)
+		)
+		data = ""
+		mks = list(modules.keys())
+		mks.sort()
+		for module in mks:
+			if module in ("valid", "signature"):
+				continue
+			if module in helpermodules:
+				val = helpermodules[module]
+				if int(val) > 0:
+					modules[module] = True
+			else:
+				val = modules[module]
+				if isinstance(val, bool):
+					val = "yes" if val else "no"
+			data += f"{module.lower().strip()} = {val}\r\n"
+
+		verified = False
+		if modules["signature"].startswith("{"):
+			s_bytes = int(modules['signature'].split("}", 1)[-1]).to_bytes(256, "big")
+			try:
+				pkcs1_15.new(public_key).verify(MD5.new(data.encode()), s_bytes)
+				verified = True
+			except ValueError:
+				# Invalid signature
+				pass
+		else:
+			h_int = int.from_bytes(MD5.new(data.encode()).digest(), "big")
+			s_int = public_key._encrypt(int(modules["signature"])) # pylint: disable=protected-access
+			verified = h_int == s_int
+
+		if not verified:
+			logger.error("Modules file invalid.")
+			self._uefiModule = False
+			self._secureBootModule = False
+			return
+
+		logger.debug("Modules file signature verified (customer: %s)", modules.get('customer'))
+
+		if modules.get("uefi"):
+			num_clients = len(self._backend.host_getIdents(type='OpsiClient'))  # pylint: disable=no-member
+			if int(modules["uefi"]) + 50 <= num_clients:
+				logger.error("You have more clients then licensed in modules file. Disabling module 'uefi'")
+			else:
+				self._uefiModule = True
+				if int(modules["uefi"]) <= num_clients:
+					logger.warning("You have more clients then licensed in modules file.")
+
+		if modules.get('secureboot'):
+			self._secureBootModule = True
+
 	def updateBootConfiguration(self, hostId: str, cacheFile: str=None) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements
 		"""
 		Updates Boot Configuration.
 
-		This method is called for a specifig host. It updates the PXE boot
+		This method is called for a specific host. It updates the PXE boot
 		configuration for it. For NetbootProducts with pending action requests,
 		a PXEConfigWriter is created and run.
 
@@ -519,21 +596,17 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			pcw = None
 			try:
 				logger.info("Creating thread for pxeconfig %d", len(self._pxeConfigWriters) + 1)
-				try:
-					backendInfo = cachedData["backendInfo"]
-				except KeyError:
-					backendInfo = self._backend.backend_info()
-					backendInfo['hostCount'] = len(self._backend.host_getIdents(type='OpsiClient'))  # pylint: disable=no-member
-
+				self._check_modules(cachedData)
 				pcw = PXEConfigWriter(
-					pxeConfigTemplate,
-					hostId,
-					productOnClients,
-					append,
-					productPropertyStates,
-					pxefile,
-					self.pxeConfigWriterCallback,
-					backendInfo
+					templatefile=pxeConfigTemplate,
+					hostId=hostId,
+					productOnClients=productOnClients,
+					append=append,
+					productPropertyStates=productPropertyStates,
+					pxefile=pxefile,
+					secureBootModule=self._secureBootModule,
+					uefiModule=self._uefiModule,
+					callback=self.pxeConfigWriterCallback
 				)
 				with self._pxeConfigWritersLock:
 					self._pxeConfigWriters.append(pcw)
