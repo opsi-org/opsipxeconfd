@@ -29,7 +29,7 @@ except ImportError:
 	from Crypto.Hash import MD5
 	from Crypto.Signature import pkcs1_15
 
-from opsicommon.logging import logger, log_context
+from opsicommon.logging import logger, log_context, secret_filter
 
 from OPSI.Backend.BackendManager import BackendManager
 from OPSI.Config import OPSI_ADMIN_GROUP
@@ -582,7 +582,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				'service': serviceAddress,
 			}
 			if append['pckey']:
-				logger.addConfidentialString(append['pckey'])
+				secret_filter.add_secrets(append['pckey'])
 
 			try:
 				bootimageAppendConfigStates = [cachedData['bootimageAppend']]
