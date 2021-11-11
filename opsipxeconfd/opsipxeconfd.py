@@ -378,7 +378,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		logger.notice(result)
 		return result
 
-	def _check_modules(self, cached_data: dict):  # pylint: disable=too-many-branches
+	def _check_modules_legacy(self, cached_data: dict):  # pylint: disable=too-many-branches
 		try:
 			backend_info = cached_data["backendInfo"]
 		except KeyError:
@@ -443,6 +443,22 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 
 		if modules.get('secureboot'):
 			self._secureBootModule = True
+
+	def _check_modules(self, cached_data: dict):  # pylint: disable=too-many-branches
+		if not hasattr(self._backend, "backend_getLicensingInfo"):
+			self._check_modules_legacy(cached_data)
+		else:
+			info = self._backend.backend_getLicensingInfo(licenses=False, legacy_modules=False, dates=False)  # pylint: disable=no-member
+			logger.debug("Got licensing info from service: %s", info)
+			if "uefi" in info["available_modules"]:
+				self._uefiModule = True
+			if "secureboot" in info["available_modules"]:
+				self._secureBootModule = True
+		logger.info(
+			"uefi module is %s, secureboot module is %s",
+			"enabled" if self._uefiModule else "disabled",
+			"enabled" if self._secureBootModule else "disabled"
+		)
 
 	def updateBootConfiguration(self, hostId: str, cacheFile: str=None) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements
 		"""
