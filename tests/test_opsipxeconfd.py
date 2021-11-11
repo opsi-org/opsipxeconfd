@@ -83,7 +83,7 @@ def test_pxeconfigwriter():
 	append = {
 		'pckey': None,	#host.getOpsiHostKey(),
 		'hn': hostId.split('.')[0],
-		'dn': u'.'.join(hostId.split('.')[1:]),
+		'dn': '.'.join(hostId.split('.')[1:]),
 		'product': None,
 		'service': None
 	}

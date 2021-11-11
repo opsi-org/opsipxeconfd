@@ -1,31 +1,12 @@
-#! /usr/bin/python3
 # -*- coding: utf-8 -*-
+
+# opsipxeconfd is part of the desktop management solution opsi http://www.opsi.org
+# Copyright (c) 2013-2021 uib GmbH <info@uib.de>
+# All rights reserved.
+# License: AGPL-3.0
+
 """
-opsi pxe configuration daemon (opsipxeconfd)
-
-opsipxeconfd is part of the desktop management solution opsi
-(open pc server integration) http://www.opsi.org
-
-Copyright (C) 2013-2019 uib GmbH
-
-http://www.uib.de/
-
-All rights reserved.
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License, version 3
-as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Affero General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-@copyright:	uib GmbH <info@uib.de>
-@license: GNU Affero GPL version 3
+opsipxeconfd - init
 """
 
 import codecs
@@ -37,7 +18,6 @@ import argparse
 from signal import SIGHUP, SIGINT, SIGTERM, signal
 from collections import OrderedDict
 import configargparse
-import argparse
 
 from opsicommon.logging import (
 	logger, DEFAULT_FORMAT, LOG_WARNING, log_context, set_filter_from_string
@@ -57,11 +37,11 @@ from . import __version__
 DEFAULT_CONFIG_FILE = "/etc/opsi/opsipxeconfd.conf"
 
 
-class OpsipxeconfdConfigFileParser(configargparse.ConfigFileParser):
+class OpsipxeconfdConfigFileParser(configargparse.ConfigFileParser):  # pylint: disable=abstract-method
 	def get_syntax_description(self):
 		return ""
 
-	def parse(self, stream):
+	def parse(self, stream):  # pylint: disable=too-many-branches
 		items = OrderedDict()
 		for i, line in enumerate(stream):
 			line = line.strip()
@@ -305,7 +285,7 @@ def assemble_command(config):
 	# Theoretically it is possible for the user to specify additional commands, not captured here.
 	return command
 
-class OpsipxeconfdInit(object):
+class OpsipxeconfdInit:
 	"""
 	class OpsipxeconfdInit.
 
@@ -348,7 +328,7 @@ class OpsipxeconfdInit(object):
 		if self.config.get("setup"):
 			with log_context({'instance' : 'Opsipxeconfd setup'}):
 				setup(self.config)
-			return		#TODO: exit code handling
+			return  # TODO: exit code handling
 
 		if self.config.get("command") == "start":
 			# Call signalHandler on signal SIGHUP, SIGTERM, SIGINT
@@ -373,7 +353,7 @@ class OpsipxeconfdInit(object):
 				result = con.sendCommand(" ".join(forceUnicodeList(command)))
 				print(result)
 
-	def signalHandler(self, signo, stackFrame)-> None:
+	def signalHandler(self, signo, stackFrame)-> None:  # pylint: disable=unused-argument
 		"""
 		Signal Handler for OpsipxeconfdInit.
 
@@ -414,8 +394,8 @@ class OpsipxeconfdInit(object):
 		This method modifies the data written in the configFile to conform to
 		the standard logging format.
 		"""
-		with codecs.open(self.config['conffile'], 'r', "utf-8") as f:
-			data = f.read()
+		with codecs.open(self.config['conffile'], 'r', "utf-8") as file:
+			data = file.read()
 		new_data = data.replace("[%l] [%D] %M (%F|%N)", DEFAULT_FORMAT)
 		new_data = new_data.replace("%D", "%(asctime)s")
 		new_data = new_data.replace("%T", "%(thread)d")
@@ -426,8 +406,8 @@ class OpsipxeconfdInit(object):
 		new_data = new_data.replace("%N", "%(lineno)s")
 		if new_data != data:
 			logger.notice("Updating config file: %s", self.config['conffile'])
-			with codecs.open(self.config['conffile'], 'w', "utf-8") as f:
-				f.write(new_data)
+			with codecs.open(self.config['conffile'], 'w', "utf-8") as file:
+				file.write(new_data)
 
 	def daemonize(self) -> None:
 		"""
@@ -442,8 +422,8 @@ class OpsipxeconfdInit(object):
 			if self._pid > 0:
 				# Parent exits
 				sys.exit(0)
-		except OSError as error:
-			raise Exception("First fork failed: %e", error)
+		except OSError as err:
+			raise Exception(f"First fork failed: {err}") from err
 
 		# Do not hinder umounts
 		os.chdir("/")
@@ -455,8 +435,8 @@ class OpsipxeconfdInit(object):
 			self._pid = os.fork()
 			if self._pid > 0:
 				sys.exit(0)
-		except OSError as error:
-			raise Exception("Second fork failed: %e" % error)
+		except OSError as err:
+			raise Exception(f"Second fork failed: {err}") from err
 
 		# Close standard output and standard error.
 		os.close(0)

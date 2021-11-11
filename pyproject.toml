@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opsipxeconfd"
-version = "4.2.0.20"
+version = "4.2.0.21"
 description = "opsi pxe configuration service"
 homepage = "https://www.opsi.org"
 license = "AGPL-3.0"
@@ -27,6 +27,7 @@ opsi-dev-tools = "^1.0.78"
 pytest = "^5.4.3"
 pytest-cov = "^2.10.0"
 pyinstaller = "^4.0"
+pylint = "^2.11.1"
 
 [tool.poetry.scripts]
 opsipxeconfd = "opsipxeconfd.__main__:main"

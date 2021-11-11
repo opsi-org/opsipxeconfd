@@ -1,13 +1,25 @@
+# -*- coding: utf-8 -*-
+
+# opsipxeconfd is part of the desktop management solution opsi http://www.opsi.org
+# Copyright (c) 2013-2021 uib GmbH <info@uib.de>
+# All rights reserved.
+# License: AGPL-3.0
+
+"""
+pxeconfigwriter
+"""
+
 import threading
 import time
 import base64
 import os
-from typing import Any, List, Dict, Tuple, Callable
+from typing import List, Dict, Callable
 from hashlib import md5
+
 try:
 	# python3-pycryptodome installs into Cryptodome
-	from Cryptodome.Hash import MD5
-	from Cryptodome.Signature import pkcs1_15
+	from Cryptodome.Hash import MD5 # type: ignore
+	from Cryptodome.Signature import pkcs1_15 # type: ignore
 except ImportError:
 	# PyCryptodome from pypi installs into Crypto
 	from Crypto.Hash import MD5
@@ -16,21 +28,22 @@ except ImportError:
 from opsicommon.logging import logger, log_context
 from OPSI.Util import getPublicKey
 
-class PXEConfigWriter(threading.Thread):
+class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-attributes
 	"""
 	class PXEConfigWriter
 
 	This class handles the sending of PXE boot information to clients.
 	"""
-	def __init__(self,
-				templatefile : str,
-				hostId : str,
-				productOnClients : List,
-				append : Dict,
-				productPropertyStates : Dict,
-				pxefile : str,
-				callback : Callable=None,
-				backendinfo : Dict=None
+	def __init__(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+		self,
+		templatefile: str,
+		hostId: str,
+		productOnClients: List,
+		append: Dict,
+		productPropertyStates: Dict,
+		pxefile: str,
+		callback: Callable=None,
+		backendinfo: Dict=None
 	) -> None:
 		"""
 		PXEConfigWriter constructor.
@@ -73,14 +86,22 @@ class PXEConfigWriter(threading.Thread):
 		self._secureBootModule = False
 		self._usingGrub = False
 
-		if backendinfo:  # expect this to be a dict
+		# backendinfo: expect this to be a dict
+		if backendinfo:  # pylint: disable=too-many-nested-blocks
 			modules = backendinfo['modules']
 			helpermodules = backendinfo['realmodules']
 			hostCount = backendinfo['hostCount']
 
 			if modules.get('customer'):
 				logger.info("Verifying modules file signature")
-				publicKey = getPublicKey(data=base64.decodebytes(b"AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDojY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDUlk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP"))
+				public_key = getPublicKey(
+					data=base64.decodebytes(
+						b"AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDo"
+						b"jY96FDYv+2d73LsoOckHCnuh55GA0mtuVMWdXNZIE8Avt/RzbEoYGo/H0weuga7I8PuQNC/nyS8w3W8TH4pt+ZCjZZoX8"
+						b"S+IizWCYwfqYoYTMLgB0i+6TCAfJj3mNgCrDZkQ24+rOFS4a8RrjamEz/b81noWl9IntllK1hySkR+LbulfTGALHgHkDU"
+						b"lk0OSu+zBPw/hcDSOMiDQvvHfmR4quGyLPbQ2FOVm1TzE0bQPR+Bhx4V8Eo2kNYstG2eJELrz7J1TJI0rCjpB+FQjYPsP"
+					)
+				)
 				data = ""
 				mks = list(modules.keys())
 				mks.sort()
@@ -100,42 +121,40 @@ class PXEConfigWriter(threading.Thread):
 								modules[module] = True
 					else:
 						val = modules[module]
-						if val is False:
-							val = "no"
-						if val is True:
-							val = "yes"
-					data += "%s = %s\r\n" % (module.lower().strip(), val)
+						if isinstance(val, bool):
+							val = "yes" if val else "no"
+					data += f"{module.lower().strip()} = {val}\r\n"
 
 				verified = False
 				if modules["signature"].startswith("{"):
 					s_bytes = int(modules['signature'].split("}", 1)[-1]).to_bytes(256, "big")
 					try:
-						pkcs1_15.new(publicKey).verify(MD5.new(data.encode()), s_bytes)
+						pkcs1_15.new(public_key).verify(MD5.new(data.encode()), s_bytes)
 						verified = True
 					except ValueError:
 						# Invalid signature
 						pass
 				else:
 					h_int = int.from_bytes(md5(data.encode()).digest(), "big")
-					s_int = publicKey._encrypt(int(modules["signature"]))
+					s_int = public_key._encrypt(int(modules["signature"]))
 					verified = h_int == s_int
-				
+
 				if not verified:
 					logger.error("Failed to verify modules signature")
 					return
 
 				logger.debug("Modules file signature verified (customer: %s)", modules.get('customer'))
-				
+
 				if modules.get('uefi'):
 					self._uefiModule = True
 				if modules.get('secureboot'):
 					self._secureBootModule = True
 
-		logger.info(u"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
+		logger.info("PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
 					self.templatefile, self.pxefile, self.hostId, self.append)
 
 		if not os.path.exists(self.templatefile):
-			raise Exception(u"Template file '%s' not found" % self.templatefile)
+			raise Exception(f"Template file '{self.templatefile}' not found")
 
 		self.template = {'pxelinux': []}
 
@@ -152,7 +171,7 @@ class PXEConfigWriter(threading.Thread):
 		os.mkfifo(self.pxefile)
 		os.chmod(self.pxefile, 0o644)
 
-	def _getPXEConfigContent(self, templateFile : str) -> str:
+	def _getPXEConfigContent(self, templateFile : str) -> str:  # pylint: disable=too-many-branches
 		"""
 		Gets PXEConfig string.
 
@@ -168,21 +187,21 @@ class PXEConfigWriter(threading.Thread):
 
 		:raises Exception: In case uefi module is not licensed.
 		"""
-		logger.debug(u"Reading template '%s'", templateFile)
-		with open(templateFile, 'r') as infile:
-			templateLines = infile.readlines()
+		logger.debug("Reading template '%s'", templateFile)
+		with open(templateFile, 'r', encoding="utf-8") as file:
+			templateLines = file.readlines()
 
-		content = u''
+		content = ''
 		appendLineProperties = []
 		for line in templateLines:
 			line = line.rstrip()
 
 			for (propertyId, value) in self.productPropertyStates.items():
-				logger.debug2("Property: '%s': value: '%s'", propertyId, value)
-				line = line.replace(u'%%%s%%' % propertyId, value)
+				logger.trace("Property: '%s': value: '%s'", propertyId, value)
+				line = line.replace(f'%{propertyId}%', value)
 
-			if line.lstrip().startswith(u'append'):
-				if line.lstrip().startswith(u'append='):
+			if line.lstrip().startswith('append'):
+				if line.lstrip().startswith('append='):
 					logger.notice("elilo configuration detected for %s", self.hostId)
 					self.uefi = True
 					appendLineProperties = ''.join(line.split('="')[1:])[:-1].split()
@@ -192,33 +211,33 @@ class PXEConfigWriter(threading.Thread):
 
 				for key, value in self.append.items():
 					if value:
-						appendLineProperties.append("%s=%s" % (key, value))
+						appendLineProperties.append(f"{key}={value}")
 					else:
 						appendLineProperties.append(str(key))
 
 				if self._uefiModule and self.uefi:
-					content = '%sappend="%s"\n' % (content, ' '.join(appendLineProperties))
+					content = f'{content}append="{" ".join(appendLineProperties)}"\n'
 				elif not self._uefiModule and self.uefi:
-					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
+					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
 				else:
-					content = '%s  append %s\n' % (content, ' '.join(appendLineProperties))
-			elif line.lstrip().startswith(u'linux'):
+					content = f'{content}  append {" ".join(appendLineProperties)}\n'
+			elif line.lstrip().startswith('linux'):
 				logger.notice("UEFI GRUB configuration detected for %s", self.hostId)
 				if not self._uefiModule and self.uefi:
-					raise Exception(u"You have not licensed uefi module, please check your modules or contact info@uib.de")
+					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
 
 				self.uefi = True
 				self._usingGrub = True
 				appendLineProperties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
-						appendLineProperties.append("%s=%s" % (key, value))
+						appendLineProperties.append(f"{key}={value}")
 					else:
 						appendLineProperties.append(str(key))
 
-				content = '%slinux %s\n' % (content, ' '.join(appendLineProperties))
+				content = f'{content}linux {" ".join(appendLineProperties)}\n'
 			else:
-				content = "%s%s\n" % (content, line)
+				content = f"{content}{line}\n"
 
 		return content
 
@@ -236,13 +255,13 @@ class PXEConfigWriter(threading.Thread):
 				try:
 					self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
 					pipeOpenend = True
-				except Exception as error:
-					if error.errno != 6:
+				except Exception as err:  # pylint: disable=broad-except
+					if hasattr(err, "errno") or err.errno != 6:  # pylint: disable=no-member
 						raise
 					time.sleep(1)
 
 			if pipeOpenend:
-				logger.notice(u"Pipe '%s' opened, piping pxe boot configuration", self.pxefile)
+				logger.notice("Pipe '%s' opened, piping pxe boot configuration", self.pxefile)
 				os.write(self._pipe, self.content.encode())
 				if self.uefi and self._usingGrub:
 					time.sleep(5)

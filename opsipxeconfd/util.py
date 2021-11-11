@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+
+# opsipxeconfd is part of the desktop management solution opsi http://www.opsi.org
+# Copyright (c) 2013-2021 uib GmbH <info@uib.de>
+# All rights reserved.
+# License: AGPL-3.0
+
+"""
+opsipxeconfd - util
+"""
+
 import time
 import threading
 import os
@@ -26,29 +37,29 @@ def temporaryPidFile(filepath : str) -> None:
 
 	logger.debug("Reading old pidFile %r...", pidFile)
 	try:
-		with open(pidFile, 'r') as pf:
+		with open(pidFile, 'r', encoding="utf-8") as pf:
 			oldPid = pf.readline().strip()
 
 		if oldPid:
 			running = False
 			try:
-				pids = execute("%s -x opsipxeconfd" % which("pidof"))[0].strip().split()
+				pids = execute(f"{which('pidof')} -x opsipxeconfd")[0].strip().split()
 				for runningPid in pids:
 					if runningPid == oldPid:
 						running = True
 						break
-			except Exception as error:
-				logger.error(error)
+			except Exception as err:  # pylint: disable=broad-except
+				logger.error(err)
 
 			if running:
-				raise Exception(u"Another opsipxeconfd process is running (pid: %s), stop process first or change pidfile." % oldPid)
-	except IOError as ioerr:
-		if ioerr.errno != 2:  # errno 2 == no such file
-			raise ioerr
+				raise Exception(f"Another opsipxeconfd process is running (pid: {oldPid}), stop process first or change pidfile.")
+	except IOError as err:
+		if err.errno != 2:  # errno 2 == no such file
+			raise err
 
-	logger.info(u"Creating pid file %r", pidFile)
+	logger.info("Creating pid file %r", pidFile)
 	pid = os.getpid()
-	with open(pidFile, "w") as pf:
+	with open(pidFile, "w", encoding="utf-8") as pf:
 		pf.write(str(pid))
 
 	try:
@@ -58,11 +69,11 @@ def temporaryPidFile(filepath : str) -> None:
 			logger.debug("Removing pid file %r...")
 			os.unlink(pidFile)
 			logger.info("Removed pid file %r", pidFile)
-		except OSError as oserr:
-			if oserr.errno != 2:
-				logger.error("Failed to remove pid file %r: %s", pidFile, oserr)
-		except Exception as error:
-			logger.error("Failed to remove pid file %r: %s", pidFile, error)
+		except OSError as err:
+			if err.errno != 2:
+				logger.error("Failed to remove pid file %r: %s", pidFile, err)
+		except Exception as err:  # pylint: disable=broad-except
+			logger.error("Failed to remove pid file %r: %s", pidFile, err)
 
 class StartupTask(threading.Thread):
 	"""
@@ -94,14 +105,18 @@ class StartupTask(threading.Thread):
 		the opsipxeconfd is updated.
 		"""
 		self._running = True
-		logger.notice(u"Start setting initial boot configurations")
+		logger.notice("Start setting initial boot configurations")
 		try:
-			clientIds = [clientToDepot['clientId'] for clientToDepot in
-						self._opsipxeconfd._backend.configState_getClientToDepotserver(depotIds=[self._opsipxeconfd.config['depotId']])]
+			clientIds = [
+				clientToDepot['clientId'] for clientToDepot in
+				self._opsipxeconfd._backend.configState_getClientToDepotserver(  # pylint: disable=protected-access
+					depotIds=[self._opsipxeconfd.config['depotId']]
+				)
+			]
 
 			if clientIds:
-				productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(
-					productType=u'NetbootProduct',
+				productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(  # pylint: disable=protected-access
+					productType='NetbootProduct',
 					clientId=clientIds,
 					actionRequest=['setup', 'uninstall', 'update', 'always', 'once', 'custom']
 				)
@@ -116,12 +131,12 @@ class StartupTask(threading.Thread):
 
 					try:
 						self._opsipxeconfd.updateBootConfiguration(clientId)
-					except Exception as error:
-						logger.error(u"Failed to update PXE boot config for client '%s': %s", clientId, error)
+					except Exception as err:  # pylint: disable=broad-except
+						logger.error("Failed to update PXE boot config for client '%s': %s", clientId, err)
 
-			logger.notice(u"Finished setting initial boot configurations")
-		except Exception as error:
-			logger.logException(error)
+			logger.notice("Finished setting initial boot configurations")
+		except Exception as err:  # pylint: disable=broad-except
+			logger.error(err, exc_info=True)
 		finally:
 			self._running = False
 
@@ -182,15 +197,15 @@ class ClientConnection(threading.Thread):
 			try:
 				cmd = self._socket.recv(4096)
 				cmd = forceUnicode(cmd.strip())
-				logger.info(u"Got command '%s'", cmd)
+				logger.info("Got command '%s'", cmd)
 
 				result = self._processCommand(cmd)
-				logger.info(u"Returning result '%s'", result)
+				logger.info("Returning result '%s'", result)
 
 				try:
 					self._socket.send(result.encode('utf-8'))
-				except Exception as error:
-					logger.warning("Sending result over socket failed: '%s'", error)
+				except Exception as err:  # pylint: disable=broad-except
+					logger.warning("Sending result over socket failed: '%s'", err)
 			finally:
 				if self._running and self._callback:
 					self._callback(self)
@@ -229,24 +244,23 @@ class ClientConnection(threading.Thread):
 
 			command = command.strip()
 
-			if command == u'stop':
+			if command == 'stop':
 				self._opsipxeconfd.stop()
-				return u'opsipxeconfd is going down'
-			elif command == u'status':
+				return 'opsipxeconfd is going down'
+			if command == 'status':
 				return self._opsipxeconfd.status()
-			elif command == u'update':
+			if command == 'update':
 				if len(arguments) == 2:
 					# We have an update path
 					hostId = forceHostId(arguments[0])
 					cacheFilePath = forceFilename(arguments[1])
 					return self._opsipxeconfd.updateBootConfiguration(hostId, cacheFilePath)
-				elif len(arguments) == 1:
+				if len(arguments) == 1:
 					hostId = forceHostId(arguments[0])
 					return self._opsipxeconfd.updateBootConfiguration(hostId)
-				else:
-					raise ValueError(u"bad arguments for command 'update', needs <hostId>")
+				raise ValueError("bad arguments for command 'update', needs <hostId>")
 
-			raise ValueError(u"Command '%s' not supported" % cmd)
-		except Exception as error:
-			logger.error("Processing command '%s' failed: %s", cmd, error)
-			return u'%s: %s' % (ERROR_MARKER, error)
+			raise ValueError(f"Command '{cmd}' not supported")
+		except Exception as err:  # pylint: disable=broad-except
+			logger.error("Processing command '%s' failed: %s", cmd, err)
+			return f'{ERROR_MARKER}: {err}'
