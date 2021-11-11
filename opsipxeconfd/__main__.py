@@ -21,7 +21,7 @@ def main() -> None:
 		OpsipxeconfdInit()
 	except SystemExit:
 		pass
-	except Exception as err:
+	except Exception as err:  # pylint: disable=broad-except
 		logger.error(err, exc_info=True)
 		print(f"ERROR: {err}", file=sys.stderr)
 		sys.exit(1)
