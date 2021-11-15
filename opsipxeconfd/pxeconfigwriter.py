@@ -91,10 +91,6 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		except KeyError:
 			pass  # Key may be non-existing
 
-		if os.path.exists(self.pxefile):
-			os.unlink(self.pxefile)
-		os.mkfifo(self.pxefile)
-		os.chmod(self.pxefile, 0o644)
 
 	def _getPXEConfigContent(self, templateFile : str) -> str:  # pylint: disable=too-many-branches
 		"""
@@ -167,36 +163,49 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		return content
 
 	def run(self) -> None:
+		with log_context({'instance' : 'PXEConfigWriter'}):
+			self._running = True
+			try:
+				self._run()
+			except Exception as err: # pylint: disable=broad-except
+				logger.error(err, exc_info=True)
+			self._running = False
+
+	def _run(self) -> None:
 		"""
 		PXEConfigWriter main method.
 
 		This method opens a pipe and sends the PXE boot configuration through
 		that pipe. At the end the hooked callback is executed.
 		"""
-		with log_context({'instance' : 'PXEConfigWriter'}):
-			self._running = True
-			pipeOpenend = False
-			while self._running and not pipeOpenend:
-				try:
-					self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
-					pipeOpenend = True
-				except Exception as err:  # pylint: disable=broad-except
-					if hasattr(err, "errno") or err.errno != 6:  # pylint: disable=no-member
-						raise
-					time.sleep(1)
+		if os.path.exists(self.pxefile):
+			logger.info("Removing existing file '%s'", self.pxefile)
+			os.unlink(self.pxefile)
 
-			if pipeOpenend:
-				logger.notice("Pipe '%s' opened, piping pxe boot configuration", self.pxefile)
-				os.write(self._pipe, self.content.encode())
-				if self.uefi and self._usingGrub:
-					time.sleep(5)
-				os.close(self._pipe)
+		pipeOpenend = False
+		while self._running and not pipeOpenend:
+			try:
+				if not os.path.exists(self.pxefile):
+					os.mkfifo(self.pxefile, mode=0o644)
+				self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
+				pipeOpenend = True
+			except OSError as err:
+				if err.errno != 6:  # pylint: disable=no-member
+					raise
+				time.sleep(1)
 
-			if os.path.exists(self.pxefile):
-				os.unlink(self.pxefile)
+		if pipeOpenend:
+			logger.notice("Pipe '%s' opened, piping pxe boot configuration", self.pxefile)
+			os.write(self._pipe, self.content.encode())
+			if self.uefi and self._usingGrub:
+				time.sleep(5)
+			os.close(self._pipe)
 
-			if pipeOpenend and self._callback:
-				self._callback(self)
+		if os.path.exists(self.pxefile):
+			os.unlink(self.pxefile)
+
+		if pipeOpenend and self._callback:
+			self._callback(self)
 
 	def stop(self):
 		"""
