@@ -17,7 +17,7 @@ url = "http://pypi.uib.gmbh:8080/simple"
 
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.7,<3.10"
 python-opsi = "^4.2.0.204"
 mysqlclient = "^2.0.3"
 distro = {platform = "linux", version = "^1.5.0"}
@@ -26,7 +26,7 @@ distro = {platform = "linux", version = "^1.5.0"}
 opsi-dev-tools = "^1.0.78"
 pytest = "^5.4.3"
 pytest-cov = "^2.10.0"
-pyinstaller = "^4.0"
+pyinstaller = "^4.4"
 pylint = "^2.11.1"
 
 [tool.poetry.scripts]
