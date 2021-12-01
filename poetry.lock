@@ -904,7 +904,7 @@ reference = "uibpypi"
 
 [[package]]
 name = "python-opsi"
-version = "4.2.0.252"
+version = "4.2.0.258"
 description = "The opsi python library"
 category = "main"
 optional = false
@@ -1347,7 +1347,7 @@ reference = "uibpypi"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.10"
-content-hash = "5e26470d79769f70d8d28ad55bcfd61855e624e78d542c7b04bee71911c94a3f"
+content-hash = "5fee2e864053b8f9573c55a674a4c0bcd1b99150dcf2ccd231c68ea060be3772"
 
 [metadata.files]
 altgraph = [
@@ -1865,8 +1865,8 @@ python-gettext = [
     {file = "python-gettext-4.0.tar.gz", hash = "sha256:626b501a51ac892fc3460cf550e60dca121f544eaa46eb69c90ce4682fc7ec02"},
 ]
 python-opsi = [
-    {file = "python-opsi-4.2.0.252.tar.gz", hash = "sha256:cfb739ce70a5fc6bca5ac40d3e5ade03c7df6633cb9f2a283ec8ec6675560171"},
-    {file = "python_opsi-4.2.0.252-py3-none-any.whl", hash = "sha256:adbc9ca6b5504ccfb08418972a0f6776dceff8406249322e576447e73a800b81"},
+    {file = "python-opsi-4.2.0.258.tar.gz", hash = "sha256:4eac951e82e8f57d8a6a64685ee103cf1b3f4c0a6d6126af87573c2f6db8c9ec"},
+    {file = "python_opsi-4.2.0.258-py3-none-any.whl", hash = "sha256:736bbde2343effe36e108596113d534fb68fbb8cebf47750b997302fd1cf6109"},
 ]
 python-pam = [
     {file = "python-pam-1.8.4.tar.gz", hash = "sha256:c856d9c89fedb33951dd8a95727ae57c6887b02d065bbdffd2fd9dbc0183909b"},
@@ -2028,6 +2028,7 @@ typed-ast = [
 ]
 typing-extensions = [
     {file = "typing_extensions-4.0.0-py3-none-any.whl", hash = "sha256:829704698b22e13ec9eaf959122315eabb370b0884400e9818334d8b677023d9"},
+    {file = "typing_extensions-4.0.0.tar.gz", hash = "sha256:2cdf80e4e04866a9b3689a51869016d36db0814d84b8d8a568d22781d45d27ed"},
 ]
 urllib3 = [
     {file = "urllib3-1.26.7-py2.py3-none-any.whl", hash = "sha256:c4fdf4019605b6e5423637e01bc9fe4daef873709a7973e195ceba0a62bbc844"},
