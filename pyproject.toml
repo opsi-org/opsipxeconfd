@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opsipxeconfd"
-version = "4.2.0.21"
+version = "4.2.0.22"
 description = "opsi pxe configuration service"
 homepage = "https://www.opsi.org"
 license = "AGPL-3.0"
@@ -17,7 +17,7 @@ url = "http://pypi.uib.gmbh:8080/simple"
 
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.10"
+python = ">=3.7,<3.11"
 python-opsi = "^4.2.0.204"
 mysqlclient = "^2.0.3"
 distro = {platform = "linux", version = "^1.5.0"}
