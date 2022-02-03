@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opsipxeconfd"
-version = "4.2.0.23"
+version = "4.2.0.24"
 description = "opsi pxe configuration service"
 homepage = "https://www.opsi.org"
 license = "AGPL-3.0"
