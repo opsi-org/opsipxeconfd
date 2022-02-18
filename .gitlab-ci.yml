@@ -18,36 +18,44 @@ stages:
   apt update
   apt -y install wget git mariadb-client iproute2 net-tools iputils-ping
 
-  groupadd opsiadmin
-  groupadd pcpatch
+  # Grant full database access to opsi user
+  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "GRANT ALL ON opsitest.* TO 'opsi'@'%';"
+
+  # Create adminuser used in tests
   useradd adminuser
-  useradd opsiconfd
   echo "adminuser:adminuser" | chpasswd
   adduser adminuser opsiadmin
-  adduser opsiconfd opsiadmin
-  adduser adminuser pcpatch
+  adduser adminuser opsifileadmins
 
-  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "GRANT ALL ON *.* TO 'opsi'@'%';"
   # Get config files from opsi-server package
   [ -e /etc/opsi ] && rm -r /etc/opsi
   [ -e ../opsi-server ] && rm -r ../opsi-server
-  url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsipxeconfd.git.*#/opsi-server.git#')
+  url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsiconfd.git.*#/opsi-server.git#')
+  #branch=$(git rev-parse --abbrev-ref HEAD)
   branch=master
   GIT_TERMINAL_PROMPT=0 git clone --branch $branch $url ../opsi-server
   cp -a ../opsi-server/opsi-server_data/etc /etc/opsi
-  mkdir /var/run/opsipxeconfd/
-  chown adminuser:opsiadmin /var/run/opsipxeconfd
-  chmod 775 /var/run/opsipxeconfd
-  mkdir /var/log/opsi
+
+  # Create empty cofig file
+  touch /etc/opsi/opsipxeconfd.conf
+
   # Set mysql address in config
   sed -i "s/127.0.0.1/mysql/" /etc/opsi/backends/mysql.conf
   # Use mysql backend only
   echo ".* : mysql" > /etc/opsi/backendManager/dispatch.conf
-  # Configure opsiconfd
-  mkdir -p /var/lib/opsi/repository /var/lib/opsi/depot
-  touch /etc/opsi/opsipxeconfd.conf
+
   # Installing opsi test modules file
-  echo "${OPSI_TEST_MODULES}" > /etc/opsi/modules
+  [ -z "${OPSILICSRV_TOKEN}" ] && (echo "OPSILICSRV_TOKEN not set" 1>&2 ; exit 1)
+  mkdir -p /etc/opsi/licenses
+  wget --header="Authorization: Bearer ${OPSILICSRV_TOKEN}" "https://opsi-license-server.uib.gmbh/api/v1/licenses/test?usage=opsiconfd-gitlab-ci" -O /etc/opsi/licenses/test.opsilic
+
+  # Create dirs
+  mkdir -p /var/log/opsi/opsipxeconfd
+  mkdir -p /var/lib/opsi/repository
+  mkdir -p /var/lib/opsi/depot
+  mkdir -p /var/run/opsipxeconfd/
+  chown adminuser:opsiadmin /var/run/opsipxeconfd
+  chmod 775 /var/run/opsipxeconfd
 
   # Install poetry
   pip3 install poetry
