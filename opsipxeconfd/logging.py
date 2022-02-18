@@ -8,11 +8,10 @@ This file is part of opsi - https://www.opsi.org
 
 from typing import Dict
 
-from opsicommon.logging import (
-	DEFAULT_FORMAT, DEFAULT_COLORED_FORMAT, logger, logging_config, handle_log_exception
-)
+from opsicommon.logging import DEFAULT_FORMAT, DEFAULT_COLORED_FORMAT, logging_config, handle_log_exception
 
-def init_logging(config : Dict) -> None:
+
+def init_logging(config: Dict) -> None:
 	"""
 	Initializes logging for opsipxeconfd.
 
@@ -30,13 +29,13 @@ def init_logging(config : Dict) -> None:
 		if config["daemon"]:
 			stderr_level = None
 		logging_config(
-					stderr_format=DEFAULT_COLORED_FORMAT,
-					stderr_level=stderr_level,
-					log_file=config["logFile"],
-					file_format=DEFAULT_FORMAT,
-					file_level=file_level,
-					file_rotate_max_bytes=config.get("maxBytesLog", 0)*1000*1000,
-					file_rotate_backup_count=config.get("backupCountLog")
+			stderr_format=DEFAULT_COLORED_FORMAT,
+			stderr_level=stderr_level,
+			log_file=config["logFile"],
+			file_format=DEFAULT_FORMAT,
+			file_level=file_level,
+			file_rotate_max_bytes=config.get("maxBytesLog", 0) * 1000 * 1000,
+			file_rotate_backup_count=config.get("backupCountLog"),
 		)
-	except Exception as err:
+	except Exception as err:  # pylint: disable=broad-except
 		handle_log_exception(err)

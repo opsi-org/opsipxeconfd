@@ -21,7 +21,7 @@ from OPSI.Backend.BackendManager import BackendManager
 from opsicommon.logging import logger
 
 
-def setup_files(log_file : str) -> None:
+def setup_files(log_file: str) -> None:
 	"""
 	Setup for log file.
 
@@ -37,7 +37,8 @@ def setup_files(log_file : str) -> None:
 		os.makedirs(log_dir)
 	setRights(log_dir)
 
-def get_backend(config : Dict) -> BackendManager:
+
+def get_backend(config: Dict) -> BackendManager:
 	"""
 	Creates a BackendManager for current backend.
 
@@ -52,16 +53,16 @@ def get_backend(config : Dict) -> BackendManager:
 	:rtype: BackendManager
 	"""
 	bc = {
-		'dispatchConfigFile': config['dispatchConfigFile'],
-		'backendConfigDir': config['backendConfigDir'],
-		'hostControlBackend': True,
-		'hostControlSafeBackend': True,
-		'depotBackend' : True
+		"dispatchConfigFile": config["dispatchConfigFile"],
+		"backendConfigDir": config["backendConfigDir"],
+		"hostControlBackend": True,
+		"hostControlSafeBackend": True,
+		"depotBackend": True,
 	}
 	return BackendManager(**bc)
 
 
-def setup_backend(config : Dict) -> None:
+def setup_backend(config: Dict) -> None:
 	"""
 	Sets up the backend.
 
@@ -74,7 +75,7 @@ def setup_backend(config : Dict) -> None:
 	fqdn = getLocalFqdn()
 	try:
 		backend = get_backend(config)
-		depot = backend.host_getObjects(type='OpsiDepotserver', id=fqdn)  # pylint: disable=no-member
+		depot = backend.host_getObjects(type="OpsiDepotserver", id=fqdn)  # pylint: disable=no-member
 		if depot:
 			return
 	except Exception as err:  # pylint: disable=broad-except
@@ -83,7 +84,8 @@ def setup_backend(config : Dict) -> None:
 	logger.info("Setup backend")
 	initializeBackends()
 
-def setup(config : Dict) -> None:
+
+def setup(config: Dict) -> None:
 	"""
 	Setup method for opsipxeconfd.
 
@@ -99,4 +101,4 @@ def setup(config : Dict) -> None:
 		setup_backend(config)
 	except Exception as err:  # pylint: disable=broad-except
 		logger.warning("Failed to setup backend: %s", err)
-	setup_files(config['logFile'])
+	setup_files(config["logFile"])

@@ -22,8 +22,9 @@ from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER
 from OPSI.Types import forceFilename, forceHostId, forceUnicode
 from opsicommon.logging import logger
 
+
 @contextmanager
-def temporaryPidFile(filepath : str) -> None:
+def temporaryPidFile(filepath: str) -> None:
 	"""
 	Maintain temporary PID file.
 
@@ -37,7 +38,7 @@ def temporaryPidFile(filepath : str) -> None:
 
 	logger.debug("Reading old pidFile %r...", pidFile)
 	try:
-		with open(pidFile, 'r', encoding="utf-8") as pf:
+		with open(pidFile, "r", encoding="utf-8") as pf:
 			oldPid = pf.readline().strip()
 
 		if oldPid:
@@ -75,12 +76,14 @@ def temporaryPidFile(filepath : str) -> None:
 		except Exception as err:  # pylint: disable=broad-except
 			logger.error("Failed to remove pid file %r: %s", pidFile, err)
 
+
 class StartupTask(threading.Thread):
 	"""
 	class StartupTask
 
 	This class retrieves the initial boot configuration for the clients.
 	"""
+
 	def __init__(self, opsipxeconfd) -> None:
 		"""
 		StartupTask constructor.
@@ -108,17 +111,17 @@ class StartupTask(threading.Thread):
 		logger.notice("Start setting initial boot configurations")
 		try:
 			clientIds = [
-				clientToDepot['clientId'] for clientToDepot in
-				self._opsipxeconfd._backend.configState_getClientToDepotserver(  # pylint: disable=protected-access
-					depotIds=[self._opsipxeconfd.config['depotId']]
+				clientToDepot["clientId"]
+				for clientToDepot in self._opsipxeconfd._backend.configState_getClientToDepotserver(  # pylint: disable=protected-access
+					depotIds=[self._opsipxeconfd.config["depotId"]]
 				)
 			]
 
 			if clientIds:
 				productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(  # pylint: disable=protected-access
-					productType='NetbootProduct',
+					productType="NetbootProduct",
 					clientId=clientIds,
-					actionRequest=['setup', 'uninstall', 'update', 'always', 'once', 'custom']
+					actionRequest=["setup", "uninstall", "update", "always", "once", "custom"],
 				)
 
 				clientIds = set()
@@ -157,7 +160,8 @@ class ClientConnection(threading.Thread):
 	Communication is established via sockets. A callback can be registered
 	to trigger an additional action.
 	"""
-	def __init__(self, opsipxeconfd, connectionSocket : socket, callback : Callable=None) -> None:
+
+	def __init__(self, opsipxeconfd, connectionSocket: socket, callback: Callable = None) -> None:
 		"""
 		ClientConnection Constructor.
 
@@ -203,7 +207,7 @@ class ClientConnection(threading.Thread):
 				logger.info("Returning result '%s'", result)
 
 				try:
-					self._socket.send(result.encode('utf-8'))
+					self._socket.send(result.encode("utf-8"))
 				except Exception as err:  # pylint: disable=broad-except
 					logger.warning("Sending result over socket failed: '%s'", err)
 			finally:
@@ -222,7 +226,7 @@ class ClientConnection(threading.Thread):
 		except AttributeError:
 			pass  # Probably none
 
-	def _processCommand(self, cmd : str) -> str:
+	def _processCommand(self, cmd: str) -> str:
 		"""
 		Executes a command.
 
@@ -244,12 +248,12 @@ class ClientConnection(threading.Thread):
 
 			command = command.strip()
 
-			if command == 'stop':
+			if command == "stop":
 				self._opsipxeconfd.stop()
-				return 'opsipxeconfd is going down'
-			if command == 'status':
+				return "opsipxeconfd is going down"
+			if command == "status":
 				return self._opsipxeconfd.status()
-			if command == 'update':
+			if command == "update":
 				if len(arguments) == 2:
 					# We have an update path
 					hostId = forceHostId(arguments[0])
@@ -263,4 +267,4 @@ class ClientConnection(threading.Thread):
 			raise ValueError(f"Command '{cmd}' not supported")
 		except Exception as err:  # pylint: disable=broad-except
 			logger.error("Processing command '%s' failed: %s", cmd, err)
-			return f'{ERROR_MARKER}: {err}'
+			return f"{ERROR_MARKER}: {err}"

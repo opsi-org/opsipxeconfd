@@ -22,8 +22,8 @@ from typing import Dict, List, Any, Tuple
 
 try:
 	# python3-pycryptodome installs into Cryptodome
-	from Cryptodome.Hash import MD5 # type: ignore
-	from Cryptodome.Signature import pkcs1_15 # type: ignore
+	from Cryptodome.Hash import MD5  # type: ignore
+	from Cryptodome.Signature import pkcs1_15  # type: ignore
 except ImportError:
 	# PyCryptodome from pypi installs into Crypto
 	from Crypto.Hash import MD5
@@ -42,8 +42,9 @@ from .logging import init_logging
 from .util import StartupTask, ClientConnection
 from .pxeconfigwriter import PXEConfigWriter
 
-ELILO_X86 = 'x86'
-ELILO_X64 = 'x64'
+ELILO_X86 = "x86"
+ELILO_X64 = "x64"
+
 
 class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attributes
 	"""
@@ -51,7 +52,8 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 
 	This class handles installation of NetbootProducts via network.
 	"""
-	def __init__(self, config : Dict) -> None:
+
+	def __init__(self, config: Dict) -> None:
 		"""
 		Opsipxeconfd constructor.
 
@@ -80,7 +82,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 
 		logger.comment("opsi pxe configuration service starting")
 
-	def setConfig(self, config : Dict) -> None:
+	def setConfig(self, config: Dict) -> None:
 		"""
 		Sets new configuration.
 
@@ -144,7 +146,6 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		self._createBackendInstance()
 		self._createSocket()
 
-
 	def _createBackendInstance(self) -> None:
 		"""
 		Creates BackendManager instance.
@@ -155,12 +156,12 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		"""
 		logger.info("Creating backend instance")
 		self._backend = BackendManager(
-			dispatchConfigFile=self.config['dispatchConfigFile'],
-			dispatchIgnoreModules=['OpsiPXEConfd'],  # Avoid loops
-			backendConfigDir=self.config['backendConfigDir'],
-			extend=True
+			dispatchConfigFile=self.config["dispatchConfigFile"],
+			dispatchIgnoreModules=["OpsiPXEConfd"],  # Avoid loops
+			backendConfigDir=self.config["backendConfigDir"],
+			extend=True,
 		)
-		self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
+		self._backend.backend_setOptions({"addProductPropertyStateDefaults": True, "addConfigStateDefaults": True})
 
 	def _createSocket(self) -> None:
 		"""
@@ -180,20 +181,20 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		specified in config['port']. Access rights are adjusted for the
 		resulting socket file.
 		"""
-		logger.notice("Creating unix socket %s", self.config['port'])
-		if os.path.exists(self.config['port']):
-			os.unlink(self.config['port'])
+		logger.notice("Creating unix socket %s", self.config["port"])
+		if os.path.exists(self.config["port"]):
+			os.unlink(self.config["port"])
 		self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 		try:
-			self._socket.bind(self.config['port'])
+			self._socket.bind(self.config["port"])
 		except Exception as err:
 			raise Exception(f"Failed to bind to socket '{self.config['port']}': {err}") from err
 		self._socket.settimeout(0.1)
-		self._socket.listen(self.config['maxConnections'])
+		self._socket.listen(self.config["maxConnections"])
 
-		self._setAccessRightsForSocket(self.config['port'])
+		self._setAccessRightsForSocket(self.config["port"])
 
-	def _setAccessRightsForSocket(self, path : str) -> None:
+	def _setAccessRightsForSocket(self, path: str) -> None:
 		"""
 		Sets access rights for UnixSocket.
 
@@ -223,7 +224,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		except socket.error as err:
 			if not self._running:
 				return
-			if err.args[0] == 'timed out' or err.args[0] == 11:
+			if err.args[0] == "timed out" or err.args[0] == 11:
 				return
 
 			logger.debug("Socket error: %s", err)
@@ -254,7 +255,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		This method is run on Opsipxeconfd execution.
 		It creates backend, StartupTask and socket.
 		"""
-		with log_context({'instance' : 'Opsipxeconfd'}):
+		with log_context({"instance": "Opsipxeconfd"}):
 			self._running = True
 			logger.notice("Starting opsipxeconfd main thread")
 			try:
@@ -271,7 +272,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			finally:
 				self._running = False
 
-	def clientConnectionCallback(self, connection : ClientConnection) -> None:
+	def clientConnectionCallback(self, connection: ClientConnection) -> None:
 		"""
 		Callback method for ClientConnection.
 
@@ -283,10 +284,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		:param connection: ClientConnection that the callback is hooked to.
 		:type connection: ClientConnection
 		"""
-		logger.info(
-			"ClientConnection %s finished (took %0.3f seconds)",
-			connection.name, (time.time() - connection.startTime)
-		)
+		logger.info("ClientConnection %s finished (took %0.3f seconds)", connection.name, (time.time() - connection.startTime))
 
 		try:
 			with self._clientConnectionLock:
@@ -299,7 +297,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		except Exception as err:  # pylint: disable=broad-except
 			logger.error("Failed to remove ClientConnection: %s", err)
 
-	def pxeConfigWriterCallback(self, pcw : PXEConfigWriter) -> None:
+	def pxeConfigWriterCallback(self, pcw: PXEConfigWriter) -> None:
 		"""
 		Callback for PXEConfigWriter
 
@@ -311,10 +309,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		:param pcw: PXEConfigWriter this method should be hooked to.
 		:type pcw: PXEConfigWriter
 		"""
-		logger.info(
-			"PXEConfigWriter %s (for %s) finished (running for %0.3f seconds)",
-			pcw.name, pcw.hostId, (time.time() - pcw.startTime)
-		)
+		logger.info("PXEConfigWriter %s (for %s) finished (running for %0.3f seconds)", pcw.name, pcw.hostId, (time.time() - pcw.startTime))
 
 		try:
 			with self._pxeConfigWritersLock:
@@ -330,9 +325,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		for i, poc in enumerate(pcw.productOnClients):
 			# renew objects and check if anythin changes on service since callback
 			productOnClients = self._backend.productOnClient_getObjects(  # pylint: disable=no-member
-				productType='NetbootProduct',
-				clientId=poc.clientId,
-				productId=poc.productId
+				productType="NetbootProduct", clientId=poc.clientId, productId=poc.productId
 			)
 			if productOnClients:
 				pcw.productOnClients[i] = productOnClients[0]
@@ -340,11 +333,11 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				del pcw.productOnClients[i]
 
 			if pcw.productOnClients:
-				pcw.productOnClients[i].setActionProgress('pxe boot configuration read')
-				if pcw.productOnClients[i].getActionRequest() == 'always':
+				pcw.productOnClients[i].setActionProgress("pxe boot configuration read")
+				if pcw.productOnClients[i].getActionRequest() == "always":
 					gotAlways = True
-				if pcw.templatefile != self.config['pxeConfTemplate'] and not gotAlways:
-					pcw.productOnClients[i].setActionRequest('none')
+				if pcw.templatefile != self.config["pxeConfTemplate"] and not gotAlways:
+					pcw.productOnClients[i].setActionRequest("none")
 
 		if pcw.productOnClients:
 			self._backend.productOnClient_updateObjects(pcw.productOnClients)  # pylint: disable=no-member
@@ -362,14 +355,14 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		:rtype: str
 		"""
 		logger.notice("Getting opsipxeconfd status")
-		result = 'opsipxeconfd status:\n'
+		result = "opsipxeconfd status:\n"
 
 		with self._clientConnectionLock:
-			result += f'{len(self._clientConnections)} control connection(s) established\n'
+			result += f"{len(self._clientConnections)} control connection(s) established\n"
 			for idx, connection in enumerate(self._clientConnections, start=1):
-				result += f'    Connection {idx} established at: {time.asctime(time.localtime(connection.startTime))}\n'
+				result += f"    Connection {idx} established at: {time.asctime(time.localtime(connection.startTime))}\n"
 
-		result += f'\n{len(self._pxeConfigWriters)} boot configuration(s) set\n'
+		result += f"\n{len(self._pxeConfigWriters)} boot configuration(s) set\n"
 		for pcw in self._pxeConfigWriters:
 			result += (
 				f"Boot config for client '{pcw.hostId}' (path '{pcw.pxefile}'; configuration {pcw.append}) "
@@ -384,8 +377,8 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		except KeyError:
 			backend_info = self._backend.backend_info()
 
-		modules = backend_info['modules']
-		helpermodules = backend_info['realmodules']
+		modules = backend_info["modules"]
+		helpermodules = backend_info["realmodules"]
 		public_key = getPublicKey(
 			data=base64.decodebytes(
 				b"AAAAB3NzaC1yc2EAAAADAQABAAABAQCAD/I79Jd0eKwwfuVwh5B2z+S8aV0C5suItJa18RrYip+d4P0ogzqoCfOoVWtDo"
@@ -412,7 +405,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 
 		verified = False
 		if modules["signature"].startswith("{"):
-			s_bytes = int(modules['signature'].split("}", 1)[-1]).to_bytes(256, "big")
+			s_bytes = int(modules["signature"].split("}", 1)[-1]).to_bytes(256, "big")
 			try:
 				pkcs1_15.new(public_key).verify(MD5.new(data.encode()), s_bytes)
 				verified = True
@@ -421,7 +414,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				pass
 		else:
 			h_int = int.from_bytes(MD5.new(data.encode()).digest(), "big")
-			s_int = public_key._encrypt(int(modules["signature"])) # pylint: disable=protected-access
+			s_int = public_key._encrypt(int(modules["signature"]))  # pylint: disable=protected-access
 			verified = h_int == s_int
 
 		if not verified:
@@ -430,10 +423,10 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			self._secureBootModule = False
 			return
 
-		logger.debug("Modules file signature verified (customer: %s)", modules.get('customer'))
+		logger.debug("Modules file signature verified (customer: %s)", modules.get("customer"))
 
 		if modules.get("uefi"):
-			num_clients = len(self._backend.host_getIdents(type='OpsiClient'))  # pylint: disable=no-member
+			num_clients = len(self._backend.host_getIdents(type="OpsiClient"))  # pylint: disable=no-member
 			if int(modules["uefi"]) + 50 <= num_clients:
 				logger.error("You have more clients then licensed in modules file. Disabling module 'uefi'")
 			else:
@@ -441,7 +434,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				if int(modules["uefi"]) <= num_clients:
 					logger.warning("You have more clients then licensed in modules file.")
 
-		if modules.get('secureboot'):
+		if modules.get("secureboot"):
 			self._secureBootModule = True
 
 	def _check_modules(self, cached_data: dict):  # pylint: disable=too-many-branches
@@ -457,10 +450,12 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		logger.info(
 			"uefi module is %s, secureboot module is %s",
 			"enabled" if self._uefiModule else "disabled",
-			"enabled" if self._secureBootModule else "disabled"
+			"enabled" if self._secureBootModule else "disabled",
 		)
 
-	def updateBootConfiguration(self, hostId: str, cacheFile: str=None) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements
+	def updateBootConfiguration(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements
+		self, hostId: str, cacheFile: str = None
+	) -> None:
 		"""
 		Updates Boot Configuration.
 
@@ -492,21 +487,21 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			except KeyError:
 				# Get product actions
 				productOnClients = self._backend.productOnClient_getObjects(  # pylint: disable=no-member
-					productType='NetbootProduct',
+					productType="NetbootProduct",
 					clientId=hostId,
-					actionRequest=['setup', 'uninstall', 'update', 'always', 'once', 'custom']
+					actionRequest=["setup", "uninstall", "update", "always", "once", "custom"],
 				)
 
 			if not productOnClients:
 				logger.info("No netboot products with action requests for client '%s' found.", hostId)
-				return 'Boot configuration updated'
+				return "Boot configuration updated"
 
 			try:
 				host = cachedData["host"]
 			except KeyError:
 				host = self._getHostObject(hostId)
 
-			depotId = self.config['depotId']
+			depotId = self.config["depotId"]
 
 			newProductOnClients = []
 			for poc in productOnClients:
@@ -515,9 +510,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				except KeyError:
 					logger.debug("Searching for product '%s' on depot '%s'", poc.productId, depotId)
 					productOnDepot = self._backend.productOnDepot_getObjects(  # pylint: disable=no-member
-						productType='NetbootProduct',
-						productId=poc.productId,
-						depotId=depotId
+						productType="NetbootProduct", productId=poc.productId, depotId=depotId
 					)
 
 					try:
@@ -535,25 +528,25 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 
 			if not productOnClients:
 				logger.info("No matching netboot product found on depot '%s'.", depotId)
-				return 'Boot configuration updated'
+				return "Boot configuration updated"
 
 			try:
 				product = cachedData["product"]
 
 				# Setting empty string to avoid making another
 				# unnecessary call to the backend.
-				elilo = cachedData['elilo'] or ''
+				elilo = cachedData["elilo"] or ""
 			except KeyError:
 				product = None
 				elilo = None
-				self._backend.backend_setOptions({'addProductPropertyStateDefaults': True, 'addConfigStateDefaults': True})
+				self._backend.backend_setOptions({"addProductPropertyStateDefaults": True, "addConfigStateDefaults": True})
 
 			pxeConfigTemplate, product = self._getPxeConfigTemplate(hostId, productOnClients, product, elilo)
 			logger.debug("Using pxe config template '%s'", pxeConfigTemplate)
 
 			pxeConfigName = self._getNameForPXEConfigFile(host)
 
-			pxefile = os.path.join(self.config['pxeDir'], pxeConfigName)
+			pxefile = os.path.join(self.config["pxeDir"], pxeConfigName)
 			if os.path.exists(pxefile):
 				for pcw in self._pxeConfigWriters:
 					if pcw.uefi and not pcw._uefiModule:  # pylint: disable=protected-access
@@ -569,23 +562,23 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				os.unlink(pxefile)
 
 			try:
-				serviceAddress = cachedData['serviceAddress']
+				serviceAddress = cachedData["serviceAddress"]
 			except KeyError:
 				serviceAddress = self._getConfigServiceAddress(hostId)
 
 			# Append arguments
 			append = {
-				'pckey': host.getOpsiHostKey(),
-				'hn': hostId.split('.')[0],
-				'dn': '.'.join(hostId.split('.')[1:]),
-				'product': product.id,
-				'service': serviceAddress,
+				"pckey": host.getOpsiHostKey(),
+				"hn": hostId.split(".")[0],
+				"dn": ".".join(hostId.split(".")[1:]),
+				"product": product.id,
+				"service": serviceAddress,
 			}
-			if append['pckey']:
-				secret_filter.add_secrets(append['pckey'])
+			if append["pckey"]:
+				secret_filter.add_secrets(append["pckey"])
 
 			try:
-				bootimageAppendConfigStates = [cachedData['bootimageAppend']]
+				bootimageAppendConfigStates = [cachedData["bootimageAppend"]]
 				bootimageAppend = self._getAdditionalBootimageParameters(hostId, bootimageAppendConfigStates)
 			except KeyError:
 				bootimageAppend = self._getAdditionalBootimageParameters(hostId)
@@ -600,10 +593,9 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				productIds = [poc.productId for poc in productOnClients]
 				if productIds:
 					productPropertyStates = {
-						pps.propertyId: ','.join(forceUnicodeList(pps.getValues()))
+						pps.propertyId: ",".join(forceUnicodeList(pps.getValues()))
 						for pps in self._backend.productPropertyState_getObjects(  # pylint: disable=no-member
-							objectId=hostId,
-							productId=productIds
+							objectId=hostId, productId=productIds
 						)
 					}
 				else:
@@ -622,13 +614,13 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 					pxefile=pxefile,
 					secureBootModule=self._secureBootModule,
 					uefiModule=self._uefiModule,
-					callback=self.pxeConfigWriterCallback
+					callback=self.pxeConfigWriterCallback,
 				)
 				with self._pxeConfigWritersLock:
 					self._pxeConfigWriters.append(pcw)
 				pcw.start()
 				logger.notice("PXE boot configuration for host %s is now set at '%s'", hostId, pxefile)
-				return 'Boot configuration updated'
+				return "Boot configuration updated"
 			except Exception as err:
 				logger.error("Failed to create pxe config writer: %s", err)
 
@@ -643,7 +635,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			logger.error(err, exc_info=True)
 			raise err
 
-	def _removeCurrentConfigWriters(self, hostId : str) -> None:
+	def _removeCurrentConfigWriters(self, hostId: str) -> None:
 		"""
 		Remove PXEConfigWriters for host.
 
@@ -675,7 +667,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			logger.notice("PXE boot configuration for host '%s' removed", hostId)
 
 	@staticmethod
-	def _readCachedData(cacheFile : str) -> Any:
+	def _readCachedData(cacheFile: str) -> Any:
 		"""
 		Reads data from cache.
 
@@ -692,13 +684,13 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			return {}
 
 		logger.debug("Reading data from %s", cacheFile)
-		with codecs.open(cacheFile, "r", 'utf-8') as inFile:
+		with codecs.open(cacheFile, "r", "utf-8") as inFile:
 			data = json.load(inFile)
 		os.unlink(cacheFile)
 
 		return deserialize(data)
 
-	def _getHostObject(self, hostId : str) -> Any:
+	def _getHostObject(self, hostId: str) -> Any:
 		"""
 		Get the object for `hostId`.
 
@@ -721,7 +713,9 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		except IndexError as err:
 			raise ValueError(f"Host '{hostId}' not found") from err
 
-	def _getPxeConfigTemplate(self, hostId: str, productOnClients: List, product: NetbootProduct=None, elilo: str=None) -> Tuple:  # pylint: disable=too-many-branches
+	def _getPxeConfigTemplate(  # pylint: disable=too-many-branches
+		self, hostId: str, productOnClients: List, product: NetbootProduct = None, elilo: str = None
+	) -> Tuple:
 		"""
 		Get pxe template to use for `hostId`.
 
@@ -750,31 +744,23 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			if not product:
 				try:
 					product = self._backend.product_getObjects(  # pylint: disable=no-member
-						type='NetbootProduct',
-						id=poc.productId,
-						productVersion=poc.productVersion,
-						packageVersion=poc.packageVersion
+						type="NetbootProduct", id=poc.productId, productVersion=poc.productVersion, packageVersion=poc.packageVersion
 					)[0]
 				except IndexError:
 					product = None
 
 			if not product:
-				raise BackendMissingDataError(
-					f"Product not found: {poc.productId}_{poc.productVersion}-{poc.packageVersion}"
-				)
+				raise BackendMissingDataError(f"Product not found: {poc.productId}_{poc.productVersion}-{poc.packageVersion}")
 
 			if ELILO_X86 == elilo:
-				pxeConfigTemplate = self.config['uefiConfTemplateX86']
+				pxeConfigTemplate = self.config["uefiConfTemplateX86"]
 			elif ELILO_X64 == elilo:
-				pxeConfigTemplate = self.config['uefiConfTemplateX64']
+				pxeConfigTemplate = self.config["uefiConfTemplateX64"]
 
 			if product.pxeConfigTemplate:
 				if pxeConfigTemplate and (pxeConfigTemplate != product.pxeConfigTemplate):
-					logger.error(
-						"Cannot use more than one pxe config template, got: %s, %s",
-						pxeConfigTemplate, product.pxeConfigTemplate
-					)
-					absolutePathToTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), product.pxeConfigTemplate)
+					logger.error("Cannot use more than one pxe config template, got: %s, %s", pxeConfigTemplate, product.pxeConfigTemplate)
+					absolutePathToTemplate = os.path.join(os.path.dirname(self.config["pxeConfTemplate"]), product.pxeConfigTemplate)
 					if os.path.isfile(f"{absolutePathToTemplate}.efi"):
 						logger.notice("Using an alternate UEFI template provided by netboot product")
 						pxeConfigTemplate = f"{product.pxeConfigTemplate}.efi"
@@ -785,33 +771,35 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 					pxeConfigTemplate = product.pxeConfigTemplate
 					logger.notice(
 						"Special pxe config template '%s' will be used used for host '%s', product '%s'",
-						pxeConfigTemplate, hostId, poc.productId
+						pxeConfigTemplate,
+						hostId,
+						poc.productId,
 					)
 
 		if not pxeConfigTemplate:
 			logger.debug("Using default config template")
-			pxeConfigTemplate = self.config['pxeConfTemplate']
+			pxeConfigTemplate = self.config["pxeConfTemplate"]
 
 		if not os.path.isabs(pxeConfigTemplate):  # Not an absolute path
 			logger.debug("pxeConfigTemplate is not an absolute path.")
-			pxeConfigTemplate = os.path.join(os.path.dirname(self.config['pxeConfTemplate']), pxeConfigTemplate)
+			pxeConfigTemplate = os.path.join(os.path.dirname(self.config["pxeConfTemplate"]), pxeConfigTemplate)
 			logger.debug("pxeConfigTemplate changed to %s", pxeConfigTemplate)
 
 		return pxeConfigTemplate, product
 
-	def _detectEliloMode(self, hostId : str) -> str:
+	def _detectEliloMode(self, hostId: str) -> str:
 		"""
-		Checks if elilo mode is set for client.
+				Checks if elilo mode is set for client.
 
-		This method searches the backend configStates for the host for
-		hints regarding the system architecture. It returns the elilo mode as string.
+				This method searches the backend configStates for the host for
+				hints regarding the system architecture. It returns the elilo mode as string.
 
-		:param hostId: fqdn of the client.
-		:type hostId: str
+				:param hostId: fqdn of the client.
+				:type hostId: str
 
-		:rtype: str or None
-		:returns: The elilo mode of the client represented as either
-`x86` or `x64` if it is set. If no elilo mode is set then `None`.
+				:rtype: str or None
+				:returns: The elilo mode of the client represented as either
+		`x86` or `x64` if it is set. If no elilo mode is set then `None`.
 		"""
 		eliloMode = None
 		configStates = self._backend.configState_getObjects(  # pylint: disable=no-member
@@ -819,8 +807,8 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		)
 		if configStates:
 			val = configStates[0].getValues()
-			if val and (('elilo' in val[0]) or ('shimx64' in val[0])):
-				if 'x86' in val[0]:
+			if val and (("elilo" in val[0]) or ("shimx64" in val[0])):
+				if "x86" in val[0]:
 					eliloMode = ELILO_X86
 				else:
 					eliloMode = ELILO_X64
@@ -828,7 +816,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		return eliloMode
 
 	@staticmethod
-	def _getNameForPXEConfigFile(host : Host) -> str:
+	def _getNameForPXEConfigFile(host: Host) -> str:
 		"""
 		Gets network address information.
 
@@ -846,10 +834,12 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			return f"01-{host.getHardwareAddress().replace(':', '-')}"
 		if host.getIpAddress():
 			logger.warning("Failed to get hardware address for host '%s', using ip address '%s'", host.id, host.getIpAddress())
-			return '%02X%02X%02X%02X' % tuple([int(i) for i in host.getIpAddress().split('.')])  # pylint: disable=consider-using-generator,consider-using-f-string
+			return "%02X%02X%02X%02X" % tuple(  # pylint: disable=consider-using-generator,consider-using-f-string
+				[int(i) for i in host.getIpAddress().split(".")]
+			)
 		raise Exception(f"Neither hardware address nor ip address known for host '{host.id}'")
 
-	def _getConfigServiceAddress(self, hostId : str) -> str:
+	def _getConfigServiceAddress(self, hostId: str) -> str:
 		"""
 		Returns the config serive address for `hostId`.
 
@@ -862,20 +852,20 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		:returns: url of the configserver.
 		:rtype: str
 		"""
-		address = ''
+		address = ""
 
 		configStates = self._backend.configState_getObjects(  # pylint: disable=no-member
-			objectId=hostId, configId='clientconfig.configserver.url'
+			objectId=hostId, configId="clientconfig.configserver.url"
 		)
 		if configStates:
 			address = configStates[0].getValues()[0]
 
-		if not address.endswith('/rpc'):
-			address += '/rpc'
+		if not address.endswith("/rpc"):
+			address += "/rpc"
 
 		return address
 
-	def _getAdditionalBootimageParameters(self, hostId : str, configStates : List=None) -> Tuple:
+	def _getAdditionalBootimageParameters(self, hostId: str, configStates: List = None) -> Tuple:
 		"""
 		Returns additional bootimage parameters.
 
@@ -891,14 +881,14 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		"""
 		if configStates is None:
 			configStates = self._backend.configState_getObjects(  # pylint: disable=no-member
-				objectId=hostId, configId='opsi-linux-bootimage.append'
+				objectId=hostId, configId="opsi-linux-bootimage.append"
 			)
 
 		if configStates:
-			app = ' '.join(forceUnicodeList(configStates[0].getValues()))
+			app = " ".join(forceUnicodeList(configStates[0].getValues()))
 			for option in app.split():
 				keyValue = option.split("=")
 				if len(keyValue) < 2:
-					yield keyValue[0].strip().lower(), ''
+					yield keyValue[0].strip().lower(), ""
 				else:
 					yield keyValue[0].strip().lower(), keyValue[1].strip()
