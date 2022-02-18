@@ -123,7 +123,6 @@ build:linux-pyinstaller:
     expire_in: 2 day
 
 build:arm64-pyinstaller:
-  image: python:3.7-stretch
   stage: build
   tags:
     - arm64
