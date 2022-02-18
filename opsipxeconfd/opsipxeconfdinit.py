@@ -134,7 +134,7 @@ def parse_args() -> argparse.Namespace:
 	parser.add(
 		"--log-file",
 		env_var="OPSIPXECONFD_LOG_FILE",
-		default="/var/log/opsi/opsipxeconfd.log",
+		default="/var/log/opsi/opsipxeconfd/opsipxeconfd.log",
 		dest="logFile",
 		help="Log file to use."
 	)
