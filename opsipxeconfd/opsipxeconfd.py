@@ -441,7 +441,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		if not hasattr(self._backend, "backend_getLicensingInfo"):
 			self._check_modules_legacy(cached_data)
 		else:
-			info = self._backend.backend_getLicensingInfo(licenses=False, legacy_modules=False, dates=False, allow_cache=True)  # pylint: disable=no-member
+			info = self._backend.backend_getLicensingInfo()  # pylint: disable=no-member
 			logger.debug("Got licensing info from service: %s", info)
 			if "uefi" in info["available_modules"]:
 				self._uefiModule = True
