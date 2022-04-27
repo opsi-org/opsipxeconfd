@@ -572,6 +572,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				"hn": hostId.split(".")[0],
 				"dn": ".".join(hostId.split(".")[1:]),
 				"product": product.id,
+				"macaddress": host.getHardwareAddress(),
 				"service": serviceAddress,
 			}
 			if append["pckey"]:
