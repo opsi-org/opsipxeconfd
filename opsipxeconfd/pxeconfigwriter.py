@@ -64,6 +64,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		:type backendinfo: Dict
 		"""
 		threading.Thread.__init__(self)
+		self.daemon = True
 		self.templatefile = templatefile
 		self.append = append
 		self.productPropertyStates = productPropertyStates
@@ -75,8 +76,8 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		self._callback = callback
 		self.startTime = time.time()
 		self._running = False
+		self._should_stop = False
 		self.uefi = False
-		self._inotify = None
 
 		logger.info(
 			"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
@@ -211,18 +212,24 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		os.chmod(self.pxefile, 0o644)
 
 		logger.debug("Watching config file %r for read with inotify", self.pxefile)
-		self._inotify = Inotify()
-		self._inotify.add_watch(self.pxefile)
+		inotify = Inotify()
+		inotify.add_watch(self.pxefile)
 
-		for event in self._inotify.event_gen(yield_nones=False):
-			logger.trace("Inotify event: %s", event)
-			if "IN_CLOSE_NOWRITE" in event[1]:
-				break
+		file_accessed = False
+		while not self._should_stop and not file_accessed:
+			for event in inotify.event_gen(yield_nones=False, timeout_s=3):
+				logger.trace("Inotify event: %s", event)
+				if "IN_CLOSE_NOWRITE" in event[1]:
+					file_accessed = True
+					break
 
-		logger.notice("Config file %r was accessed, deleting", self.pxefile)
+		if file_accessed:
+			logger.notice("Config file %r was accessed", self.pxefile)
+			if self._callback:
+				self._callback(self)
+
 		os.unlink(self.pxefile)
-		if self._callback:
-			self._callback(self)
+		self._running = False
 
 	def stop(self):
 		"""
@@ -230,9 +237,4 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 
 		This method requests a stop for the current PXEConfigWriter instance.
 		"""
-		if self._inotify:
-			del self._inotify
-		if os.path.exists(self.pxefile):
-			logger.debug("Removing config file %r on stop", self.pxefile)
-			os.unlink(self.pxefile)
-		self._running = False
+		self._should_stop = True

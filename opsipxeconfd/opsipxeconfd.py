@@ -124,14 +124,19 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		except RuntimeError:
 			pass  # Probably not yet started
 		except Exception as err:  # pylint: disable=broad-except
-			logger.debug("Unhandled error during stop: %s", err, exc_info=True)
+			logger.debug("Error during stop: %s", err, exc_info=True)
 
 		logger.info("Stopping pxe config writers")
 		for pcw in self._pxeConfigWriters:
 			try:
+				logger.debug("Stopping %s", pcw)
 				pcw.stop()
 			except Exception as err:  # pylint: disable=broad-except
 				logger.error("Failed to stop %s: %s", pcw, err, exc_info=True)
+
+		for pcw in self._pxeConfigWriters:
+			logger.debug("Waiting for %s to stop", pcw)
+			pcw.join(5)
 
 		self._running = False
 

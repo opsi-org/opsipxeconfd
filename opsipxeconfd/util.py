@@ -97,7 +97,7 @@ class StartupTask(threading.Thread):
 		threading.Thread.__init__(self)
 		self._opsipxeconfd = opsipxeconfd
 		self._running = False
-		self._stop = False
+		self._should_stop = False
 
 	def run(self) -> None:
 		"""
@@ -129,7 +129,7 @@ class StartupTask(threading.Thread):
 					clientIds.add(poc.clientId)
 
 				for clientId in clientIds:
-					if self._stop:
+					if self._should_stop:
 						return
 
 					try:
@@ -149,7 +149,7 @@ class StartupTask(threading.Thread):
 
 		This method requests thread termination.
 		"""
-		self._stop = True
+		self._should_stop = True
 
 
 class ClientConnection(threading.Thread):
