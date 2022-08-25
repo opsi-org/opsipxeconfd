@@ -17,6 +17,10 @@ from typing import List, Dict, Callable
 from inotify.adapters import Inotify
 
 from opsicommon.logging import logger, log_context
+from OPSI.Config import (
+	FILE_ADMIN_GROUP,
+	OPSICONFD_USER,
+)
 
 
 class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-attributes
@@ -209,6 +213,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		logger.debug("Creating config file %r", self.pxefile)
 		with open(self.pxefile, "w", encoding="utf-8") as file:
 			file.write(self.content)
+		os.chown(OPSICONFD_USER, FILE_ADMIN_GROUP)
 		os.chmod(self.pxefile, 0o644)
 
 		logger.debug("Watching config file %r for read with inotify", self.pxefile)
