@@ -213,7 +213,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		inotify = Inotify()
 		inotify.add_watch(self.pxefile)
 
-		for event in inotify.event_gen(yield_nones=False, filter_predicate=["IN_CLOSE_NOWRITE"]):
+		for event in inotify.event_gen(yield_nones=False):
 			logger.trace("Inotify event: %s", event)
 			if "IN_CLOSE_NOWRITE" in event[1]:
 				break
