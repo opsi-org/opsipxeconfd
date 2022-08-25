@@ -67,7 +67,7 @@ def temporaryPidFile(filepath: str) -> None:
 		yield
 	finally:
 		try:
-			logger.debug("Removing pid file %r...")
+			logger.debug("Removing pid file %r...", pidFile)
 			os.unlink(pidFile)
 			logger.info("Removed pid file %r", pidFile)
 		except OSError as err:

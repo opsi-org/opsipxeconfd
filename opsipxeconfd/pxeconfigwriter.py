@@ -76,6 +76,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		self.startTime = time.time()
 		self._running = False
 		self.uefi = False
+		self._inotify = None
 
 		logger.info(
 			"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
@@ -210,10 +211,10 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		os.chmod(self.pxefile, 0o644)
 
 		logger.debug("Watching config file %r for read with inotify", self.pxefile)
-		inotify = Inotify()
-		inotify.add_watch(self.pxefile)
+		self._inotify = Inotify()
+		self._inotify.add_watch(self.pxefile)
 
-		for event in inotify.event_gen(yield_nones=False):
+		for event in self._inotify.event_gen(yield_nones=False):
 			logger.trace("Inotify event: %s", event)
 			if "IN_CLOSE_NOWRITE" in event[1]:
 				break
@@ -229,6 +230,8 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 
 		This method requests a stop for the current PXEConfigWriter instance.
 		"""
+		if self._inotify:
+			del self._inotify
 		if os.path.exists(self.pxefile):
 			logger.debug("Removing config file %r on stop", self.pxefile)
 			os.unlink(self.pxefile)

@@ -114,7 +114,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		StartupTask instance. Afterwards it requests a stop
 		for the current Opsipxeconfd thread.
 		"""
-		logger.notice("Stopping opsipxeconfd main thread")
+		logger.notice("Stopping opsipxeconfd")
 
 		try:
 			self._startupTask.stop()
@@ -124,7 +124,11 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		except RuntimeError:
 			pass  # Probably not yet started
 		except Exception as err:  # pylint: disable=broad-except
-			logger.debug("Unhandled error during stop: '%s", err)
+			logger.debug("Unhandled error during stop: %s", err, exc_info=True)
+
+		logger.info("Stopping pxe config writers")
+		for pcw in self._pxeConfigWriters:
+			pcw.stop()
 
 		self._running = False
 
@@ -441,7 +445,9 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		if not hasattr(self._backend, "backend_getLicensingInfo"):
 			self._check_modules_legacy(cached_data)
 		else:
-			info = self._backend.backend_getLicensingInfo(licenses=False, legacy_modules=False, dates=False, allow_cache=True)  # pylint: disable=no-member
+			info = self._backend.backend_getLicensingInfo(
+				licenses=False, legacy_modules=False, dates=False, allow_cache=True
+			)  # pylint: disable=no-member
 			logger.debug("Got licensing info from service: %s", info)
 			if "uefi" in info["available_modules"]:
 				self._uefiModule = True
