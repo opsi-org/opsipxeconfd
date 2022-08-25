@@ -14,6 +14,8 @@ import time
 import threading
 from typing import List, Dict, Callable
 
+from inotify.adapters import Inotify
+
 from opsicommon.logging import logger, log_context
 
 
@@ -73,9 +75,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		self._callback = callback
 		self.startTime = time.time()
 		self._running = False
-		self._pipe = None
 		self.uefi = False
-		self._usingGrub = False
 
 		logger.info(
 			"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
@@ -154,7 +154,6 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
 
 				self.uefi = True
-				self._usingGrub = True
 				appendLineProperties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
@@ -163,6 +162,20 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 						appendLineProperties.append(str(key))
 
 				content = f'{content}linux {" ".join(appendLineProperties)}\n'
+			elif line.lstrip().startswith("kernel ../"):
+				logger.notice("UEFI iPXE configuration detected for %s", self.hostId)
+				if not self._uefiModule and self.uefi:
+					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+
+				self.uefi = True
+				appendLineProperties = line.lstrip().split()[1:]
+				for key, value in self.append.items():
+					if value:
+						appendLineProperties.append(f"{key}={value}")
+					else:
+						appendLineProperties.append(str(key))
+
+				content = f'{content}kernel {" ".join(appendLineProperties)}\n'
 			else:
 				content = f"{content}{line}\n"
 
@@ -181,37 +194,33 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		"""
 		PXEConfigWriter main method.
 
-		This method opens a pipe and sends the PXE boot configuration through
-		that pipe. At the end the hooked callback is executed.
+		This method creates a regular file and append the PXE boot configuration through
+		to it. At the end the hooked callback is executed.
 		"""
-		if os.path.exists(self.pxefile):
-			logger.info("Removing existing file '%s'", self.pxefile)
-			os.unlink(self.pxefile)
 
-		pipeOpenend = False
-		while self._running and not pipeOpenend:
-			try:
-				if not os.path.exists(self.pxefile):
-					os.mkfifo(self.pxefile)
-				os.chmod(self.pxefile, 0o644)
-				self._pipe = os.open(self.pxefile, os.O_WRONLY | os.O_NONBLOCK)
-				pipeOpenend = True
-			except OSError as err:
-				if err.errno != 6:  # pylint: disable=no-member
-					raise
-				time.sleep(1)
-
-		if pipeOpenend:
-			logger.notice("Pipe '%s' opened, piping pxe boot configuration", self.pxefile)
-			os.write(self._pipe, self.content.encode())
-			if self.uefi and self._usingGrub:
-				time.sleep(5)
-			os.close(self._pipe)
+		logger.notice("Creating config %r and waiting for access", self.pxefile)
 
 		if os.path.exists(self.pxefile):
+			logger.debug("Removing old config file %r", self.pxefile)
 			os.unlink(self.pxefile)
 
-		if pipeOpenend and self._callback:
+		logger.debug("Creating config file %r", self.pxefile)
+		with open(self.pxefile, "w", encoding="utf-8") as file:
+			file.write(self.content)
+		os.chmod(self.pxefile, 0o644)
+
+		logger.debug("Watching config file %r for read with inotify", self.pxefile)
+		inotify = Inotify()
+		inotify.add_watch(self.pxefile)
+
+		for event in inotify.event_gen(yield_nones=False, filter_predicate=["IN_CLOSE_NOWRITE"]):
+			logger.trace("Inotify event: %s", event)
+			if "IN_CLOSE_NOWRITE" in event[1]:
+				break
+
+		logger.notice("Config file %r was accessed, deleting", self.pxefile)
+		os.unlink(self.pxefile)
+		if self._callback:
 			self._callback(self)
 
 	def stop(self):

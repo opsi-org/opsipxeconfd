@@ -21,6 +21,7 @@ python = ">=3.8,<3.11"
 python-opsi = "^4.2.0.266"
 mysqlclient = "^2.0"
 distro = {platform = "linux", version = "^1.5.0"}
+inotify = "^0.2.10"
 
 [tool.poetry.dev-dependencies]
 opsi-dev-tools = "^1.1"
