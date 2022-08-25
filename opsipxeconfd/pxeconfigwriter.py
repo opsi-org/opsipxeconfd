@@ -10,6 +10,7 @@ pxeconfigwriter
 """
 
 import os
+import shutil
 import time
 import threading
 from typing import List, Dict, Callable
@@ -213,7 +214,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		logger.debug("Creating config file %r", self.pxefile)
 		with open(self.pxefile, "w", encoding="utf-8") as file:
 			file.write(self.content)
-		os.chown(self.pxefile, OPSICONFD_USER, FILE_ADMIN_GROUP)
+		shutil.chown(self.pxefile, OPSICONFD_USER, FILE_ADMIN_GROUP)
 		os.chmod(self.pxefile, 0o644)
 
 		logger.debug("Watching config file %r for read with inotify", self.pxefile)
