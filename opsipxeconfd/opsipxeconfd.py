@@ -128,7 +128,10 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 
 		logger.info("Stopping pxe config writers")
 		for pcw in self._pxeConfigWriters:
-			pcw.stop()
+			try:
+				pcw.stop()
+			except Exception as err:  # pylint: disable=broad-except
+				logger.error("Failed to stop %s: %s", pcw, err, exc_info=True)
 
 		self._running = False
 
