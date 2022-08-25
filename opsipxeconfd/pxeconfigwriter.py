@@ -229,4 +229,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 
 		This method requests a stop for the current PXEConfigWriter instance.
 		"""
+		if os.path.exists(self.pxefile):
+			logger.debug("Removing config file %r on stop", self.pxefile)
+			os.unlink(self.pxefile)
 		self._running = False
