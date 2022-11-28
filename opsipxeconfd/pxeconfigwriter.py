@@ -213,7 +213,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 			logger.debug("Removing old config file %r", self.pxefile)
 			os.unlink(self.pxefile)
 
-		logger.debug("Creating config file %r (%s)", self.pxefile, id(self))
+		logger.debug("Creating config file %r", self.pxefile)
 		with open(self.pxefile, "w", encoding="utf-8") as file:
 			file.write(self.content)
 		shutil.chown(self.pxefile, OPSICONFD_USER, FILE_ADMIN_GROUP)
@@ -237,10 +237,10 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 				self._callback(self)
 
 		if os.path.exists(self.pxefile):
-			logger.notice("Deleting config file %r (%s)", self.pxefile, id(self))
+			logger.notice("Deleting config file %r", self.pxefile)
 			os.unlink(self.pxefile)
 		else:
-			logger.notice("Config file %r already deleted (%s)", self.pxefile, id(self))
+			logger.notice("Config file %r already deleted", self.pxefile)
 
 	def stop(self):
 		"""
