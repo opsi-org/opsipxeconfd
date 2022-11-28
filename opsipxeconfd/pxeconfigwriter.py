@@ -230,11 +230,15 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 					break
 
 		if file_accessed:
-			logger.notice("Config file %r was accessed", self.pxefile)
+			logger.info("Config file %r was accessed", self.pxefile)
 			if self._callback:
 				self._callback(self)
 
-		os.unlink(self.pxefile)
+		if os.path.exists(self.pxefile):
+			logger.notice("Deleting config file %r", self.pxefile)
+			os.unlink(self.pxefile)
+		else:
+			logger.notice("Config file %r already deleted", self.pxefile)
 		self._running = False
 
 	def stop(self):
