@@ -83,6 +83,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		self._running = False
 		self._should_stop = False
 		self.uefi = False
+		self.stopped_event = threading.Event()
 
 		logger.info(
 			"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
@@ -196,6 +197,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 			except Exception as err:  # pylint: disable=broad-except
 				logger.error(err, exc_info=True)
 			self._running = False
+			self.stopped_event.set()
 
 	def _run(self) -> None:
 		"""
@@ -211,7 +213,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 			logger.debug("Removing old config file %r", self.pxefile)
 			os.unlink(self.pxefile)
 
-		logger.debug("Creating config file %r", self.pxefile)
+		logger.debug("Creating config file %r (%s)", self.pxefile, id(self))
 		with open(self.pxefile, "w", encoding="utf-8") as file:
 			file.write(self.content)
 		shutil.chown(self.pxefile, OPSICONFD_USER, FILE_ADMIN_GROUP)
@@ -235,11 +237,10 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 				self._callback(self)
 
 		if os.path.exists(self.pxefile):
-			logger.notice("Deleting config file %r", self.pxefile)
+			logger.notice("Deleting config file %r (%s)", self.pxefile, id(self))
 			os.unlink(self.pxefile)
 		else:
-			logger.notice("Config file %r already deleted", self.pxefile)
-		self._running = False
+			logger.notice("Config file %r already deleted (%s)", self.pxefile, id(self))
 
 	def stop(self):
 		"""

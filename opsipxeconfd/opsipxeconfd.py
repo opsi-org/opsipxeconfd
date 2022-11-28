@@ -677,15 +677,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 
 		for pcw in currentPcws:
 			pcw.stop()
-
-			for _ in range(10):
-				if not pcw.is_alive():
-					break
-
-				time.sleep(0.1)
-			else:
-				pcw.join(1)
-
+			pcw.stopped_event.wait(5)
 			logger.notice("PXE boot configuration for host '%s' removed", hostId)
 
 	@staticmethod
