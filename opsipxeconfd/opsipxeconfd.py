@@ -467,6 +467,13 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			"enabled" if self._secureBootModule else "disabled",
 		)
 
+	def removeBootConfiguration(self, hostId: str) -> None:
+		try:
+			self._removeCurrentConfigWriters(hostId)
+		except Exception as err:
+			logger.error(err, exc_info=True)
+			raise err
+
 	def updateBootConfiguration(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements
 		self, hostId: str, cacheFile: str = None
 	) -> None:

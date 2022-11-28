@@ -263,6 +263,11 @@ class ClientConnection(threading.Thread):
 					hostId = forceHostId(arguments[0])
 					return self._opsipxeconfd.updateBootConfiguration(hostId)
 				raise ValueError("bad arguments for command 'update', needs <hostId>")
+			if command == "remove":
+				if len(arguments) == 1:
+					hostId = forceHostId(arguments[0])
+					return self._opsipxeconfd.removeBootConfiguration(hostId)
+				raise ValueError("bad arguments for command 'remove', needs <hostId>")
 
 			raise ValueError(f"Command '{cmd}' not supported")
 		except Exception as err:  # pylint: disable=broad-except
