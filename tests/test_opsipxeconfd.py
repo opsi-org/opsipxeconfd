@@ -46,7 +46,7 @@ def test_pxe_onfig_writer() -> None:
 		"product": None,
 		"service": None,
 	}
-	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)
+	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
 	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
 	# default opsi-install-x64
 	# label opsi-install-x64

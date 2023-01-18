@@ -8,7 +8,13 @@ This file is part of opsi - https://www.opsi.org
 
 from typing import Dict
 
-from opsicommon.logging import DEFAULT_FORMAT, DEFAULT_COLORED_FORMAT, logging_config, handle_log_exception
+from opsicommon.logging import (
+	DEFAULT_COLORED_FORMAT,
+	DEFAULT_FORMAT,
+	LOG_NONE,
+	handle_log_exception,
+	logging_config,
+)
 
 
 def init_logging(config: Dict) -> None:
@@ -24,8 +30,8 @@ def init_logging(config: Dict) -> None:
 	:type config: Dict
 	"""
 	try:
-		stderr_level = max(config.get("logLevelStderr"), config.get("logLevel"))
-		file_level = max(config.get("logLevelFile"), config.get("logLevel"))
+		stderr_level = max(config.get("logLevelStderr", LOG_NONE), config.get("logLevel", LOG_NONE))
+		file_level = max(config.get("logLevelFile", LOG_NONE), config.get("logLevel", LOG_NONE))
 		if config["daemon"]:
 			stderr_level = None
 		logging_config(
@@ -34,8 +40,8 @@ def init_logging(config: Dict) -> None:
 			log_file=config["logFile"],
 			file_format=DEFAULT_FORMAT,
 			file_level=file_level,
-			file_rotate_max_bytes=config.get("maxBytesLog", 0) * 1000 * 1000,
-			file_rotate_backup_count=config.get("backupCountLog"),
+			file_rotate_max_bytes=config.get("maxLogSize", 0) * 1000 * 1000,
+			file_rotate_backup_count=config.get("keepRotatedLogs", 0),
 		)
 	except Exception as err:  # pylint: disable=broad-except
 		handle_log_exception(err)
