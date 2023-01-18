@@ -7,12 +7,12 @@ This file is part of opsi - https://www.opsi.org
 """
 import argparse
 import os
+from socket import getfqdn
 
-from OPSI.Types import forceHostId
-from OPSI.Util import getfqdn
+from opsicommon.types import forceHostId
 
-from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
-from opsipxeconfd.util import pid_file
+from opsipxeconfd.pxeconfigwriter import PXEConfigWriter  # type: ignore[import]
+from opsipxeconfd.util import pid_file  # type: ignore[import]
 
 default_opts = argparse.Namespace(
 	help=False,
@@ -35,56 +35,19 @@ PXE_TEMPLATE_FILE = "install-x64"
 CONFFILE = "/etc/opsi/opsipxeconfd.conf"
 PID_FILE = "tests/test_data/pidfile.pid"
 
-"""
-@contextmanager
-@fixture
-def run_opsipxeconfd():
-	try:
-		opts = argparse.Namespace(**vars(default_opts))
-		opts.nofork = True
 
-		pid = os.fork()
-		if pid > 0:
-			# Parent calls init
-			print("before starting opsipxeconfd")
-			OpsipxeconfdInit(opts)
-			print("after starting opsipxeconfd")
-			time.sleep(5)
-			os.kill(pid, signal.SIGTERM)
-			print("after killing opsipxeconfd")
-			return
-		# Child yields
-		time.sleep(12)
-		print("before yield")
-		yield
-		print("after yield")
-
-	except OSError as error:
-		raise Exception("Fork failed: %e", error)
-	finally:
-		print("before teardown")
-		opts = argparse.Namespace(**vars(default_opts))
-		opts.command = "stop"
-		OpsipxeconfdInit(opts)
-		print("after teardown")
-"""
-
-
-def test_pxeconfigwriter():
-	hostId = forceHostId(getfqdn())
-	productOnClients = None
-	pxeConfigTemplate = os.path.join(TEST_DATA, PXE_TEMPLATE_FILE)
-	pxefile = CONFFILE
+def test_pxe_onfig_writer() -> None:
+	host_id = forceHostId(getfqdn())
+	pxe_config_template = os.path.join(TEST_DATA, PXE_TEMPLATE_FILE)
 	append = {
 		"pckey": None,
-		"hn": hostId.split(".")[0],
-		"dn": ".".join(hostId.split(".")[1:]),
+		"hn": host_id.split(".")[0],
+		"dn": ".".join(host_id.split(".")[1:]),
 		"product": None,
 		"service": None,
 	}
-	productPropertyStates = {}
-	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, True, True)
-	content = pcw._get_pxe_config_content(pxeConfigTemplate)  # pylint: disable=protected-access
+	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)
+	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
 	# default opsi-install-x64
 	# label opsi-install-x64
 	# kernel install-x64
@@ -92,7 +55,7 @@ def test_pxeconfigwriter():
 	assert " ".join(["kernel", PXE_TEMPLATE_FILE]) in content
 
 
-def test_temporarypidfile():
+def test_pid_file() -> None:
 	if os.path.exists(PID_FILE):
 		os.remove(PID_FILE)
 	with pid_file(PID_FILE):
