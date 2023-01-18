@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # opsipxeconfd is part of the desktop management solution opsi http://www.opsi.org
-# Copyright (c) 2013-2021 uib GmbH <info@uib.de>
+# Copyright (c) 2013-2023 uib GmbH <info@uib.de>
 # All rights reserved.
 # License: AGPL-3.0
 
@@ -13,85 +13,130 @@ import codecs
 import os
 import sys
 import threading
-import time
-import argparse
-from signal import SIGHUP, SIGINT, SIGTERM, signal
+from argparse import ArgumentDefaultsHelpFormatter, Namespace
 from collections import OrderedDict
-import configargparse
+from contextlib import closing, contextmanager
+from io import StringIO
+from signal import SIGHUP, SIGINT, SIGTERM, signal
+from socket import AF_UNIX, SOCK_STREAM, socket
+from time import sleep
+from types import FrameType
+from typing import Any, Generator
 
-from opsicommon.logging import logger, DEFAULT_FORMAT, LOG_WARNING, log_context, set_filter_from_string
+from configargparse import ArgParser, ConfigFileParser, ConfigFileParserException
+from opsicommon import __version__ as python_opsi_common_version
+from opsicommon.logging import (
+	DEFAULT_FORMAT,
+	LOG_WARNING,
+	get_logger,
+	log_context,
+	set_filter_from_string,
+)
+from opsicommon.types import forceInt, forceUnicode, forceUnicodeList
 
-from OPSI.Backend.OpsiPXEConfd import ServerConnection
-from OPSI.Util import getfqdn
-from OPSI.Types import forceHostId, forceUnicodeList
-from OPSI import __version__ as python_opsi_version
-
-from .logging import init_logging
-from .setup import setup
-from .util import temporaryPidFile
-from .opsipxeconfd import Opsipxeconfd
 from . import __version__
+from .logging import init_logging
+from .opsipxeconfd import Opsipxeconfd, opsi_config
+from .setup import setup
+from .util import pid_file
 
 DEFAULT_CONFIG_FILE = "/etc/opsi/opsipxeconfd.conf"
+ERROR_MARKER = "(ERROR)"
 
 
-class OpsipxeconfdConfigFileParser(configargparse.ConfigFileParser):  # pylint: disable=abstract-method
-	def get_syntax_description(self):
+logger = get_logger()
+
+
+@contextmanager
+def create_unix_socket(port: str, timeout: float = 5.0) -> Generator[socket, None, None]:
+	logger.notice("Creating unix socket %s", port)
+	_socket = socket(AF_UNIX, SOCK_STREAM)
+	_socket.settimeout(timeout)
+	try:
+		with closing(_socket) as unix_socket:
+			unix_socket.connect(port)
+			yield unix_socket
+	except Exception as err:
+		raise RuntimeError(f"Failed to connect to socket '{port}': {err}") from err
+
+
+class ServerConnection:  # pylint: disable=too-few-public-methods
+	def __init__(self, port: str, timeout: float = 10.0) -> None:
+		self.port = port
+		self.timeout = forceInt(timeout)
+
+	def send_command(self, cmd: str) -> str:
+		with create_unix_socket(self.port, timeout=self.timeout) as unix_socket:
+			unix_socket.send(forceUnicode(cmd).encode("utf-8"))
+			result = ""
+			try:
+				for part in iter(lambda: unix_socket.recv(4096), b""):
+					logger.trace("Received %s", part)  # pylint: disable=loop-global-usage
+					result += forceUnicode(part)
+			except Exception as err:  # pylint: disable=broad-except
+				raise RuntimeError(f"Failed to receive: {err}") from err
+
+		if result.startswith(ERROR_MARKER):
+			raise RuntimeError(f"Command '{cmd}' failed: {result}")
+
+		return result
+
+
+class OpsipxeconfdConfigFileParser(ConfigFileParser):  # pylint: disable=abstract-method
+	def get_syntax_description(self) -> str:
 		return ""
 
-	def parse(self, stream):  # pylint: disable=too-many-branches
+	def parse(self, stream: StringIO) -> dict[str, Any]:  # pylint: disable=too-many-branches
 		items = OrderedDict()
 		for i, line in enumerate(stream):
 			line = line.strip()
 			if not line or line.startswith(("#", ";", "/")):
 				continue
 			if "=" not in line:
-				raise configargparse.ConfigFileParserException(f"Unexpected line {i} in {getattr(stream, 'name', 'stream')}: {line}")
+				raise ConfigFileParserException(f"Unexpected line {i} in {getattr(stream, 'name', 'stream')}: {line}")
 
 			(option, value) = line.split("=", 1)
 			option = option.strip()
 			value = value.strip()
 			if option == "pid file":
-				items["pid-file"] = value
+				items["pid-file"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "log level":
-				items["log-level"] = value
+				items["log-level"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "log level stderr":
-				items["log-level-stderr"] = value
+				items["log-level-stderr"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "log level file":
-				items["log-level-file"] = value
+				items["log-level-file"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "max byte log":
-				items["max-log-size"] = value
+				items["max-log-size"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "backup count log":
-				items["keep-rotated-logs"] = value
+				items["keep-rotated-logs"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "log file":
-				items["log-file"] = value
+				items["log-file"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "log format":
 				# Ignore
 				pass
 			elif option == "pxe config dir":
-				items["pxe-dir"] = value
+				items["pxe-dir"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "pxe config template":
-				items["pxe-conf-template"] = value
+				items["pxe-conf-template"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "uefi netboot config template x86":
-				items["uefi-conf-template-x86"] = value
+				items["uefi-conf-template-x86"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "uefi netboot config template x64":
-				items["uefi-conf-template-x64"] = value
+				items["uefi-conf-template-x64"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "max pxe config writers":
-				items["max-pxe-config-writers"] = value
+				items["max-pxe-config-writers"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "max control connections":
-				items["max-connections"] = value
+				items["max-connections"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "backend config dir":
-				items["backend-config-dir"] = value
+				items["backend-config-dir"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "dispatch config file":
-				items["dispatch-config-file"] = value
+				items["dispatch-config-file"] = value  # pylint: disable=loop-invariant-statement
 			else:
-				raise configargparse.ConfigFileParserException(
-					f"Unexpected option in line {i} in {getattr(stream, 'name', 'stream')}: {option}"
-				)
+				raise ConfigFileParserException(f"Unexpected option in line {i} in {getattr(stream, 'name', 'stream')}: {option}")
 		return items
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args() -> Namespace:
 	"""
 	Parses command line arguments.
 
@@ -99,11 +144,11 @@ def parse_args() -> argparse.Namespace:
 	to extract keywords and values to set for certain variables.
 
 	:returns: Namespace object containing all provided settings (or defaults).
-	:rtype: argparse.Namespace
+	:rtype: Namespace
 	"""
-	parser = configargparse.ArgParser(
+	parser = ArgParser(
 		config_file_parser_class=OpsipxeconfdConfigFileParser,
-		formatter_class=lambda prog: argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=30, width=100),
+		formatter_class=lambda prog: ArgumentDefaultsHelpFormatter(prog, max_help_position=30, width=100),
 	)
 	parser.add("--version", "-v", help="Show version information and exit.", action="store_true")
 	parser.add("--no-fork", "-F", dest="nofork", help="Do not fork to background.", action="store_true")
@@ -251,7 +296,7 @@ def parse_args() -> argparse.Namespace:
 	opts = parser.parse_args()
 
 	if opts.version:
-		print(f"{__version__} [python-opsi={python_opsi_version}]")
+		print(f"{__version__} [python-opsi-common={python_opsi_common_version}]")
 		sys.exit(0)
 
 	has_command = opts.command and (opts.command in ["start", "stop", "update", "status"])
@@ -263,7 +308,7 @@ def parse_args() -> argparse.Namespace:
 	return opts
 
 
-def assemble_command(config):
+def assemble_command(config: dict[str, Any]) -> list[str]:
 	command = [config["command"]]
 	if config.get("nofork"):
 		command.append("--no-fork")
@@ -293,16 +338,16 @@ class OpsipxeconfdInit:
 
 		This constructor creates an OpsipxeconfdInit instance. The settings are
 		determined by values in the config file and command line arguments
-		(previously parsed and converted into an argparse.Namespace).
+		(previously parsed and converted into an Namespace).
 		Depending on the command specified on command line, an action is triggered.
 		This could be start, stop, update or status.
 
-		:param opts: Parsed command line arguments as argparse.Namespace.
-		:type opts: argparse.Namespace.
+		:param opts: Parsed command line arguments as Namespace.
+		:type opts: Namespace.
 		"""
 		self.config = vars(parse_args())
 		self.config["port"] = "/var/run/opsipxeconfd/opsipxeconfd.socket"
-		self.config["depotId"] = forceHostId(getfqdn())
+		self.config["depotId"] = opsi_config.get("host", "id")
 		self.config["daemon"] = True
 		if self.config["nofork"] and self.config["command"] == "start":
 			self.config["daemon"] = False
@@ -313,7 +358,7 @@ class OpsipxeconfdInit:
 		os.umask(0o077)
 		self._pid = 0
 
-		self.updateConfigFile()
+		self.update_config_file()
 
 		if self.config.get("logFilter"):
 			set_filter_from_string(self.config["logFilter"])
@@ -324,29 +369,29 @@ class OpsipxeconfdInit:
 			return  # TODO: exit code handling
 
 		if self.config.get("command") == "start":
-			# Call signalHandler on signal SIGHUP, SIGTERM, SIGINT
-			signal(SIGHUP, self.signalHandler)
-			signal(SIGTERM, self.signalHandler)
-			signal(SIGINT, self.signalHandler)
+			# Call signal_handler on signal SIGHUP, SIGTERM, SIGINT
+			signal(SIGHUP, self.signal_handler)
+			signal(SIGTERM, self.signal_handler)
+			signal(SIGINT, self.signal_handler)
 
 			if self.config["daemon"]:
 				self.daemonize()
 			with log_context({"instance": "Opsipxeconfd start"}):
-				with temporaryPidFile(self.config["pidFile"]):
+				with pid_file(self.config["pidFile"]):
 					self._opsipxeconfd = Opsipxeconfd(self.config)
 					self._opsipxeconfd.start()
-					time.sleep(3)
-					while self._opsipxeconfd.isRunning():
-						time.sleep(1)
+					sleep(3)
+					while self._opsipxeconfd.is_running():
+						sleep(1)
 					self._opsipxeconfd.join(30)
 		else:
 			with log_context({"instance": " ".join(["Opsipxeconfd", self.config["command"]])}):
 				command = assemble_command(self.config)
 				con = ServerConnection(self.config["port"], timeout=5.0)
-				result = con.sendCommand(" ".join(forceUnicodeList(command)))
+				result = con.send_command(" ".join(forceUnicodeList(command)))
 				print(result)
 
-	def signalHandler(self, signo, stackFrame) -> None:  # pylint: disable=unused-argument
+	def signal_handler(self, signo: int, frame: FrameType | None) -> None:  # pylint: disable=unused-argument
 		"""
 		Signal Handler for OpsipxeconfdInit.
 
@@ -360,14 +405,14 @@ class OpsipxeconfdInit:
 		:param stackFrame: unused
 		:type stackFrame: Any
 		"""
-		for thread in threading.enumerate():
-			logger.debug("Running thread before signal: %s", thread)
+		for thread in threading.enumerate():  # pylint: disable=dotted-import-in-loop
+			logger.debug("Running thread before signal: %s", thread)  # pylint: disable=loop-global-usage
 
 		logger.debug("Processing signal %r", signo)
 		if signo == SIGHUP:
 			try:
 				self.config.update(vars(parse_args()))
-				self._opsipxeconfd.setConfig(self.config)
+				self._opsipxeconfd.set_config(self.config)
 				self._opsipxeconfd.reload()
 			except AttributeError:
 				pass  # probably set to None
@@ -377,10 +422,10 @@ class OpsipxeconfdInit:
 			except AttributeError:
 				pass  # probably set to None
 
-		for thread in threading.enumerate():
-			logger.debug("Running thread after signal: %s", thread)
+		for thread in threading.enumerate():  # pylint: disable=dotted-import-in-loop
+			logger.debug("Running thread after signal: %s", thread)  # pylint: disable=loop-global-usage
 
-	def updateConfigFile(self) -> None:
+	def update_config_file(self) -> None:
 		"""
 		Updates Opsipxeconfd config file.
 

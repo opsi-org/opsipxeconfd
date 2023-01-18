@@ -12,19 +12,20 @@ pxeconfigwriter
 import os
 import shutil
 import time
-import threading
-from typing import List, Dict, Callable
+from threading import Event, Thread
+from typing import Callable, Dict
 
-from inotify.adapters import Inotify
+from inotify.adapters import Inotify  # type: ignore[import]
+from opsicommon.config.opsi import OpsiConfig
+from opsicommon.exceptions import LicenseMissingError
+from opsicommon.logging import get_logger, log_context
+from opsicommon.objects import ProductOnClient
 
-from opsicommon.logging import logger, log_context
-from OPSI.Config import (
-	FILE_ADMIN_GROUP,
-	OPSICONFD_USER,
-)
+logger = get_logger()
+opsi_config = OpsiConfig()
 
 
-class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-attributes
+class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 	"""
 	class PXEConfigWriter
 
@@ -33,15 +34,15 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 
 	def __init__(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
 		self,
-		templatefile: str,
-		hostId: str,
-		productOnClients: List,
+		template_file: str,
+		host_id: str,
+		product_on_client: ProductOnClient,
 		append: Dict,
-		productPropertyStates: Dict,
+		product_property_states: Dict,
 		pxefile: str,
-		secureBootModule: bool,
-		uefiModule: bool,
-		callback: Callable = None,
+		secure_boot_module: bool,
+		uefi_module: bool,
+		callback: Callable | None = None,
 	) -> None:
 		"""
 		PXEConfigWriter constructor.
@@ -50,12 +51,12 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		Template- and PXE-file paths as well as, hostID, products and their states
 		are stored.
 
-		:param templatefile: Path of the PXE template file.
-		:type templatefile: str
-		:param hostId: fqdn of client.
-		:type hostId:str
-		:param productOnClients: List of Products on Clients.
-		:type productOnClients: List
+		:param template_file: Path of the PXE template file.
+		:type template_file: str
+		:param host_id: fqdn of client.
+		:type host_id:str
+		:param product_on_client: ProductOnClient.
+		:type product_on_client: ProductOnClient
 		:param append: Dictionary of additional Information (pckey).
 		:type append: Dict
 		:param productPropertyStates: Data to be collected by _getPXEConfigContent.
@@ -68,45 +69,45 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 				This data is parsed for uifi module license at init.
 		:type backendinfo: Dict
 		"""
-		threading.Thread.__init__(self)
+		Thread.__init__(self)
 		self.daemon = True
-		self.templatefile = templatefile
+		self.template_file = template_file
 		self.append = append
-		self.productPropertyStates = productPropertyStates
-		self.hostId = hostId
-		self.productOnClients = productOnClients
+		self.product_property_states = product_property_states
+		self.host_id = host_id
+		self.product_on_client = product_on_client
 		self.pxefile = pxefile
-		self._secureBootModule = bool(secureBootModule)
-		self._uefiModule = bool(uefiModule)
+		self._secure_boot_module = bool(secure_boot_module)
+		self._uefi_module = bool(uefi_module)
 		self._callback = callback
-		self.startTime = time.time()
+		self.start_time = time.time()
 		self._running = False
 		self._should_stop = False
 		self.uefi = False
-		self.stopped_event = threading.Event()
+		self.stopped_event = Event()
 
 		logger.info(
-			"PXEConfigWriter initializing: templatefile '%s', pxefile '%s', hostId '%s', append %s",
-			self.templatefile,
+			"PXEConfigWriter initializing: template_file '%s', pxefile '%s', host_id '%s', append %s",
+			self.template_file,
 			self.pxefile,
-			self.hostId,
+			self.host_id,
 			self.append,
 		)
 
-		if not os.path.exists(self.templatefile):
-			raise Exception(f"Template file '{self.templatefile}' not found")
+		if not os.path.exists(self.template_file):
+			raise Exception(f"Template file '{self.template_file}' not found")
 
-		self.template = {"pxelinux": []}
+		self.template: dict[str, list[str]] = {"pxelinux": []}
 
 		# Set pxe config content
-		self.content = self._getPXEConfigContent(self.templatefile)
+		self.content = self._get_pxe_config_content(self.template_file)
 
 		try:
 			del self.append["pckey"]
 		except KeyError:
 			pass  # Key may be non-existing
 
-	def _getPXEConfigContent(self, templateFile: str) -> str:  # pylint: disable=too-many-branches
+	def _get_pxe_config_content(self, template_file: str) -> str:  # pylint: disable=too-many-branches,too-many-statements
 		"""
 		Gets PXEConfig string.
 
@@ -114,76 +115,76 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		template file, parses it using information from the
 		productPropertyStates and assemples the data as a string.
 
-		:param templateFile: Path of the PXE template file.
-		:type templateFile: str
+		:param template_file: Path of the PXE template file.
+		:type template_file: str
 
 		:returns: PXE configuration information as string.
 		:rtype: str
 
 		:raises Exception: In case uefi module is not licensed.
 		"""
-		logger.debug("Reading template '%s'", templateFile)
-		with open(templateFile, "r", encoding="utf-8") as file:
-			templateLines = file.readlines()
+		logger.debug("Reading template '%s'", template_file)
+		with open(template_file, "r", encoding="utf-8") as file:
+			template_lines = file.readlines()
 
 		content = ""
-		appendLineProperties = []
-		for line in templateLines:
+		append_line_properties = []
+		for line in template_lines:
 			line = line.rstrip()
 
-			for (propertyId, value) in self.productPropertyStates.items():
-				logger.trace("Property: '%s': value: '%s'", propertyId, value)
-				line = line.replace(f"%{propertyId}%", value)
+			for (property_id, value) in self.product_property_states.items():
+				logger.trace("Property: '%s': value: '%s'", property_id, value)  # pylint: disable=loop-global-usage
+				line = line.replace(f"%{property_id}%", value)
 
 			if line.lstrip().startswith("append"):
 				if line.lstrip().startswith("append="):
-					logger.notice("elilo configuration detected for %s", self.hostId)
-					self.uefi = True
-					appendLineProperties = "".join(line.split('="')[1:])[:-1].split()
+					logger.notice("elilo configuration detected for %s", self.host_id)  # pylint: disable=loop-global-usage
+					self.uefi = True  # pylint: disable=loop-invariant-statement
+					append_line_properties = "".join(line.split('="')[1:])[:-1].split()
 				else:
-					self.uefi = False
-					appendLineProperties = line.lstrip().split()[1:]
+					self.uefi = False  # pylint: disable=loop-invariant-statement
+					append_line_properties = line.lstrip().split()[1:]
 
 				for key, value in self.append.items():
 					if value:
-						appendLineProperties.append(f"{key}={value}")
+						append_line_properties.append(f"{key}={value}")
 					else:
-						appendLineProperties.append(str(key))
+						append_line_properties.append(str(key))
 
-				if self._uefiModule and self.uefi:
-					content = f'{content}append="{" ".join(appendLineProperties)}"\n'
-				elif not self._uefiModule and self.uefi:
-					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+				if self._uefi_module and self.uefi:
+					content = f'{content}append="{" ".join(append_line_properties)}"\n'
+				elif not self._uefi_module and self.uefi:
+					raise LicenseMissingError("UEFI module not licensed")  # pylint: disable=loop-invariant-statement
 				else:
-					content = f'{content}  append {" ".join(appendLineProperties)}\n'
+					content = f'{content}  append {" ".join(append_line_properties)}\n'
 			elif line.lstrip().startswith("linux"):
-				logger.notice("UEFI GRUB configuration detected for %s", self.hostId)
-				if not self._uefiModule and self.uefi:
-					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+				logger.notice("UEFI GRUB configuration detected for %s", self.host_id)  # pylint: disable=loop-global-usage
+				if not self._uefi_module and self.uefi:
+					raise LicenseMissingError("UEFI module not available")  # pylint: disable=loop-invariant-statement
 
-				self.uefi = True
-				appendLineProperties = line.lstrip().split()[1:]
+				self.uefi = True  # pylint: disable=loop-invariant-statement
+				append_line_properties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
-						appendLineProperties.append(f"{key}={value}")
+						append_line_properties.append(f"{key}={value}")
 					else:
-						appendLineProperties.append(str(key))
+						append_line_properties.append(str(key))
 
-				content = f'{content}linux {" ".join(appendLineProperties)}\n'
+				content = f'{content}linux {" ".join(append_line_properties)}\n'
 			elif line.lstrip().startswith("kernel ../"):
-				logger.notice("UEFI iPXE configuration detected for %s", self.hostId)
-				if not self._uefiModule and self.uefi:
-					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+				logger.notice("UEFI iPXE configuration detected for %s", self.host_id)  # pylint: disable=loop-global-usage
+				if not self._uefi_module and self.uefi:
+					raise LicenseMissingError("UEFI module not available")  # pylint: disable=loop-invariant-statement
 
-				self.uefi = True
-				appendLineProperties = line.lstrip().split()[1:]
+				self.uefi = True  # pylint: disable=loop-invariant-statement
+				append_line_properties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
-						appendLineProperties.append(f"{key}={value}")
+						append_line_properties.append(f"{key}={value}")
 					else:
-						appendLineProperties.append(str(key))
+						append_line_properties.append(str(key))
 
-				content = f'{content}kernel {" ".join(appendLineProperties)}\n'
+				content = f'{content}kernel {" ".join(append_line_properties)}\n'
 			else:
 				content = f"{content}{line}\n"
 
@@ -216,7 +217,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		logger.debug("Creating config file %r", self.pxefile)
 		with open(self.pxefile, "w", encoding="utf-8") as file:
 			file.write(self.content)
-		shutil.chown(self.pxefile, OPSICONFD_USER, FILE_ADMIN_GROUP)
+		shutil.chown(self.pxefile, -1, opsi_config.get("groups", "admingroup"))
 		os.chmod(self.pxefile, 0o644)
 
 		logger.debug("Watching config file %r for read with inotify", self.pxefile)
@@ -226,7 +227,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		file_accessed = False
 		while not self._should_stop and not file_accessed:
 			for event in inotify.event_gen(yield_nones=False, timeout_s=3):
-				logger.trace("Inotify event: %s", event)
+				logger.trace("Inotify event: %s", event)  # pylint: disable=loop-global-usage
 				if "IN_CLOSE_NOWRITE" in event[1]:
 					file_accessed = True
 					break
@@ -242,7 +243,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		else:
 			logger.notice("Config file %r already deleted", self.pxefile)
 
-	def stop(self):
+	def stop(self) -> None:
 		"""
 		Stop PXEConfigWriter thread.
 

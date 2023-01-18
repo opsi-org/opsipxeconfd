@@ -9,82 +9,65 @@
 opsipxeconfd - util
 """
 
-import time
-import threading
-import os
-import socket
-from typing import Callable
-from contextlib import contextmanager, closing
-from shlex import split as shlex_split
+from __future__ import annotations
 
-from OPSI.System.Posix import execute, which
-from OPSI.Backend.OpsiPXEConfd import ERROR_MARKER
-from OPSI.Types import forceFilename, forceHostId, forceUnicode
-from opsicommon.logging import logger
+import os
+import time
+from contextlib import closing, contextmanager
+from shlex import split as shlex_split
+from socket import socket
+from threading import Thread
+from typing import TYPE_CHECKING, Callable, Generator
+
+from opsicommon.logging import get_logger
+from opsicommon.system import ensure_not_already_running
+from opsicommon.types import forceHostId, forceString
+
+if TYPE_CHECKING:
+	from opsipxeconfd.opsipxeconfd import Opsipxeconfd
+
+ERROR_MARKER = "(ERROR)"
+
+logger = get_logger()
 
 
 @contextmanager
-def temporaryPidFile(filepath: str) -> None:
+def pid_file(pid_file_path: str) -> Generator[None, None, None]:
 	"""
 	Maintain temporary PID file.
 
-	Create a file containing the current pid for 'opsipxeconfd' at `filepath`.
+	Create a file containing the current pid for 'opsipxeconfd' at `pid_file_path`.
 	Leaving the context will remove the file.
 
-	:param filepath: Path of the PID file to create.
-	:type filepath: str
+	:param pid_file_path: Path of the PID file to create.
+	:type pid_file_path: str
 	"""
-	pidFile = filepath
+	ensure_not_already_running("opsipxeconfd")
 
-	logger.debug("Reading old pidFile %r...", pidFile)
-	try:
-		with open(pidFile, "r", encoding="utf-8") as pf:
-			oldPid = pf.readline().strip()
-
-		if oldPid:
-			running = False
-			try:
-				pids = execute(f"{which('pidof')} -x opsipxeconfd")[0].strip().split()
-				for runningPid in pids:
-					if runningPid == oldPid:
-						running = True
-						break
-			except Exception as err:  # pylint: disable=broad-except
-				logger.error(err)
-
-			if running:
-				raise Exception(f"Another opsipxeconfd process is running (pid: {oldPid}), stop process first or change pidfile.")
-	except IOError as err:
-		if err.errno != 2:  # errno 2 == no such file
-			raise err
-
-	logger.info("Creating pid file %r", pidFile)
-	pid = os.getpid()
-	with open(pidFile, "w", encoding="utf-8") as pf:
-		pf.write(str(pid))
+	logger.info("Creating pid file %r", pid_file_path)
+	with open(pid_file_path, "w", encoding="utf-8") as file:
+		file.write(str(os.getpid()))
 
 	try:
 		yield
 	finally:
-		try:
-			logger.debug("Removing pid file %r...", pidFile)
-			os.unlink(pidFile)
-			logger.info("Removed pid file %r", pidFile)
-		except OSError as err:
-			if err.errno != 2:
-				logger.error("Failed to remove pid file %r: %s", pidFile, err)
-		except Exception as err:  # pylint: disable=broad-except
-			logger.error("Failed to remove pid file %r: %s", pidFile, err)
+		if os.path.exists(pid_file_path):
+			try:
+				logger.debug("Removing pid file %r...", pid_file_path)
+				os.unlink(pid_file_path)
+				logger.info("Removed pid file %r", pid_file_path)
+			except Exception as err:  # pylint: disable=broad-except
+				logger.error("Failed to remove pid file %r: %s", pid_file_path, err)
 
 
-class StartupTask(threading.Thread):
+class StartupTask(Thread):
 	"""
 	class StartupTask
 
 	This class retrieves the initial boot configuration for the clients.
 	"""
 
-	def __init__(self, opsipxeconfd) -> None:
+	def __init__(self, opsipxeconfd: Opsipxeconfd) -> None:
 		"""
 		StartupTask constructor.
 
@@ -94,7 +77,7 @@ class StartupTask(threading.Thread):
 		:param opsipxeconfd: Opsipxeconfd this StartupTask instance is issued by.
 		:type opsipxeconfd: Opsipxeconfd
 		"""
-		threading.Thread.__init__(self)
+		Thread.__init__(self)
 		self._opsipxeconfd = opsipxeconfd
 		self._running = False
 		self._should_stop = False
@@ -110,32 +93,37 @@ class StartupTask(threading.Thread):
 		self._running = True
 		logger.notice("Start setting initial boot configurations")
 		try:
-			clientIds = [
-				clientToDepot["clientId"]
-				for clientToDepot in self._opsipxeconfd._backend.configState_getClientToDepotserver(  # pylint: disable=protected-access
-					depotIds=[self._opsipxeconfd.config["depotId"]]
+			client_ids = [
+				client_to_depot["clientId"]
+				for client_to_depot in self._opsipxeconfd.service.jsonrpc(
+					"configState_getClientToDepotserver",
+					{"depotIds": [str(self._opsipxeconfd.config["depotId"])]},
 				)
 			]
 
-			if clientIds:
-				productOnClients = self._opsipxeconfd._backend.productOnClient_getObjects(  # pylint: disable=protected-access
-					productType="NetbootProduct",
-					clientId=clientIds,
-					actionRequest=["setup", "uninstall", "update", "always", "once", "custom"],
+			if client_ids:
+				product_on_clients = self._opsipxeconfd.service.jsonrpc(
+					"productOnClient_getObjects",
+					[
+						[],
+						{
+							"productType": "NetbootProduct",
+							"clientId": client_ids,
+							"actionRequest": ["setup", "uninstall", "update", "always", "once", "custom"],
+						},
+					],
 				)
 
-				clientIds = set()
-				for poc in productOnClients:
-					clientIds.add(poc.clientId)
-
-				for clientId in clientIds:
+				for client_id in {poc.clientId for poc in product_on_clients}:
 					if self._should_stop:
 						return
 
-					try:
-						self._opsipxeconfd.updateBootConfiguration(clientId)
+					try:  # pylint: disable=loop-try-except-usage
+						self._opsipxeconfd.update_boot_configuration(client_id)
 					except Exception as err:  # pylint: disable=broad-except
-						logger.error("Failed to update PXE boot config for client '%s': %s", clientId, err)
+						logger.error(  # pylint: disable=loop-global-usage
+							"Failed to update PXE boot config for client '%s': %s", client_id, err
+						)
 
 			logger.notice("Finished setting initial boot configurations")
 		except Exception as err:  # pylint: disable=broad-except
@@ -143,7 +131,7 @@ class StartupTask(threading.Thread):
 		finally:
 			self._running = False
 
-	def stop(self):
+	def stop(self) -> None:
 		"""
 		StartupTask thread stop method.
 
@@ -152,7 +140,7 @@ class StartupTask(threading.Thread):
 		self._should_stop = True
 
 
-class ClientConnection(threading.Thread):
+class ClientConnection(Thread):
 	"""
 	class ClientConnection
 
@@ -161,31 +149,31 @@ class ClientConnection(threading.Thread):
 	to trigger an additional action.
 	"""
 
-	def __init__(self, opsipxeconfd, connectionSocket: socket, callback: Callable = None) -> None:
+	def __init__(self, opsipxeconfd: Opsipxeconfd, connection_socket: socket, callback: Callable | None = None) -> None:
 		"""
 		ClientConnection Constructor.
 
 		This constructor initializes a new ClientConnection instance.
 		A reference to the issuing opsipxeconfd is stored. Additionally the
-		connectionSocket for the communication is given and stored.
+		connection_socket for the communication is given and stored.
 		Optionally a callback can be provided.
 		The time of instance creation is stored.
 
 		:param opsipxeconfd: Opsipxeconfd this StartupTask instance is issued by.
 		:type opsipxeconfd: Opsipxeconfd
-		:param connectionSocket: Socket for communication.
-		:type connectionSocket: socket
+		:param connection_socket: Socket for communication.
+		:type connection_socket: socket
 		:param callback: callback method to be called after command execution.
 		:type callback: Callable
 		"""
-		threading.Thread.__init__(self)
+		Thread.__init__(self)
 		self._opsipxeconfd = opsipxeconfd
-		self._socket = connectionSocket
+		self._socket = connection_socket
 		self._callback = callback
 		self._running = False
-		self.startTime = time.time()
+		self.start_time = time.time()
 
-	def run(self):
+	def run(self) -> None:
 		"""
 		Main method of ClientConnection thread.
 
@@ -199,11 +187,10 @@ class ClientConnection(threading.Thread):
 		logger.debug("Receiving data...")
 		with closing(self._socket):
 			try:
-				cmd = self._socket.recv(4096)
-				cmd = forceUnicode(cmd.strip())
+				cmd = forceString(self._socket.recv(4096))
 				logger.info("Got command '%s'", cmd)
 
-				result = self._processCommand(cmd)
+				result = self._process_command(cmd)
 				logger.info("Returning result '%s'", result)
 
 				try:
@@ -214,19 +201,17 @@ class ClientConnection(threading.Thread):
 				if self._running and self._callback:
 					self._callback(self)
 
-	def stop(self):
+	def stop(self) -> None:
 		"""
 		ClientConnection thread stop method.
 
 		This method requests thread termination. The socket is closed.
 		"""
 		self._running = False
-		try:
+		if self._socket:
 			self._socket.close()
-		except AttributeError:
-			pass  # Probably none
 
-	def _processCommand(self, cmd: str) -> str:
+	def _process_command(self, cmd: str) -> str:
 		"""
 		Executes a command.
 
@@ -241,8 +226,8 @@ class ClientConnection(threading.Thread):
 		"""
 		try:
 			try:
-				command, arguments = cmd.split(None, 1)
-				arguments = shlex_split(arguments)
+				command, args = cmd.split(None, 1)
+				arguments = shlex_split(args)
 			except ValueError:
 				command = cmd.split()[0]
 
@@ -254,20 +239,14 @@ class ClientConnection(threading.Thread):
 			if command == "status":
 				return self._opsipxeconfd.status()
 			if command == "update":
-				if len(arguments) == 2:
-					# We have an update path
-					hostId = forceHostId(arguments[0])
-					cacheFilePath = forceFilename(arguments[1])
-					return self._opsipxeconfd.updateBootConfiguration(hostId, cacheFilePath)
-				if len(arguments) == 1:
-					hostId = forceHostId(arguments[0])
-					return self._opsipxeconfd.updateBootConfiguration(hostId)
-				raise ValueError("bad arguments for command 'update', needs <hostId>")
+				if len(arguments) < 1:
+					raise ValueError("bad arguments for command 'update', needs <hostId>")
+				return self._opsipxeconfd.update_boot_configuration(forceHostId(arguments[0]))
+
 			if command == "remove":
-				if len(arguments) == 1:
-					hostId = forceHostId(arguments[0])
-					return self._opsipxeconfd.removeBootConfiguration(hostId)
-				raise ValueError("bad arguments for command 'remove', needs <hostId>")
+				if len(arguments) < 1:
+					raise ValueError("bad arguments for command 'remove', needs <hostId>")
+				return self._opsipxeconfd.remove_boot_configuration(forceHostId(arguments[0]))
 
 			raise ValueError(f"Command '{cmd}' not supported")
 		except Exception as err:  # pylint: disable=broad-except

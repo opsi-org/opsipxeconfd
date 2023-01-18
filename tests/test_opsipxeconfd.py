@@ -12,8 +12,7 @@ from OPSI.Types import forceHostId
 from OPSI.Util import getfqdn
 
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
-from opsipxeconfd.util import temporaryPidFile
-
+from opsipxeconfd.util import pid_file
 
 default_opts = argparse.Namespace(
 	help=False,
@@ -85,7 +84,7 @@ def test_pxeconfigwriter():
 	}
 	productPropertyStates = {}
 	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, True, True)
-	content = pcw._getPXEConfigContent(pxeConfigTemplate)  # pylint: disable=protected-access
+	content = pcw._get_pxe_config_content(pxeConfigTemplate)  # pylint: disable=protected-access
 	# default opsi-install-x64
 	# label opsi-install-x64
 	# kernel install-x64
@@ -96,7 +95,7 @@ def test_pxeconfigwriter():
 def test_temporarypidfile():
 	if os.path.exists(PID_FILE):
 		os.remove(PID_FILE)
-	with temporaryPidFile(PID_FILE):
+	with pid_file(PID_FILE):
 		with open(PID_FILE, "r", encoding="utf-8") as filehandle:
 			pid = filehandle.readline().strip()
 		assert not pid == ""
