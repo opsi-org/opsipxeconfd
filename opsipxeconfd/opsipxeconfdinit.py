@@ -384,10 +384,14 @@ class OpsipxeconfdInit:
 				with pid_file(self.config["pidFile"]):
 					self._opsipxeconfd = Opsipxeconfd(self.config)
 					self._opsipxeconfd.start()
-					sleep(3)
+					sleep(1)
 					while self._opsipxeconfd.is_running():
 						sleep(1)
 					self._opsipxeconfd.join(30)
+					if self._opsipxeconfd.error:
+						print(f"ERROR: {self._opsipxeconfd.error}")
+						sys.exit(1)
+					sys.exit(0)
 		else:
 			with log_context({"instance": " ".join(["Opsipxeconfd", self.config["command"]])}):
 				command = assemble_command(self.config)

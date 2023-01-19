@@ -16,12 +16,17 @@ from socket import AF_UNIX, SOCK_STREAM
 from socket import error as socket_error
 from socket import socket
 from threading import Lock, Thread
-from time import asctime, localtime, time
+from time import asctime, localtime, sleep, time
 from typing import Any
 
 from opsicommon.client.opsiservice import ServiceClient
 from opsicommon.config.opsi import OpsiConfig  # type: ignore[import]
-from opsicommon.exceptions import LicenseMissingError
+from opsicommon.exceptions import (
+	LicenseMissingError,
+	OpsiServiceAuthenticationError,
+	OpsiServiceError,
+	OpsiServiceVerificationError,
+)
 from opsicommon.logging import get_logger, log_context, secret_filter
 from opsicommon.objects import Host, NetbootProduct, ProductOnClient
 from opsicommon.types import forceHostId, forceStringList
@@ -59,7 +64,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 
 		self.config = config
 		self._running = False
-
+		self.error: str | None = None
 		self._socket: socket | None = None
 		self._client_connection_lock = Lock()
 		self._pxe_config_writers_lock = Lock()
@@ -265,7 +270,24 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			self._running = True
 			logger.notice("Starting opsipxeconfd main thread")
 			try:
-				self.service.connect()
+				max_attempts = 3
+				for attempt in range(1, max_attempts + 1):
+					try:  # pylint: disable=loop-try-except-usage
+						logger.notice(  # pylint: disable=loop-global-usage
+							"Connecting to opsi service at %r (attempt %d)", self.service.base_url, attempt
+						)
+						self.service.connect()
+					except (OpsiServiceAuthenticationError, OpsiServiceVerificationError):  # pylint: disable=loop-invariant-statement
+						raise
+					except OpsiServiceError as err:  # pylint: disable=broad-except
+						message = f"Failed to connect to opsi service at {self.service.base_url!r}: {err}"  # pylint: disable=loop-invariant-statement
+						if attempt == max_attempts:
+							raise RuntimeError(message) from err
+
+						message = f"{message}, retry in 5 seconds."
+						logger.warning(message)  # pylint: disable=loop-global-usage
+						sleep(5)
+
 				logger.info("Setting needed boot configurations")
 				self._startup_task = StartupTask(self)
 				self._startup_task.start()
@@ -275,7 +297,9 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				logger.notice("Opsipxeconfd main thread exiting...")
 			except Exception as err:  # pylint: disable=broad-except
 				logger.error(err, exc_info=True)
+				self.error = str(err)
 			finally:
+				self.service.disconnect()
 				self._running = False
 
 	def client_connection_callback(self, connection: ClientConnection) -> None:
