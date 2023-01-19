@@ -85,7 +85,6 @@ stages:
   echo "Run pylint"
   echo "---------------------------------------"
   poetry run pylint --disable=R,fixme --load-plugin perflint opsipxeconfd tests
-  poetry run flake8 opsipxeconfd tests
   poetry run mypy opsipxeconfd tests
 
 test:pylint-pytest:
