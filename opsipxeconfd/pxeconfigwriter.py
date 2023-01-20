@@ -83,7 +83,6 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		self.start_time = time.time()
 		self._running = False
 		self._should_stop = False
-		self.uefi = False
 		self.stopped_event = Event()
 
 		logger.info(
@@ -136,13 +135,10 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 				logger.trace("Property: '%s': value: '%s'", property_id, value)  # pylint: disable=loop-global-usage
 				line = line.replace(f"%{property_id}%", value)
 
-			if line.lstrip().startswith("append"):
-				if line.lstrip().startswith("append="):
-					logger.notice("elilo configuration detected for %s", self.host_id)  # pylint: disable=loop-global-usage
-					self.uefi = True  # pylint: disable=loop-invariant-statement
+			if line.lstrip().startswith(("append", "linux")):
+				if line.lstrip().startswith("append"):
 					append_line_properties = "".join(line.split('="')[1:])[:-1].split()
 				else:
-					self.uefi = False  # pylint: disable=loop-invariant-statement
 					append_line_properties = line.lstrip().split()[1:]
 
 				for key, value in self.append.items():
@@ -151,40 +147,10 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 					else:
 						append_line_properties.append(str(key))
 
-				if self._uefi_module and self.uefi:
+				if line.lstrip().startswith("append"):
 					content = f'{content}append="{" ".join(append_line_properties)}"\n'
-				elif not self._uefi_module and self.uefi:
-					raise LicenseMissingError("UEFI module not licensed")  # pylint: disable=loop-invariant-statement
 				else:
-					content = f'{content}  append {" ".join(append_line_properties)}\n'
-			elif line.lstrip().startswith("linux"):
-				logger.notice("UEFI GRUB configuration detected for %s", self.host_id)  # pylint: disable=loop-global-usage
-				if not self._uefi_module and self.uefi:
-					raise LicenseMissingError("UEFI module not available")  # pylint: disable=loop-invariant-statement
-
-				self.uefi = True  # pylint: disable=loop-invariant-statement
-				append_line_properties = line.lstrip().split()[1:]
-				for key, value in self.append.items():
-					if value:
-						append_line_properties.append(f"{key}={value}")
-					else:
-						append_line_properties.append(str(key))
-
-				content = f'{content}linux {" ".join(append_line_properties)}\n'
-			elif line.lstrip().startswith("kernel ../"):
-				logger.notice("UEFI iPXE configuration detected for %s", self.host_id)  # pylint: disable=loop-global-usage
-				if not self._uefi_module and self.uefi:
-					raise LicenseMissingError("UEFI module not available")  # pylint: disable=loop-invariant-statement
-
-				self.uefi = True  # pylint: disable=loop-invariant-statement
-				append_line_properties = line.lstrip().split()[1:]
-				for key, value in self.append.items():
-					if value:
-						append_line_properties.append(f"{key}={value}")
-					else:
-						append_line_properties.append(str(key))
-
-				content = f'{content}kernel {" ".join(append_line_properties)}\n'
+					content = f'{content}linux {" ".join(append_line_properties)}\n'
 			else:
 				content = f"{content}{line}\n"
 

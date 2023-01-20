@@ -123,10 +123,6 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):  # pylint: disable=abstrac
 				items["pxe-dir"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "pxe config template":
 				items["pxe-conf-template"] = value  # pylint: disable=loop-invariant-statement
-			elif option == "uefi netboot config template x86":
-				items["uefi-conf-template-x86"] = value  # pylint: disable=loop-invariant-statement
-			elif option == "uefi netboot config template x64":
-				items["uefi-conf-template-x64"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "max pxe config writers":
 				items["max-pxe-config-writers"] = value  # pylint: disable=loop-invariant-statement
 			elif option == "max control connections":
@@ -261,20 +257,6 @@ def parse_args() -> Namespace:
 		help="Location of the pxe config template.",
 	)
 	parser.add(
-		"--uefi-conf-template-x86",
-		dest="uefiConfTemplateX86",
-		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X86",
-		default="/tftpboot/linux/pxelinux.cfg/install-elilo-x86",
-		help="Location of the uefi x86 config template.",
-	)
-	parser.add(
-		"--uefi-conf-template-x64",
-		dest="uefiConfTemplateX64",
-		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X64",
-		default="/tftpboot/linux/pxelinux.cfg/install-grub-x64",
-		help="Location of the uefi x64 config template.",
-	)
-	parser.add(
 		"--max-connections",
 		env_var="OPSIPXECONFD_MAX_CONNECTIONS",
 		type=int,
@@ -295,6 +277,20 @@ def parse_args() -> Namespace:
 		nargs="?",
 		choices=("start", "stop", "status", "update"),
 		metavar="<command>",
+	)
+	parser.add(
+		"--uefi-conf-template-x86",
+		dest="uefiConfTemplateX86",
+		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X86",
+		default="/tftpboot/linux/pxelinux.cfg/install-elilo-x86",
+		help="(Deprecated) Location of the uefi x86 config template.",
+	)
+	parser.add(
+		"--uefi-conf-template-x64",
+		dest="uefiConfTemplateX64",
+		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X64",
+		default="/tftpboot/linux/pxelinux.cfg/install-grub-x64",
+		help="(Deprecated) Location of the uefi x64 config template.",
 	)
 
 	opts = parser.parse_args()

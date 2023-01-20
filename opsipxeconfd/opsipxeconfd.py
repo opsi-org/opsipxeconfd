@@ -492,8 +492,6 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			pxefile = os.path.join(self.config["pxeDir"], pxe_config_name)
 			if os.path.exists(pxefile):
 				for pcw in self._pxe_config_writers:
-					if pcw.uefi and not pcw._uefi_module:  # pylint: disable=protected-access
-						raise LicenseMissingError("Should use uefi netboot, but uefi module is not licensed.")
 					if pcw.pxefile == pxefile:
 						if host.id == pcw.host_id:
 							logger.notice(  # pylint: disable=loop-global-usage
@@ -599,38 +597,20 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		:returns: The absolute path to the template that should be used for the client.
 		"""
 		pxe_config_template = None
-		configs = self.service.jsonrpc(
-			"configState_getValues", {"config_ids": ["clientconfig.dhcpd.filename"], "object_ids": [product_on_client.clientId]}
-		)
-		value = (configs.get("clientconfig.dhcpd.filename") or [""])[0]
-		if "elilo" in value or "shimx64" in value:
-			if "x86" in value:
-				pxe_config_template = self.config["uefiConfTemplateX86"]
-			else:
-				pxe_config_template = self.config["uefiConfTemplateX64"]
-
 		if product.pxeConfigTemplate:
-			if pxe_config_template and (pxe_config_template != product.pxeConfigTemplate):
-				logger.error("Cannot use more than one pxe config template, got: %s, %s", pxe_config_template, product.pxeConfigTemplate)
-				absolute_path_to_template = os.path.join(os.path.dirname(self.config["pxeConfTemplate"]), product.pxeConfigTemplate)
-				if os.path.isfile(f"{absolute_path_to_template}.efi"):
-					logger.notice("Using an alternate UEFI template provided by netboot product")
-					pxe_config_template = f"{product.pxeConfigTemplate}.efi"
-				else:
-					logger.notice("Did not find any alternate UEFI pxeConfigTemplate, will use the default UEFI template")
-
-			else:
-				pxe_config_template = product.pxeConfigTemplate
-				logger.notice(
-					"Special pxe config template '%s' will be used used for host '%s', product '%s'",
-					pxe_config_template,
-					product_on_client.clientId,
-					product.id,
-				)
+			pxe_config_template = product.pxeConfigTemplate
+			logger.notice(
+				"Special pxe config template '%s' will be used used for product '%s' (host '%s')",
+				pxe_config_template,
+				product.id,
+				product_on_client.clientId,
+			)
 
 		if not pxe_config_template:
 			logger.debug("Using default config template")
 			pxe_config_template = self.config["pxeConfTemplate"]
+
+		assert pxe_config_template
 
 		if not os.path.isabs(pxe_config_template):  # Not an absolute path
 			logger.debug("pxeConfigTemplate is not an absolute path.")
