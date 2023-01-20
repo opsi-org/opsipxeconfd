@@ -22,7 +22,6 @@ from typing import Any
 from opsicommon.client.opsiservice import ServiceClient
 from opsicommon.config.opsi import OpsiConfig  # type: ignore[import]
 from opsicommon.exceptions import (
-	LicenseMissingError,
 	OpsiServiceAuthenticationError,
 	OpsiServiceError,
 	OpsiServiceVerificationError,

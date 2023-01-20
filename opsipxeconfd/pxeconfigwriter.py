@@ -17,7 +17,6 @@ from typing import Callable, Dict
 
 from inotify.adapters import Inotify  # type: ignore[import]
 from opsicommon.config.opsi import OpsiConfig
-from opsicommon.exceptions import LicenseMissingError
 from opsicommon.logging import get_logger, log_context
 from opsicommon.objects import ProductOnClient
 
