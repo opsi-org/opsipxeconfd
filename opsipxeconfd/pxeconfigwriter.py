@@ -93,7 +93,7 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		)
 
 		if not os.path.exists(self.template_file):
-			raise Exception(f"Template file '{self.template_file}' not found")
+			raise FileNotFoundError(f"Template file '{self.template_file}' not found")
 
 		self.template: dict[str, list[str]] = {"pxelinux": []}
 
@@ -131,7 +131,7 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 			line = line.rstrip()
 
 			for (property_id, value) in self.product_property_states.items():
-				logger.trace("Property: '%s': value: '%s'", property_id, value)  # pylint: disable=loop-global-usage
+				logger.trace("Property: '%s': value: '%s'", property_id, value)
 				line = line.replace(f"%{property_id}%", value)
 
 			if line.lstrip().startswith(("append", "linux")):
@@ -192,7 +192,7 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		file_accessed = False
 		while not self._should_stop and not file_accessed:
 			for event in inotify.event_gen(yield_nones=False, timeout_s=3):
-				logger.trace("Inotify event: %s", event)  # pylint: disable=loop-global-usage
+				logger.trace("Inotify event: %s", event)
 				if "IN_CLOSE_NOWRITE" in event[1]:
 					file_accessed = True
 					break

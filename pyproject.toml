@@ -38,6 +38,9 @@ line-length = 140
 target-version = ['py39', 'py310']
 use-tabs = true
 
+[tool.ruff]
+line-length = 140
+
 [tool.mypy]
 disallow_untyped_calls = true
 disallow_untyped_defs = true

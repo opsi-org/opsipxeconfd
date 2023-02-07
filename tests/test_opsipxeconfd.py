@@ -51,7 +51,8 @@ def test_pxe_onfig_writer() -> None:
 	# default opsi-install-x64
 	# label opsi-install-x64
 	# kernel install-x64
-	# append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0 hn=test dn=uib.gmbh product service  # pylint: disable=line-too-long
+	# append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
+	#   hn=test dn=uib.gmbh product service
 	assert " ".join(["kernel", PXE_TEMPLATE_FILE]) in content
 
 

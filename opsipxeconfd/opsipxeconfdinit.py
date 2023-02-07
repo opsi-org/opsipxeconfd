@@ -75,7 +75,7 @@ class ServerConnection:  # pylint: disable=too-few-public-methods
 			result = ""
 			try:
 				for part in iter(lambda: unix_socket.recv(4096), b""):
-					logger.trace("Received %s", part)  # pylint: disable=loop-global-usage
+					logger.trace("Received %s", part)
 					result += forceUnicode(part)
 			except Exception as err:  # pylint: disable=broad-except
 				raise RuntimeError(f"Failed to receive: {err}") from err
@@ -409,8 +409,8 @@ class OpsipxeconfdInit:
 		:param stackFrame: unused
 		:type stackFrame: Any
 		"""
-		for thread in threading.enumerate():  # pylint: disable=dotted-import-in-loop
-			logger.debug("Running thread before signal: %s", thread)  # pylint: disable=loop-global-usage
+		for thread in threading.enumerate():
+			logger.debug("Running thread before signal: %s", thread)
 
 		logger.debug("Processing signal %r", signo)
 		if signo == SIGHUP:
@@ -426,8 +426,8 @@ class OpsipxeconfdInit:
 			except AttributeError:
 				pass  # probably set to None
 
-		for thread in threading.enumerate():  # pylint: disable=dotted-import-in-loop
-			logger.debug("Running thread after signal: %s", thread)  # pylint: disable=loop-global-usage
+		for thread in threading.enumerate():
+			logger.debug("Running thread after signal: %s", thread)
 
 	def update_config_file(self) -> None:
 		"""
@@ -465,7 +465,7 @@ class OpsipxeconfdInit:
 				# Parent exits
 				sys.exit(0)
 		except OSError as err:
-			raise Exception(f"First fork failed: {err}") from err
+			raise RuntimeError(f"First fork failed: {err}") from err
 
 		# Do not hinder umounts
 		os.chdir("/")
@@ -478,7 +478,7 @@ class OpsipxeconfdInit:
 			if self._pid > 0:
 				sys.exit(0)
 		except OSError as err:
-			raise Exception(f"Second fork failed: {err}") from err
+			raise RuntimeError(f"Second fork failed: {err}") from err
 
 		# Close standard output and standard error.
 		os.close(0)

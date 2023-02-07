@@ -128,13 +128,13 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		logger.info("Stopping pxe config writers")
 		for pcw in self._pxe_config_writers:
 			try:
-				logger.debug("Stopping %s", pcw)  # pylint: disable=loop-global-usage
+				logger.debug("Stopping %s", pcw)
 				pcw.stop()
 			except Exception as err:  # pylint: disable=broad-except
-				logger.error("Failed to stop %s: %s", pcw, err, exc_info=True)  # pylint: disable=loop-global-usage
+				logger.error("Failed to stop %s: %s", pcw, err, exc_info=True)
 
 		for pcw in self._pxe_config_writers:
-			logger.debug("Waiting for %s to stop", pcw)  # pylint: disable=loop-global-usage
+			logger.debug("Waiting for %s to stop", pcw)
 			pcw.join(5)
 
 		self._running = False
@@ -196,7 +196,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		try:
 			self._socket.bind(self.config["port"])
 		except Exception as err:
-			raise Exception(f"Failed to bind to socket '{self.config['port']}': {err}") from err
+			raise RuntimeError(f"Failed to bind to socket '{self.config['port']}': {err}") from err
 		self._socket.settimeout(0.1)
 		self._socket.listen(self.config["maxConnections"])
 
@@ -272,9 +272,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				max_attempts = 3
 				for attempt in range(1, max_attempts + 1):
 					try:
-						logger.notice(  # pylint: disable=loop-global-usage
-							"Connecting to opsi service at %r (attempt %d)", self.service.base_url, attempt
-						)
+						logger.notice("Connecting to opsi service at %r (attempt %d)", self.service.base_url, attempt)
 						self.service.connect()
 					except (OpsiServiceAuthenticationError, OpsiServiceVerificationError):
 						raise
@@ -284,7 +282,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 							raise RuntimeError(message) from err
 
 						message = f"{message}, retry in 5 seconds."
-						logger.warning(message)  # pylint: disable=loop-global-usage
+						logger.warning(message)
 						sleep(5)
 
 				logger.info("Setting needed boot configurations")
@@ -493,9 +491,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				for pcw in self._pxe_config_writers:
 					if pcw.pxefile == pxefile:
 						if host.id == pcw.host_id:
-							logger.notice(  # pylint: disable=loop-global-usage
-								"PXE boot configuration '%s' for client '%s' already exists.", pxefile, host.id
-							)
+							logger.notice("PXE boot configuration '%s' for client '%s' already exists.", pxefile, host.id)
 							return "Boot configuration kept"
 						raise RuntimeError(
 							f"PXE boot configuration '{pxefile}' already exists. Clients '{host.id}' and '{pcw.host_id}' using same address?"
@@ -580,7 +576,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		for pcw in current_pcws:
 			pcw.stop()
 			pcw.stopped_event.wait(5)
-			logger.notice("PXE boot configuration for host '%s' removed", host_id)  # pylint: disable=loop-global-usage
+			logger.notice("PXE boot configuration for host '%s' removed", host_id)
 
 	def _get_pxe_config_template(
 		self, product_on_client: ProductOnClient, product: NetbootProduct
@@ -643,7 +639,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			return "%02X%02X%02X%02X" % tuple(  # pylint: disable=consider-using-generator,consider-using-f-string
 				[int(i) for i in host.ipAddress.split(".")]
 			)
-		raise Exception(f"Neither system UUID, hardware address nor ip address known for host '{host.id}'")
+		raise RuntimeError(f"Neither system UUID, hardware address nor ip address known for host '{host.id}'")
 
 	def _get_config_service_address(self, host_id: str) -> str:
 		"""

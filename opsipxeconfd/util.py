@@ -121,9 +121,7 @@ class StartupTask(Thread):
 					try:
 						self._opsipxeconfd.update_boot_configuration(client_id)
 					except Exception as err:  # pylint: disable=broad-except
-						logger.error(  # pylint: disable=loop-global-usage
-							"Failed to update PXE boot config for client '%s': %s", client_id, err
-						)
+						logger.error("Failed to update PXE boot config for client '%s': %s", client_id, err)
 
 			logger.notice("Finished setting initial boot configurations")
 		except Exception as err:  # pylint: disable=broad-except

@@ -82,9 +82,10 @@ stages:
 
 .pylint: &pylint |
   echo "---------------------------------------"
-  echo "Run pylint"
+  echo "Run linters"
   echo "---------------------------------------"
-  poetry run pylint --disable=R,fixme --load-plugin perflint opsipxeconfd tests
+  poetry run pylint --disable=R,fixme opsipxeconfd tests
+  poetry run ruff opsipxeconfd tests
   poetry run mypy opsipxeconfd tests
 
 test:pylint-pytest:
