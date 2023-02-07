@@ -21,17 +21,17 @@ python-opsi-common = "^4.3.0.2"
 inotify = "^0.2.10"
 configargparse = "^1.5.3"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.scripts]
+opsipxeconfd = "opsipxeconfd.__main__:main"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.243"
 pytest = "^7.2"
 pytest-cov = "^4.0"
 pyinstaller = "^5.5"
 pylint = "^2.12"
-perflint = "^0.7.0"
 tan = "^22.8"
 mypy = "^0.991"
-
-[tool.poetry.scripts]
-opsipxeconfd = "opsipxeconfd.__main__:main"
 
 [tool.black]
 line-length = 140

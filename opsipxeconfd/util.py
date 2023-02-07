@@ -118,7 +118,7 @@ class StartupTask(Thread):
 					if self._should_stop:
 						return
 
-					try:  # pylint: disable=loop-try-except-usage
+					try:
 						self._opsipxeconfd.update_boot_configuration(client_id)
 					except Exception as err:  # pylint: disable=broad-except
 						logger.error(  # pylint: disable=loop-global-usage

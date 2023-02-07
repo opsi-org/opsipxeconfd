@@ -103,34 +103,34 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):  # pylint: disable=abstrac
 			option = option.strip()
 			value = value.strip()
 			if option == "pid file":
-				items["pid-file"] = value  # pylint: disable=loop-invariant-statement
+				items["pid-file"] = value
 			elif option == "log level":
-				items["log-level"] = value  # pylint: disable=loop-invariant-statement
+				items["log-level"] = value
 			elif option == "log level stderr":
-				items["log-level-stderr"] = value  # pylint: disable=loop-invariant-statement
+				items["log-level-stderr"] = value
 			elif option == "log level file":
-				items["log-level-file"] = value  # pylint: disable=loop-invariant-statement
+				items["log-level-file"] = value
 			elif option == "max byte log":
-				items["max-log-size"] = value  # pylint: disable=loop-invariant-statement
+				items["max-log-size"] = value
 			elif option == "backup count log":
-				items["keep-rotated-logs"] = value  # pylint: disable=loop-invariant-statement
+				items["keep-rotated-logs"] = value
 			elif option == "log file":
-				items["log-file"] = value  # pylint: disable=loop-invariant-statement
+				items["log-file"] = value
 			elif option == "log format":
 				# Ignore
 				pass
 			elif option == "pxe config dir":
-				items["pxe-dir"] = value  # pylint: disable=loop-invariant-statement
+				items["pxe-dir"] = value
 			elif option == "pxe config template":
-				items["pxe-conf-template"] = value  # pylint: disable=loop-invariant-statement
+				items["pxe-conf-template"] = value
 			elif option == "max pxe config writers":
-				items["max-pxe-config-writers"] = value  # pylint: disable=loop-invariant-statement
+				items["max-pxe-config-writers"] = value
 			elif option == "max control connections":
-				items["max-connections"] = value  # pylint: disable=loop-invariant-statement
+				items["max-connections"] = value
 			elif option == "backend config dir":
-				items["backend-config-dir"] = value  # pylint: disable=loop-invariant-statement
+				items["backend-config-dir"] = value
 			elif option == "dispatch config file":
-				items["dispatch-config-file"] = value  # pylint: disable=loop-invariant-statement
+				items["dispatch-config-file"] = value
 			else:
 				raise ConfigFileParserException(f"Unexpected option in line {i} in {getattr(stream, 'name', 'stream')}: {option}")
 		return items

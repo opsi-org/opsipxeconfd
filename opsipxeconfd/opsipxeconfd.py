@@ -127,7 +127,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 
 		logger.info("Stopping pxe config writers")
 		for pcw in self._pxe_config_writers:
-			try:  # pylint: disable=loop-try-except-usage
+			try:
 				logger.debug("Stopping %s", pcw)  # pylint: disable=loop-global-usage
 				pcw.stop()
 			except Exception as err:  # pylint: disable=broad-except
@@ -271,15 +271,15 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			try:
 				max_attempts = 3
 				for attempt in range(1, max_attempts + 1):
-					try:  # pylint: disable=loop-try-except-usage
+					try:
 						logger.notice(  # pylint: disable=loop-global-usage
 							"Connecting to opsi service at %r (attempt %d)", self.service.base_url, attempt
 						)
 						self.service.connect()
-					except (OpsiServiceAuthenticationError, OpsiServiceVerificationError):  # pylint: disable=loop-invariant-statement
+					except (OpsiServiceAuthenticationError, OpsiServiceVerificationError):
 						raise
 					except OpsiServiceError as err:  # pylint: disable=broad-except
-						message = f"Failed to connect to opsi service at {self.service.base_url!r}: {err}"  # pylint: disable=loop-invariant-statement
+						message = f"Failed to connect to opsi service at {self.service.base_url!r}: {err}"
 						if attempt == max_attempts:
 							raise RuntimeError(message) from err
 
@@ -457,7 +457,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			depot_id = str(self.config["depotId"])
 
 			logger.debug("Searching for product '%s' on depot '%s'", product_on_client.productId, depot_id)
-			try:  # pylint: disable=loop-try-except-usage
+			try:
 				product_on_depot = self.service.jsonrpc(
 					"productOnDepot_getObjects",
 					[[], {"productType": "NetbootProduct", "productId": product_on_client.productId, "depotId": depot_id}],
@@ -466,7 +466,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				logger.warning("Product %s not available on depot '%s'", product_on_client.productId, depot_id)
 				return "Boot configuration updated"
 
-			try:  # pylint: disable=loop-try-except-usage
+			try:
 				product = self.service.jsonrpc(
 					"product_getObjects",
 					[
