@@ -78,6 +78,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			username=opsi_config.get("host", "id"),
 			password=opsi_config.get("host", "key"),
 			jsonrpc_create_objects=True,
+			jsonrpc_create_methods=True,
 			ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
 		)
 		logger.comment("opsi pxe configuration service starting")
@@ -514,6 +515,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				secret_filter.add_secrets(append["pckey"])
 
 			append.update(self._get_additional_bootimage_parameters(host_id))
+			logger.debug("Append params for %r: %r", host_id, append)
 
 			# Get product property states
 			product_property_states = {
@@ -643,7 +645,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 
 	def _get_config_service_address(self, host_id: str) -> str:
 		"""
-		Returns the config serive address for `host_id`.
+		Returns the config service address for `host_id`.
 
 		This method requests the url of the configserver, ensures
 		that it ends with /rpc and returns it as a string.
@@ -655,9 +657,10 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		:rtype: str
 		"""
 		configs = self.service.jsonrpc("configState_getValues", {"config_ids": ["clientconfig.configserver.url"], "object_ids": [host_id]})
-		address = (configs.get("clientconfig.configserver.url") or [None])[0]
+		logger.debug(configs)
+		address = (configs.get(host_id, {}).get("clientconfig.configserver.url") or [None])[0]
 		if not address:
-			address = opsi_config.get("service", "url")
+			raise RuntimeError(f"Failed to get config server address for {host_id!r}")
 		if not address.endswith("/rpc"):
 			address += "/rpc"
 		return address
