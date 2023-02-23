@@ -17,46 +17,11 @@ stages:
   tar -xvf opsi-dev-tools.tar.gz
 
 .prepare_tests: &prepare_tests |
-  # Install debian packages
-  export DEBIAN_FRONTEND=noninteractive
-  apt update
-  apt -y install wget git mariadb-client iproute2 net-tools iputils-ping
-
-  # Grant full database access to opsi user
-  mysql --host=mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e "GRANT ALL ON opsitest.* TO 'opsi'@'%';"
-
-  # Create adminuser used in tests
-  useradd adminuser
-  echo "adminuser:adminuser" | chpasswd
-  adduser adminuser opsiadmin
-  adduser adminuser opsifileadmins
-
-  # Get config files from opsi-server package
-  [ -e /etc/opsi ] && rm -r /etc/opsi
-  [ -e ../opsi-server ] && rm -r ../opsi-server
-  url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsipxeconfd.git.*#/opsi-server.git#')
-  #branch=$(git rev-parse --abbrev-ref HEAD)
-  branch=devel
-  GIT_TERMINAL_PROMPT=0 git clone --branch $branch $url ../opsi-server
-  cp -a ../opsi-server/opsi-server_data/etc /etc/opsi
-
-  # Create empty cofig file
+  # Create empty config file
   touch /etc/opsi/opsipxeconfd.conf
-
-  # Set mysql address in config
-  sed -i "s/127.0.0.1/mysql/" /etc/opsi/backends/mysql.conf
-  # Use mysql backend only
-  echo ".* : mysql" > /etc/opsi/backendManager/dispatch.conf
-
-  # Installing opsi test modules file
-  [ -z "${OPSILICSRV_TOKEN}" ] && (echo "OPSILICSRV_TOKEN not set" 1>&2 ; exit 1)
-  mkdir -p /etc/opsi/licenses
-  wget --header="Authorization: Bearer ${OPSILICSRV_TOKEN}" "https://opsi-license-server.uib.gmbh/api/v1/licenses/test?usage=opsiconfd-gitlab-ci" -O /etc/opsi/licenses/test.opsilic
 
   # Create dirs
   mkdir -p /var/log/opsi/opsipxeconfd
-  mkdir -p /var/lib/opsi/repository
-  mkdir -p /var/lib/opsi/depot
   mkdir -p /var/run/opsipxeconfd/
   chown adminuser:opsiadmin /var/run/opsipxeconfd
   chmod 775 /var/run/opsipxeconfd
@@ -66,9 +31,6 @@ stages:
   poetry config experimental.new-installer false
   poetry install
   poetry run opsipxeconfd --setup
-  # Create adminuser used with opsiconfd-perftest.py
-  echo "Set OPSI STATIC DIR"
-  export OPSICONFD_STATIC_DIR="opsiconfd_data/static"
 
 
 .pytest: &pytest |
