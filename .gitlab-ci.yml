@@ -22,9 +22,7 @@ stages:
 
   # Create dirs
   mkdir -p /var/log/opsi/opsipxeconfd
-  mkdir -p /var/run/opsipxeconfd/
-  chown adminuser:opsiadmin /var/run/opsipxeconfd
-  chmod 775 /var/run/opsipxeconfd
+  mkdir -p /var/run/opsipxeconfd
 
   # Install poetry
   pip3 install poetry
