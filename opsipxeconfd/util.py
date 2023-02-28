@@ -240,7 +240,6 @@ class ClientConnection(Thread):
 				if len(arguments) < 1:
 					raise ValueError("bad arguments for command 'update', needs <hostId>")
 				return self._opsipxeconfd.update_boot_configuration(forceHostId(arguments[0]))
-
 			if command == "remove":
 				if len(arguments) < 1:
 					raise ValueError("bad arguments for command 'remove', needs <hostId>")

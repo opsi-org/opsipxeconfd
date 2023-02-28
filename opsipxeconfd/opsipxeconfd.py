@@ -371,11 +371,9 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 
 		always = product_on_client.actionRequest == "always"
 		product_on_client.setActionProgress("pxe boot configuration read")
-		if pcw.template_file != self.config["pxeConfTemplate"] and not always:
+		if not always:
 			product_on_client.setActionRequest("none")
 		self.service.jsonrpc("productOnClient_updateObjects", [product_on_client])
-		if always:
-			self.update_boot_configuration(pcw.host_id)
 
 	def status(self) -> str:
 		"""
