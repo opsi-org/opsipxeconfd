@@ -596,14 +596,12 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		pxe_config_template = None
 		if product.pxeConfigTemplate:
 			if product.pxeConfigTemplate in ("install-x64", "install3264"):
-				logger.warning(
-					"Product %s is using obsolete pxe config template '%s', using default.", product.id, product.pxeConfigTemplate
-				)
+				logger.warning("Product %r is using obsolete pxe config template %r, using default.", product.id, product.pxeConfigTemplate)
 				pxe_config_template = None
 			else:
 				pxe_config_template = product.pxeConfigTemplate
 				logger.notice(
-					"Special pxe config template '%s' will be used used for product '%s' (host '%s')",
+					"Special pxe config template %r will be used used for product %r (host %r)",
 					pxe_config_template,
 					product.id,
 					product_on_client.clientId,
