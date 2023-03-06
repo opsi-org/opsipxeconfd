@@ -9,7 +9,6 @@
 opsipxeconfd - init
 """
 
-import codecs
 import os
 import sys
 import threading
