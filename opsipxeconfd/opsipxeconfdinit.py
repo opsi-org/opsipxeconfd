@@ -345,6 +345,8 @@ class OpsipxeconfdInit:
 		:param opts: Parsed command line arguments as Namespace.
 		:type opts: Namespace.
 		"""
+		self.update_config_file()
+
 		self.config = vars(parse_args())
 		self.config["port"] = "/var/run/opsipxeconfd/opsipxeconfd.socket"
 		self.config["depotId"] = opsi_config.get("host", "id")
@@ -357,8 +359,6 @@ class OpsipxeconfdInit:
 		# Set umask
 		os.umask(0o077)
 		self._pid = 0
-
-		self.update_config_file()
 
 		if self.config.get("logFilter"):
 			set_filter_from_string(self.config["logFilter"])
@@ -436,20 +436,40 @@ class OpsipxeconfdInit:
 		This method modifies the data written in the configFile to conform to
 		the standard logging format.
 		"""
-		with codecs.open(self.config["conffile"], "r", "utf-8") as file:
-			data = file.read()
-		new_data = data.replace("[%l] [%D] %M (%F|%N)", DEFAULT_FORMAT)
-		new_data = new_data.replace("%D", "%(asctime)s")
-		new_data = new_data.replace("%T", "%(thread)d")
-		new_data = new_data.replace("%l", "%(opsilevel)d")
-		new_data = new_data.replace("%L", "%(levelname)s")
-		new_data = new_data.replace("%M", "%(message)s")
-		new_data = new_data.replace("%F", "%(filename)s")
-		new_data = new_data.replace("%N", "%(lineno)s")
-		if new_data != data:
-			logger.notice("Updating config file: %s", self.config["conffile"])
-			with codecs.open(self.config["conffile"], "w", "utf-8") as file:
-				file.write(new_data)
+		config_file = DEFAULT_CONFIG_FILE
+		if not os.path.exists(config_file):
+			return
+
+		lines = []
+		changed = False
+		with open(config_file, encoding="utf-8") as file:
+			for line in file.readlines():
+				cur_line = line
+
+				if line.startswith("uefi netboot config template"):
+					line = f"#{line}"
+				elif line.startswith("pxe config dir"):
+					line = line.replace("/tftpboot/linux/pxelinux.cfg", "/tftpboot/opsi/opsi-linux-bootimage/cfg")
+				elif line.startswith("pxe config template"):
+					line = line.replace("/tftpboot/linux/pxelinux.cfg/install", "/tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64")
+				elif line.startswith("log format"):
+					line = line.replace("[%l] [%D] %M (%F|%N)", DEFAULT_FORMAT)
+					line = line.replace("%D", "%(asctime)s")
+					line = line.replace("%T", "%(thread)d")
+					line = line.replace("%l", "%(opsilevel)d")
+					line = line.replace("%L", "%(levelname)s")
+					line = line.replace("%M", "%(message)s")
+					line = line.replace("%F", "%(filename)s")
+					line = line.replace("%N", "%(lineno)s")
+
+				lines.append(line)
+				if not changed and line != cur_line:
+					changed = True
+
+		if changed:
+			logger.notice("Updating config file: %s", config_file)
+			with open(config_file, "w", encoding="utf-8") as file:
+				file.writelines(lines)
 
 	def daemonize(self) -> None:
 		"""

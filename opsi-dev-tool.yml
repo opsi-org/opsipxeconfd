@@ -53,8 +53,3 @@ package:
     [ -e /etc/logrotate.d/opsipxeconfd ] && rm /etc/logrotate.d/opsipxeconfd || true
     # Move log files to new default location
     mv /var/log/opsi/opsipxeconfd.log* /var/log/opsi/opsipxeconfd/ 2>/dev/null || true
-    # Remove obsolete params from config file
-    sed -i s'/^uefi netboot config template/#uefi netboot config template/' /etc/opsi/opsipxeconfd.conf
-    sed -i s'#^pxe config dir = /tftpboot/linux/pxelinux.cfg#pxe config dir = /tftpboot/opsi/opsi-linux-bootimage/cfg#' /etc/opsi/opsipxeconfd.conf
-    sed -i s'#^pxe config template = /tftpboot/linux/pxelinux.cfg/install#pxe config template = /tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64#' /etc/opsi/opsipxeconfd.conf
-
