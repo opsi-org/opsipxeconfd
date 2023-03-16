@@ -439,6 +439,10 @@ class OpsipxeconfdInit:
 		if not os.path.exists(config_file):
 			return
 
+		default_tftp_root = tftp_root = "/tftpboot"
+		if not os.path.exists(tftp_root) and os.path.exists("/var/lib/tftpboot"):
+			tftp_root = "/var/lib/tftpboot"
+
 		lines = []
 		changed = False
 		with open(config_file, encoding="utf-8") as file:
@@ -448,9 +452,11 @@ class OpsipxeconfdInit:
 				if line.startswith("uefi netboot config template"):
 					line = f"#{line}"
 				elif line.startswith("pxe config dir"):
-					line = line.replace("/tftpboot/linux/pxelinux.cfg", "/tftpboot/opsi/opsi-linux-bootimage/cfg")
+					line = line.replace("/linux/pxelinux.cfg", "/opsi/opsi-linux-bootimage/cfg")
+					line = line.replace(f"{default_tftp_root}/opsi", f"{tftp_root}/opsi")
 				elif line.startswith("pxe config template"):
-					line = line.replace("/tftpboot/linux/pxelinux.cfg/install", "/tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64")
+					line = line.replace("/linux/pxelinux.cfg/install", "/opsi/opsi-linux-bootimage/cfg/install-grub-x64")
+					line = line.replace(f"{default_tftp_root}/opsi", f"{tftp_root}/opsi")
 				elif line.startswith("log format"):
 					line = line.replace("[%l] [%D] %M (%F|%N)", DEFAULT_FORMAT)
 					line = line.replace("%D", "%(asctime)s")
