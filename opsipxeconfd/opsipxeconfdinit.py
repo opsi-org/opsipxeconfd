@@ -453,10 +453,10 @@ class OpsipxeconfdInit:
 					line = f"#{line}"
 				elif line.startswith("pxe config dir"):
 					line = line.replace("/linux/pxelinux.cfg", "/opsi/opsi-linux-bootimage/cfg")
-					line = line.replace(f"{default_tftp_root}/opsi", f"{tftp_root}/opsi")
+					line = line.replace(f" {default_tftp_root}/opsi", f" {tftp_root}/opsi")
 				elif line.startswith("pxe config template"):
 					line = line.replace("/linux/pxelinux.cfg/install", "/opsi/opsi-linux-bootimage/cfg/install-grub-x64")
-					line = line.replace(f"{default_tftp_root}/opsi", f"{tftp_root}/opsi")
+					line = line.replace(f" {default_tftp_root}/opsi", f" {tftp_root}/opsi")
 				elif line.startswith("log format"):
 					line = line.replace("[%l] [%D] %M (%F|%N)", DEFAULT_FORMAT)
 					line = line.replace("%D", "%(asctime)s")
