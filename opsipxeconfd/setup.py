@@ -13,7 +13,6 @@ import os
 import re
 from typing import Dict
 
-from opsicommon.client.opsiservice import ServiceClient
 from opsicommon.config.opsi import OpsiConfig  # type: ignore[import]
 from opsicommon.logging import get_logger
 from opsicommon.server.rights import set_rights
@@ -28,7 +27,7 @@ def patchMenuFile(service_address: str, config: Dict) -> None:
 	To find out where to patch we look for lines that starts with the
 	given `searchString` (excluding preceding whitespace).
 
-	"""	
+	"""
 	newlines = []
 	try:
 		with open(config["pxeDir"]+"grub.cfg", "r", encoding="utf-8") as readMenu:
@@ -36,7 +35,7 @@ def patchMenuFile(service_address: str, config: Dict) -> None:
 				if line.strip().startswith("linux"):
 					if "service=" in line:
 						line = re.sub(r"service=\S+", "", line.rstrip())
-					newlines.append("{} service={}\n".format(line.rstrip(), service_address))
+					newlines.append(f"{line.rstrip()} service={service_address}\n")
 					continue
 
 				newlines.append(line)
@@ -45,7 +44,6 @@ def patchMenuFile(service_address: str, config: Dict) -> None:
 			writeMenu.writelines(newlines)
 	except FileNotFoundError:
 		logger.notice(config["pxeDir"]+"grub.cfg not found")
-		pass
 
 
 def setup_files(log_file: str) -> None:
@@ -61,7 +59,7 @@ def setup_files(log_file: str) -> None:
 	logger.info("Setup files and permissions")
 	log_dir = os.path.dirname(log_file)
 	if not os.path.isdir(log_dir):
-		os.makedirs(log_dir) 
+		os.makedirs(log_dir)
 	set_rights(log_dir)
 
 
