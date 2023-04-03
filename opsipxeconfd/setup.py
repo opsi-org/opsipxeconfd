@@ -30,7 +30,7 @@ def patchMenuFile(service_address: str, config: Dict) -> None:
 	"""
 	newlines = []
 	try:
-		with open(config["pxeDir"]+"grub.cfg", "r", encoding="utf-8") as readMenu:
+		with open(config["pxeDir"]+"/grub.cfg", "r", encoding="utf-8") as readMenu:
 			for line in readMenu:
 				if line.strip().startswith("linux"):
 					if "service=" in line:
@@ -40,10 +40,10 @@ def patchMenuFile(service_address: str, config: Dict) -> None:
 
 				newlines.append(line)
 
-		with open(config["pxeDir"]+"grub.cfg", "w", encoding="utf-8") as writeMenu:
+		with open(config["pxeDir"]+"/grub.cfg", "w", encoding="utf-8") as writeMenu:
 			writeMenu.writelines(newlines)
 	except FileNotFoundError:
-		logger.notice(config["pxeDir"]+"grub.cfg not found")
+		logger.notice(config["pxeDir"]+"/grub.cfg not found")
 
 
 def setup_files(log_file: str) -> None:
