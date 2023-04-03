@@ -344,9 +344,9 @@ class OpsipxeconfdInit:
 		:param opts: Parsed command line arguments as Namespace.
 		:type opts: Namespace.
 		"""
-		self.update_config_file()
-
 		self.config = vars(parse_args())
+		
+		self.update_config_file()
 		self.config["port"] = "/var/run/opsipxeconfd/opsipxeconfd.socket"
 		self.config["depotId"] = opsi_config.get("host", "id")
 		self.config["daemon"] = True
