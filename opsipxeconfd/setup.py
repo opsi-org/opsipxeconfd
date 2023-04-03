@@ -15,6 +15,7 @@ from typing import Dict
 
 from opsicommon.client.opsiservice import ServiceClient
 from opsicommon.config.opsi import OpsiConfig  # type: ignore[import]
+from opsicommon.exceptions import OpsiServiceConnectionError
 from opsicommon.logging import get_logger
 from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
@@ -44,7 +45,7 @@ def patchMenuFile(config: Dict) -> None:
 		configs = service.jsonrpc("host_getObjects", [], {"type": ["OpsiConfigserver"]})
 		service_address = (configs.get("id") or [None])[0]
 		logger.notice(f"service_address is {service_address}")
-	except Exception as connectionError:
+	except OpsiServiceConnectionError:
 		pass
 	newlines = []
 	if service_address:
