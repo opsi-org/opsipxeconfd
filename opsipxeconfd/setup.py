@@ -39,6 +39,7 @@ def patchMenuFile(config: Dict) -> None:
 		jsonrpc_create_methods=True,
 		ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
 	)
+	service_address = ""
 	try:
 		configs = service.jsonrpc("host_getObjects", [], {"type": ["OpsiConfigserver"]})
 		service_address = (configs.get("id") or [None])[0]
