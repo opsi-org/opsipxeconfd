@@ -13,6 +13,8 @@ import os
 import re
 from typing import Dict
 
+from opsicommon.client.opsiservice import ServiceClient
+from opsicommon.config.opsi import OpsiConfig  # type: ignore[import]
 from opsicommon.logging import get_logger
 from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
@@ -72,5 +74,6 @@ def setup(config: Dict) -> None:
 	logger.notice("Running opsipxeconfd setup")
 	po_setup_users_and_groups()
 	setup_files(config["logFile"])
-	service_address = _get_config_service_address(opsi_config.get("host", "id"))
-	patchMenuFile(service_address, config)
+	opsi_config = OpsiConfig()
+	address=opsi_config.get("service", "url")
+	patchMenuFile(address, config)
