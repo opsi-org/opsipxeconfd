@@ -31,7 +31,7 @@ def patchMenuFile(config: Dict) -> None:
 	"""
 	opsi_config = OpsiConfig()
 
-	self.service = ServiceClient(
+	service = ServiceClient(
 		address=opsi_config.get("service", "url"),
 		username=opsi_config.get("host", "id"),
 		password=opsi_config.get("host", "key"),
@@ -39,7 +39,7 @@ def patchMenuFile(config: Dict) -> None:
 		jsonrpc_create_methods=True,
 		ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
 	)
-	configs = self.service.jsonrpc("host_getObjects", [], {"type": ["OpsiConfigserver"]})
+	configs = service.jsonrpc("host_getObjects", [], {"type": ["OpsiConfigserver"]})
 	service_address = (configs.get("id") or [None])[0]
 	logger.notice(f"service_address is {service_address}")
 	newlines = []
