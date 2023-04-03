@@ -13,6 +13,7 @@ import os
 import re
 from typing import Dict
 
+from opsicommon.client.opsiservice import ServiceClient
 from opsicommon.config.opsi import OpsiConfig  # type: ignore[import]
 from opsicommon.logging import get_logger
 from opsicommon.server.rights import set_rights
@@ -20,7 +21,7 @@ from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and
 
 logger = get_logger()
 
-def patchMenuFile(service_address: str, config: Dict) -> None:
+def patchMenuFile(config: Dict) -> None:
 	"""
 	Patch the address to the `configServer` into `menufile`.
 
@@ -28,22 +29,38 @@ def patchMenuFile(service_address: str, config: Dict) -> None:
 	given `searchString` (excluding preceding whitespace).
 
 	"""
+	opsi_config = OpsiConfig()
+
+	self.service = ServiceClient(
+		address=opsi_config.get("service", "url"),
+		username=opsi_config.get("host", "id"),
+		password=opsi_config.get("host", "key"),
+		jsonrpc_create_objects=True,
+		jsonrpc_create_methods=True,
+		ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
+	)
+	configs = self.service.jsonrpc("host_getObjects", [], {"type": ["OpsiConfigserver"]})
+	service_address = (configs.get("id") or [None])[0]
+	logger.notice(f"service_address is {service_address}")
 	newlines = []
-	try:
-		with open(config["pxeDir"]+"/grub.cfg", "r", encoding="utf-8") as readMenu:
-			for line in readMenu:
-				if line.strip().startswith("linux"):
-					if "service=" in line:
-						line = re.sub(r"service=\S+", "", line.rstrip())
-					newlines.append(f"{line.rstrip()} service={service_address}\n")
-					continue
+	if service_address:
+		try:
+			with open(config["pxeDir"]+"/grub.cfg", "r", encoding="utf-8") as readMenu:
+				for line in readMenu:
+					if line.strip().startswith("linux"):
+						if "service=" in line:
+							line = re.sub(r"service=\S+", "", line.rstrip())
+						newlines.append(f"{line.rstrip()} service={service_address}\n")
+						continue
 
-				newlines.append(line)
+					newlines.append(line)
 
-		with open(config["pxeDir"]+"/grub.cfg", "w", encoding="utf-8") as writeMenu:
-			writeMenu.writelines(newlines)
-	except FileNotFoundError:
-		logger.notice(config["pxeDir"]+"/grub.cfg not found")
+			with open(config["pxeDir"]+"/grub.cfg", "w", encoding="utf-8") as writeMenu:
+				writeMenu.writelines(newlines)
+		except FileNotFoundError:
+			logger.notice(config["pxeDir"]+"/grub.cfg not found")
+	else:
+		logger.notice(f"service_address not found. found {service_address}")
 
 
 def setup_files(log_file: str) -> None:
@@ -76,6 +93,6 @@ def setup(config: Dict) -> None:
 	logger.notice("Running opsipxeconfd setup")
 	po_setup_users_and_groups()
 	setup_files(config["logFile"])
-	opsi_config = OpsiConfig()
-	address=opsi_config.get("service", "url")
-	patchMenuFile(address, config)
+	#opsi_config = OpsiConfig()
+	#address=opsi_config.get("service", "url")
+	patchMenuFile(config)
