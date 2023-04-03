@@ -10,6 +10,7 @@ opsipxeconfd - setup
 """
 
 import os
+import re
 from typing import Dict
 
 from opsicommon.logging import get_logger
@@ -17,6 +18,28 @@ from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
 
 logger = get_logger()
+
+def patchMenuFile(service_address: str) -> None:
+	"""
+	Patch the address to the `configServer` into `menufile`.
+
+	To find out where to patch we look for lines that starts with the
+	given `searchString` (excluding preceding whitespace).
+
+	"""	
+	newlines = []
+	with open(self.config["pxeDir"]+"grub.cfg", "r", encoding="utf-8") as readMenu:
+		for line in readMenu:
+			if line.strip().startswith("linux"):
+				if "service=" in line:
+					line = re.sub(r"service=\S+", "", line.rstrip())
+				newlines.append("{} service={}\n".format(line.rstrip(), service_address))
+				continue
+
+			newlines.append(line)
+
+	with open(self.config["pxeDir"]+"grub.cfg", "w", encoding="utf-8") as writeMenu:
+		writeMenu.writelines(newlines)
 
 
 def setup_files(log_file: str) -> None:
@@ -32,7 +55,7 @@ def setup_files(log_file: str) -> None:
 	logger.info("Setup files and permissions")
 	log_dir = os.path.dirname(log_file)
 	if not os.path.isdir(log_dir):
-		os.makedirs(log_dir)
+		os.makedirs(log_dir) 
 	set_rights(log_dir)
 
 
@@ -49,3 +72,5 @@ def setup(config: Dict) -> None:
 	logger.notice("Running opsipxeconfd setup")
 	po_setup_users_and_groups()
 	setup_files(config["logFile"])
+	service_address = self._get_config_service_address(opsi_config.get("host", "id"))
+	patchMenuFile(service_address)
