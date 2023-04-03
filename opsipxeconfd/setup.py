@@ -19,7 +19,7 @@ from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and
 
 logger = get_logger()
 
-def patchMenuFile(service_address: str) -> None:
+def patchMenuFile(service_address: str, config: Dict) -> None:
 	"""
 	Patch the address to the `configServer` into `menufile`.
 
@@ -28,7 +28,7 @@ def patchMenuFile(service_address: str) -> None:
 
 	"""	
 	newlines = []
-	with open(self.config["pxeDir"]+"grub.cfg", "r", encoding="utf-8") as readMenu:
+	with open(config["pxeDir"]+"grub.cfg", "r", encoding="utf-8") as readMenu:
 		for line in readMenu:
 			if line.strip().startswith("linux"):
 				if "service=" in line:
@@ -38,7 +38,7 @@ def patchMenuFile(service_address: str) -> None:
 
 			newlines.append(line)
 
-	with open(self.config["pxeDir"]+"grub.cfg", "w", encoding="utf-8") as writeMenu:
+	with open(config["pxeDir"]+"grub.cfg", "w", encoding="utf-8") as writeMenu:
 		writeMenu.writelines(newlines)
 
 
@@ -72,5 +72,5 @@ def setup(config: Dict) -> None:
 	logger.notice("Running opsipxeconfd setup")
 	po_setup_users_and_groups()
 	setup_files(config["logFile"])
-	service_address = self._get_config_service_address(opsi_config.get("host", "id"))
-	patchMenuFile(service_address)
+	service_address = _get_config_service_address(opsi_config.get("host", "id"))
+	patchMenuFile(service_address, config)
