@@ -42,7 +42,7 @@ def patchMenuFile(config: Dict) -> None:
 	)
 	service_address = ""
 	try:
-		configs = service.jsonrpc("host_getObjects", {"type": ["OpsiConfigserver"]})
+		configs = service.jsonrpc("host_getObjects", {"type": "OpsiConfigserver"})
 		service_address = (configs.get("id") or [None])[0]
 		logger.notice(f"service_address is {service_address}")
 	except OpsiServiceConnectionError:
