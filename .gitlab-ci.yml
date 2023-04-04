@@ -30,9 +30,7 @@ stages:
   ping -c 4 mysql
   ping -c 2 opsi-server
 
-  wget --no-check-certificate https://opsi-server:4447/welcome
-
-
+  sleep 90
 
   # Create dirs
   mkdir -p /var/log/opsi/opsipxeconfd
