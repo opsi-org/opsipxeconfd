@@ -20,6 +20,10 @@ stages:
   # Create empty config file
   touch /etc/opsi/opsipxeconfd.conf
 
+  # Create opsi.conf
+  mkdir -p /etc/opsi
+  echo -e [host]\nid = "opsi-server.uib.gmbh"\nkey = "550b759aedd834f2c41bf3d843779099"\nserver-role = "configserver"\n[service]\nurl = "https://opsi-server:4447" > /etc/opsi/opsi.conf
+
   # Create dirs
   mkdir -p /var/log/opsi/opsipxeconfd
   mkdir -p /var/run/opsipxeconfd
@@ -63,8 +67,8 @@ test:pylint-pytest:
     OPSI_ADMIN_PASSWORD: vhahd8usaz  # also hardcoded in tests/utils.py
     OPSI_HOST_ROLE: configserver
     OPSI_HOST_ID: "opsi-server.uib.gmbh"
+    OPSI_HOST_KEY: "550b759aedd834f2c41bf3d843779099"
     OPSI_TFTPBOOT: "false"
-    OPSICONFD_RESTORE_BACKUP_URL: "http://binaryindex.uib.gmbh/development/testbackup/all/all/testbackup_all_all_1.1.tar.gz"
     MYSQL_HOST: mysql
     MYSQL_ROOT_PASSWORD: "opsi"
     MYSQL_DATABASE: "opsi"
