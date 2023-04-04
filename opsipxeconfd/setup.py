@@ -35,8 +35,8 @@ def patchMenuFile(config: Dict) -> None:
 	service = get_service_client()
 	service_address = ""
 	try:
-		configs = service.host_getObjects(type="OpsiConfigserver")  # pylint: disable=no-member
-		service_address = (configs.get("id") or [None])[0]
+		configs = service.host_getObjects(type="OpsiConfigserver")[0]  # pylint: disable=no-member
+		service_address = configs.id or None
 		logger.notice(f"service_address is {service_address}")
 	except OpsiServiceConnectionError:
 		pass
