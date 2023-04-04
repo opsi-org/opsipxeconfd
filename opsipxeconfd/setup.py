@@ -14,7 +14,7 @@ import re
 from typing import Dict
 
 from opsicommon.client.opsiservice import get_service_client
-from opsicommon.config.opsi import OpsiConfig  # type: ignore[import]
+
 from opsicommon.exceptions import OpsiServiceConnectionError
 from opsicommon.logging import get_logger
 from opsicommon.server.rights import set_rights
@@ -31,13 +31,11 @@ def patchMenuFile(config: Dict) -> None:
 	given `searchString` (excluding preceding whitespace).
 
 	"""
-	opsi_config = OpsiConfig()
 
 	service = get_service_client()
 	service_address = ""
 	try:
-		# configs = service.jsonrpc("host_getObjects", {"type": "OpsiConfigserver"})
-		configs = service.host_getObjects(type="OpsiConfigserver")
+		configs = service.host_getObjects(type="OpsiConfigserver")  # pylint: disable=no-member
 		service_address = (configs.get("id") or [None])[0]
 		logger.notice(f"service_address is {service_address}")
 	except OpsiServiceConnectionError:
