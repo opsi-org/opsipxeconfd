@@ -25,6 +25,8 @@ stages:
   echo -e [host]\\nid = \"opsi-server.uib.gmbh\"\\nkey = \"550b759aedd834f2c41bf3d843779099\"\\nserver-role = \"configserver\"\\n[service]\\nurl = \"https://opsi-server:4447\" > /etc/opsi/opsi.conf
   cat /etc/opsi/opsi.conf
 
+  wget --no-check-certificate https://opsi-server:4447/admin
+
   # Create dirs
   mkdir -p /var/log/opsi/opsipxeconfd
   mkdir -p /var/run/opsipxeconfd
