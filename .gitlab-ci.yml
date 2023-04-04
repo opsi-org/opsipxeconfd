@@ -28,7 +28,9 @@ stages:
   sleep 60
   ping -c 4 redis
   ping -c 4 mysql
-  ping -c 2 opsi-server
+  ping -c 2 opsi-server https://opsi-server:4447/admin
+
+
 
   # Create dirs
   mkdir -p /var/log/opsi/opsipxeconfd
@@ -68,6 +70,8 @@ test:pylint-pytest:
     - name: redislabs/redistimeseries:latest
       alias: redis
     - name: docker.uib.gmbh/opsi/opsi-server:4.3-development
+      entrypoint:
+        - /entrypoint.sh
       alias: opsi-server
   variables:
     REDIS_HOST: redis
