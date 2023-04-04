@@ -22,7 +22,7 @@ stages:
 
   # Create opsi.conf
   mkdir -p /etc/opsi
-  echo -e [host]\\nid = "opsi-server.uib.gmbh"\\nkey = "550b759aedd834f2c41bf3d843779099"\\nserver-role = "configserver"\\n[service]\\nurl = "https://opsi-server:4447" > /etc/opsi/opsi.conf
+  echo -e [host]\\nid = \"opsi-server.uib.gmbh\"\\nkey = \"550b759aedd834f2c41bf3d843779099\"\\nserver-role = \"configserver\"\\n[service]\\nurl = \"https://opsi-server:4447\" > /etc/opsi/opsi.conf
   cat /etc/opsi/opsi.conf
 
   # Create dirs
