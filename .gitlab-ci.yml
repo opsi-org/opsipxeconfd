@@ -5,6 +5,7 @@ stages:
   - build
   - publish
 
+
 .install_tools: &install_tools |
   export DEBIAN_FRONTEND=noninteractive
   apt update
@@ -17,31 +18,23 @@ stages:
   tar -xvf opsi-dev-tools.tar.gz
 
 .prepare_tests: &prepare_tests |
-  # Create empty config file
-  touch /etc/opsi/opsipxeconfd.conf
-
-  # Create opsi.conf
-  mkdir -p /etc/opsi
-  echo -e [host]\\nid = \"opsi-server.uib.gmbh\"\\nkey = \"550b759aedd834f2c41bf3d843779099\"\\nserver-role = \"configserver\"\\n[service]\\nurl = \"https://opsi-server:4447\" > /etc/opsi/opsi.conf
-  cat /etc/opsi/opsi.conf
-
-  sleep 60
-  ping -c 4 redis
-  ping -c 4 mysql
-  ping -c 2 opsi-server
-
-  sleep 90
-
-  # Create dirs
-  mkdir -p /var/log/opsi/opsipxeconfd
-  mkdir -p /var/run/opsipxeconfd
-
-  # Install poetry
-  pip3 install poetry
-  poetry config experimental.new-installer false
+  bash /entrypoint.sh &
+  apt update
+  apt --yes install --no-install-recommends curl build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev
+  wget https://www.python.org/ftp/python/3.11.1/Python-3.11.1.tgz
+  tar -xvf Python-3.11.1.tgz
+  cd Python-3.11.1
+  ./configure > /dev/null
+  make -j 2 build_all > /dev/null
+  make EXTRATESTOPTS=--list-tests altinstall
+  cd ..
+  python3.11 -m pip install certifi
+  curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | SSL_CERT_FILE=$(python3.11 -c "import certifi;print(certifi.where())") python3.11 - --version=1.3.2
+  ln -s /root/.local/bin/poetry /usr/local/bin/poetry
+  while ! nc -v -z -w3 localhost 4447 > /dev/null 2>&1; do sleep 1; done
+  source /entrypoint.sh set_environment_vars  # to set hosts for redis/grafana
   poetry install
   poetry run opsipxeconfd --setup
-
 
 .pytest: &pytest |
   poetry run opsipxeconfd start --log-level 6 &
@@ -49,7 +42,6 @@ stages:
   echo "---------------------------------------"
   echo "Run tests"
   echo "---------------------------------------"
-  echo "Run tests"
   poetry run pytest --tb=short -o junit_family=xunit2 --junitxml=testreport.xml --cov-append --cov opsipxeconfd --cov-report term --cov-report xml -v tests
 
 .pylint: &pylint |
@@ -60,7 +52,11 @@ stages:
   poetry run ruff opsipxeconfd tests
   poetry run mypy opsipxeconfd tests
 
-test:pylint-pytest:
+
+pylint-pytest:
+  image:
+    name: docker.uib.gmbh/opsi/opsi-server:4.3-development
+    entrypoint: [""]
   services:
     - name: mysql:latest
       command:
@@ -69,13 +65,11 @@ test:pylint-pytest:
       alias: mysql
     - name: redislabs/redistimeseries:latest
       alias: redis
-    - name: docker.uib.gmbh/opsi/opsi-server:4.3-development
-      alias: opsi-server
   variables:
     REDIS_HOST: redis
     OPSI_ADMIN_PASSWORD: vhahd8usaz  # also hardcoded in tests/utils.py
     OPSI_HOST_ROLE: configserver
-    OPSI_HOST_ID: "opsi-server.uib.gmbh"
+    OPSI_HOST_ID: "opsi-server.uib.gmbh"  # "test.uib.gmbh"
     OPSI_HOST_KEY: "550b759aedd834f2c41bf3d843779099"
     OPSI_TFTPBOOT: "false"
     MYSQL_HOST: mysql
@@ -83,11 +77,13 @@ test:pylint-pytest:
     MYSQL_DATABASE: "opsi"
     MYSQL_USER: "opsi"
     MYSQL_PASSWORD: "opsi"
+    #OPSICONFD_RESTORE_BACKUP_URL: "http://binaryindex.uib.gmbh/development/testbackup/all/all/testbackup_all_all_1.1.tar.gz"
   stage: test
   script:
     - *prepare_tests
     - *pylint
     - *pytest
+
 
 build:linux-pyinstaller:
   stage: build
@@ -127,16 +123,6 @@ build:arm64-pyinstaller:
       - opsipxeconfd-arm64
     expire_in: 2 day
 
-#publish:obs_int:
-#  stage: publish
-#  dependencies:
-#    - build:linux-pyinstaller
-#    - build:arm64-pyinstaller
-#  script:
-#    - *install_tools
-#    - ./opsi-dev-tool -l info --obs-update-package https://obs.uib.gmbh home:uibmz:opsi:4.3:development
-#  only:
-#    - tags
 
 publish:obs_ext:
   stage: publish
