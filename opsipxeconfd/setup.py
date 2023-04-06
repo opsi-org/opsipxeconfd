@@ -41,7 +41,7 @@ def patchMenuFile(config: Dict) -> None:
 	except OpsiServiceConnectionError:
 		pass
 	newlines = []
-	if service_address:
+	if configserverId:
 		try:
 			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
 				for line in readMenu:
