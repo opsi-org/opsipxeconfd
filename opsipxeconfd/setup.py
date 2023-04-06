@@ -54,7 +54,7 @@ def patchMenuFile(config: Dict) -> None:
 					if line.strip().startswith("linux"):
 						if "service=" in line:
 							line = re.sub(r"service=\S+", "", line.rstrip())
-						newlines.append(f"{line.rstrip()} {configserverUrl}\n")
+						newlines.append(f"{line.rstrip()} service={configserverUrl}\n")
 						continue
 
 					newlines.append(line)
