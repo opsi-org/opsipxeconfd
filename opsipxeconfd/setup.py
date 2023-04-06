@@ -38,17 +38,23 @@ def patchMenuFile(config: Dict) -> None:
 		configs = service.jsonrpc("host_getObjects", params=[[], {"type": "OpsiConfigserver"}])[0]
 		configserverId = configs.id or None
 		logger.notice(f"Configserver id {configserverId}")
+		configs = service.jsonrpc("configState_getValues", {"config_ids": ["clientconfig.configserver.url"], "object_ids": [configserverId]})
+		configserverUrl = (configs.get(configserverId, {}).get("clientconfig.configserver.url") or [None])[0]
+		if not configserverUrl:
+			raise RuntimeError(f"Failed to get config server address for {configserverUrl!r}")
+		if not configserverUrl.endswith("/rpc"):
+			configserverUrl += "/rpc"
 	except OpsiServiceConnectionError:
 		pass
 	newlines = []
-	if configserverId:
+	if configserverUrl:
 		try:
 			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
 				for line in readMenu:
 					if line.strip().startswith("linux"):
 						if "service=" in line:
 							line = re.sub(r"service=\S+", "", line.rstrip())
-						newlines.append(f"{line.rstrip()} service=https://{configserverId}:4447\n")
+						newlines.append(f"{line.rstrip()} {configserverUrl}\n")
 						continue
 
 					newlines.append(line)
@@ -58,7 +64,7 @@ def patchMenuFile(config: Dict) -> None:
 		except FileNotFoundError:
 			logger.notice(config["pxeDir"] + "/grub.cfg not found")
 	else:
-		logger.notice(f"configserver id not found. found {configserverId}")
+		logger.notice(f"configserverUrl not found. found for {configserverId}")
 
 
 def setup_files(log_file: str) -> None:
