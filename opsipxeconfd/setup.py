@@ -33,11 +33,11 @@ def patchMenuFile(config: Dict) -> None:
 	"""
 
 	service: ServiceClient = get_service_client()
-	service_address: str | None = ""
+	configserverId: str | None = ""
 	try:
 		configs = service.jsonrpc("host_getObjects", params=[[], {"type": "OpsiConfigserver"}])[0]
-		service_address = configs.id or None
-		logger.notice(f"service_address is {service_address}")
+		configserverId = configs.id or None
+		logger.notice(f"Configserver id {configserverId}")
 	except OpsiServiceConnectionError:
 		pass
 	newlines = []
@@ -48,7 +48,7 @@ def patchMenuFile(config: Dict) -> None:
 					if line.strip().startswith("linux"):
 						if "service=" in line:
 							line = re.sub(r"service=\S+", "", line.rstrip())
-						newlines.append(f"{line.rstrip()} service={service_address}\n")
+						newlines.append(f"{line.rstrip()} service=https://{configserverId}:4447\n")
 						continue
 
 					newlines.append(line)
@@ -58,7 +58,7 @@ def patchMenuFile(config: Dict) -> None:
 		except FileNotFoundError:
 			logger.notice(config["pxeDir"] + "/grub.cfg not found")
 	else:
-		logger.notice(f"service_address not found. found {service_address}")
+		logger.notice(f"configserver id not found. found {configserverId}")
 
 
 def setup_files(log_file: str) -> None:
