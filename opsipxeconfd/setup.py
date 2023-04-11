@@ -46,6 +46,8 @@ def patchMenuFile(config: Dict) -> None:
 			configserverUrl += "/rpc"
 	except OpsiServiceConnectionError:
 		pass
+	finally:
+		service.disconnect()
 	newlines = []
 	if configserverUrl:
 		try:
@@ -62,9 +64,9 @@ def patchMenuFile(config: Dict) -> None:
 			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
 				writeMenu.writelines(newlines)
 		except FileNotFoundError:
-			logger.notice(config["pxeDir"] + "/grub.cfg not found")
+			logger.error(config["pxeDir"] + "/grub.cfg not found")
 	else:
-		logger.notice(f"configserverUrl not found. found for {configserverId}")
+		logger.error("configserver URL not found for %r", configserverUrl)
 
 
 def setup_files(log_file: str) -> None:
