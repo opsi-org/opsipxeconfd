@@ -245,14 +245,14 @@ def parse_args() -> Namespace:
 		"--pxe-dir",
 		dest="pxeDir",
 		env_var="OPSIPXECONFD_PXE_DIR",
-		default="/tftpboot/linux/pxelinux.cfg",
+		default="/tftpboot/opsi/opsi-linux-bootimage/cfg",
 		help="Location of the pxe directory.",
 	)
 	parser.add(
 		"--pxe-conf-template",
 		dest="pxeConfTemplate",
 		env_var="OPSIPXECONFD_PXE_CONF_TEMPLATE",
-		default="/tftpboot/linux/pxelinux.cfg/install",
+		default="/tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64",
 		help="Location of the pxe config template.",
 	)
 	parser.add(
@@ -281,14 +281,14 @@ def parse_args() -> Namespace:
 		"--uefi-conf-template-x86",
 		dest="uefiConfTemplateX86",
 		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X86",
-		default="/tftpboot/linux/pxelinux.cfg/install-elilo-x86",
+		default="/tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64",
 		help="(Deprecated) Location of the uefi x86 config template.",
 	)
 	parser.add(
 		"--uefi-conf-template-x64",
 		dest="uefiConfTemplateX64",
 		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X64",
-		default="/tftpboot/linux/pxelinux.cfg/install-grub-x64",
+		default="/tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64",
 		help="(Deprecated) Location of the uefi x64 config template.",
 	)
 
@@ -344,9 +344,9 @@ class OpsipxeconfdInit:
 		:param opts: Parsed command line arguments as Namespace.
 		:type opts: Namespace.
 		"""
-		self.update_config_file()
-
 		self.config = vars(parse_args())
+
+		self.update_config_file()
 		self.config["port"] = "/var/run/opsipxeconfd/opsipxeconfd.socket"
 		self.config["depotId"] = opsi_config.get("host", "id")
 		self.config["daemon"] = True
