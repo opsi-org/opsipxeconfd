@@ -64,7 +64,7 @@ def patchMenuFile(config: Dict) -> None:
 			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
 				writeMenu.writelines(newlines)
 		except FileNotFoundError:
-			logger.error(config["pxeDir"] + "/grub.cfg not found")
+			logger.error("%/grub.cfg not found", config["pxeDir"])
 	else:
 		logger.error("configserver URL not found for %r", configserverUrl)
 
