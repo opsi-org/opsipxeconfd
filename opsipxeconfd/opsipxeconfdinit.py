@@ -286,7 +286,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 
 	has_command = opts.command and (opts.command in ["start", "stop", "update", "status", "setup"])
 
-	if not opts.setup and not has_command:
+	if not has_command:
 		parser.print_help()
 		sys.exit(1)
 
