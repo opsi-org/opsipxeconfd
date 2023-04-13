@@ -135,7 +135,7 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):  # pylint: disable=abstrac
 		return items
 
 
-def parse_args() -> Namespace:
+def parse_args(parse_config_file: bool = True) -> Namespace:
 	"""
 	Parses command line arguments.
 
@@ -151,7 +151,8 @@ def parse_args() -> Namespace:
 	)
 	parser.add("--version", "-v", help="Show version information and exit.", action="store_true")
 	parser.add("--no-fork", "-F", dest="nofork", help="Do not fork to background.", action="store_true")
-	parser.add("-c", "--conffile", required=False, is_config_file=True, default=DEFAULT_CONFIG_FILE, help="Path to config file.")
+	if parse_config_file:
+		parser.add("-c", "--conffile", required=False, is_config_file=True, default=DEFAULT_CONFIG_FILE, help="Path to config file.")
 	parser.add(
 		"--log-level",
 		"--loglevel",
@@ -329,8 +330,9 @@ class OpsipxeconfdInit:
 		:param opts: Parsed command line arguments as Namespace.
 		:type opts: Namespace.
 		"""
+		# First parse to handle --help and --version
+		parse_args(parse_config_file=False)
 		self.update_config_file()
-
 		self.config = vars(parse_args())
 
 		self.config["port"] = "/var/run/opsipxeconfd/opsipxeconfd.socket"
