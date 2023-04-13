@@ -356,7 +356,7 @@ class OpsipxeconfdInit:
 				setup(self.config)
 			return  # TODO: exit code handling
 
-		elif self.config.get("command") == "start":
+		if self.config.get("command") == "start":
 			setup(self.config)
 
 			# Call signal_handler on signal SIGHUP, SIGTERM, SIGINT
