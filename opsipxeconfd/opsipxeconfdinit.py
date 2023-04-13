@@ -252,7 +252,7 @@ def parse_args() -> Namespace:
 		dest="pxeConfTemplate",
 		env_var="OPSIPXECONFD_PXE_CONF_TEMPLATE",
 		default="/tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64",
-		help="Location of the pxe config template.",
+		help="Location of the pxe/uefi/grub config template.",
 	)
 	parser.add(
 		"--max-connections",
