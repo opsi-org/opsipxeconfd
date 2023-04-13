@@ -152,7 +152,6 @@ def parse_args() -> Namespace:
 	parser.add("--version", "-v", help="Show version information and exit.", action="store_true")
 	parser.add("--no-fork", "-F", dest="nofork", help="Do not fork to background.", action="store_true")
 	parser.add("-c", "--conffile", required=False, is_config_file=True, default=DEFAULT_CONFIG_FILE, help="Path to config file.")
-	parser.add("--setup", action="store_true", help="Set up the environment and exit.")
 	parser.add(
 		"--log-level",
 		"--loglevel",
@@ -274,22 +273,8 @@ def parse_args() -> Namespace:
 	parser.add(
 		"command",
 		nargs="?",
-		choices=("start", "stop", "status", "update"),
+		choices=("start", "stop", "status", "update", "setup"),
 		metavar="<command>",
-	)
-	parser.add(
-		"--uefi-conf-template-x86",
-		dest="uefiConfTemplateX86",
-		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X86",
-		default="/tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64",
-		help="(Deprecated) Location of the uefi x86 config template.",
-	)
-	parser.add(
-		"--uefi-conf-template-x64",
-		dest="uefiConfTemplateX64",
-		env_var="OPSIPXECONFD_UEFI_CONF_TEMPLATE_X64",
-		default="/tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64",
-		help="(Deprecated) Location of the uefi x64 config template.",
 	)
 
 	opts = parser.parse_args()
@@ -298,7 +283,7 @@ def parse_args() -> Namespace:
 		print(f"{__version__} [python-opsi-common={python_opsi_common_version}]")
 		sys.exit(0)
 
-	has_command = opts.command and (opts.command in ["start", "stop", "update", "status"])
+	has_command = opts.command and (opts.command in ["start", "stop", "update", "status", "setup"])
 
 	if not opts.setup and not has_command:
 		parser.print_help()
@@ -362,12 +347,15 @@ class OpsipxeconfdInit:
 		if self.config.get("logFilter"):
 			set_filter_from_string(self.config["logFilter"])
 		init_logging(self.config)
-		if self.config.get("setup"):
+
+		if self.config.get("command") == "setup":
 			with log_context({"instance": "Opsipxeconfd setup"}):
 				setup(self.config)
 			return  # TODO: exit code handling
 
-		if self.config.get("command") == "start":
+		elif self.config.get("command") == "start":
+			setup(self.config)
+
 			# Call signal_handler on signal SIGHUP, SIGTERM, SIGINT
 			signal(SIGHUP, self.signal_handler)
 			signal(SIGTERM, self.signal_handler)
@@ -453,9 +441,11 @@ class OpsipxeconfdInit:
 					line = f"#{line}"
 				elif line.startswith("pxe config dir"):
 					line = line.replace("/linux/pxelinux.cfg", "/opsi/opsi-linux-bootimage/cfg")
+					line = line.replace("/opsi/pxelinux.cfg", "/opsi/opsi-linux-bootimage/cfg")
 					line = line.replace(f" {default_tftp_root}/opsi", f" {tftp_root}/opsi")
 				elif line.startswith("pxe config template"):
 					line = line.replace("/linux/pxelinux.cfg/install", "/opsi/opsi-linux-bootimage/cfg/install-grub-x64")
+					line = line.replace("/opsi/pxelinux.cfg/install", "/opsi/opsi-linux-bootimage/cfg/install-grub-x64")
 					line = line.replace(f" {default_tftp_root}/opsi", f" {tftp_root}/opsi")
 				elif line.startswith("log format"):
 					line = line.replace("[%l] [%D] %M (%F|%N)", DEFAULT_FORMAT)
