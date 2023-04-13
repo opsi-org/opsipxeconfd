@@ -160,7 +160,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		self._create_socket()
 
 	def _get_licensing_info(self) -> None:
-		info = self.service.jsonrpc("backend_getLicensingInfo")
+		info = self.service.backend_getLicensingInfo()  # type: ignore[attr-defined]  # pylint: disable=no-member
 		logger.debug("Got licensing info from service: %s", info)
 		if "uefi" in info["available_modules"]:
 			self._uefi_module = True
@@ -352,16 +352,10 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		# renew objects and check if anythin changes on service since callback
 		try:
 			product_on_client: ProductOnClient = sorted(
-				self.service.jsonrpc(
-					"productOnClient_getObjects",
-					[
-						[],
-						{
-							"productType": "NetbootProduct",
-							"clientId": pcw.product_on_client.clientId,
-							"productId": pcw.product_on_client.productId,
-						},
-					],
+				self.service.productOnClient_getObjects(  # type: ignore[attr-defined]  # pylint: disable=no-member
+					productType="NetbootProduct",
+					clientId=pcw.product_on_client.clientId,
+					productId=pcw.product_on_client.productId,
 				),
 				key=lambda poc: poc.modificationTime or "",
 				reverse=True,
@@ -373,7 +367,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		product_on_client.setActionProgress("pxe boot configuration read")
 		if not always:
 			product_on_client.setActionRequest("none")
-		self.service.jsonrpc("productOnClient_updateObjects", [product_on_client])
+		self.service.productOnClient_updateObjects([product_on_client])  # type: ignore[attr-defined]  # pylint: disable=no-member
 
 	def status(self) -> str:
 		"""
@@ -430,22 +424,16 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			self._remove_current_config_writers(host_id)
 
 			try:
-				host = self.service.jsonrpc("host_getObjects", [[], {"id": host_id}])[0]
+				host = self.service.host_getObjects(id=host_id)[0]  # type: ignore[attr-defined]  # pylint: disable=no-member
 			except IndexError:
 				logger.info("Host %r not found", host_id)
 				return "Boot configuration updated"
 
 			try:
-				product_on_client = self.service.jsonrpc(
-					"productOnClient_getObjects",
-					[
-						[],
-						{
-							"productType": "NetbootProduct",
-							"clientId": host_id,
-							"actionRequest": ["setup", "uninstall", "update", "always", "once", "custom"],
-						},
-					],
+				product_on_client = self.service.productOnClient_getObjects(  # type: ignore[attr-defined]  # pylint: disable=no-member
+					productType="NetbootProduct",
+					clientId=host_id,
+					actionRequest=["setup", "uninstall", "update", "always", "once", "custom"],
 				)[0]
 			except IndexError:
 				logger.info("No netboot products with action requests for client '%s' found.", host_id)
@@ -455,26 +443,19 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 
 			logger.debug("Searching for product '%s' on depot '%s'", product_on_client.productId, depot_id)
 			try:
-				product_on_depot = self.service.jsonrpc(
-					"productOnDepot_getObjects",
-					[[], {"productType": "NetbootProduct", "productId": product_on_client.productId, "depotId": depot_id}],
+				product_on_depot = self.service.productOnDepot_getObjects(  # type: ignore[attr-defined]  # pylint: disable=no-member
+					productType="NetbootProduct", productId=product_on_client.productId, depotId=depot_id
 				)[0]
 			except IndexError:
 				logger.warning("Product %s not available on depot '%s'", product_on_client.productId, depot_id)
 				return "Boot configuration updated"
 
 			try:
-				product = self.service.jsonrpc(
-					"product_getObjects",
-					[
-						[],
-						{
-							"type": "NetbootProduct",
-							"id": product_on_depot.productId,
-							"productVersion": product_on_depot.productVersion,
-							"packageVersion": product_on_depot.packageVersion,
-						},
-					],
+				product = self.service.product_getObjects(  # type: ignore[attr-defined]  # pylint: disable=no-member
+					type="NetbootProduct",
+					id=product_on_depot.productId,
+					productVersion=product_on_depot.productVersion,
+					packageVersion=product_on_depot.packageVersion,
 				)[0]
 			except IndexError:
 				logger.error("Product %s not found", product_on_depot)
@@ -518,8 +499,8 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			# Get product property states
 			product_property_states = {
 				property_id: ",".join(values)
-				for property_id, values in self.service.jsonrpc(
-					"productPropertyState_getValues", {"product_ids": [product.id], "object_ids": [host_id]}
+				for property_id, values in self.service.productPropertyState_getValues(  # type: ignore[attr-defined]  # pylint: disable=no-member
+					product_ids=[product.id], object_ids=[host_id]
 				).items()
 			}
 
@@ -657,7 +638,9 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		:returns: url of the configserver.
 		:rtype: str
 		"""
-		configs = self.service.jsonrpc("configState_getValues", {"config_ids": ["clientconfig.configserver.url"], "object_ids": [host_id]})
+		configs = self.service.configState_getValues(  # type: ignore[attr-defined]  # pylint: disable=no-member
+			config_ids=["clientconfig.configserver.url"], object_ids=[host_id]
+		)
 		logger.debug(configs)
 		address = (configs.get(host_id, {}).get("clientconfig.configserver.url") or [None])[0]
 		if not address:
@@ -678,7 +661,9 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		:returns: key-value pairs as tuple (value possibly empty) as yield.
 		:rtype: Tuple
 		"""
-		configs = self.service.jsonrpc("configState_getValues", {"config_ids": ["opsi-linux-bootimage.append"], "object_ids": [host_id]})
+		configs = self.service.configState_getValues(  # type: ignore[attr-defined]  # pylint: disable=no-member
+			config_ids=["opsi-linux-bootimage.append"], object_ids=[host_id]
+		)
 		values = configs.get("clientconfig.configserver.url") or []
 		params = {}
 		for value in forceStringList(values):

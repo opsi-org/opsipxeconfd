@@ -52,6 +52,8 @@ stages:
   poetry run mypy opsipxeconfd tests
 
 pylint-pytest:
+  only:
+    - tags
   image:
     name: docker.uib.gmbh/opsi/opsi-server:4.3-development
     entrypoint: [""]

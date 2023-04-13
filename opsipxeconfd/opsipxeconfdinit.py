@@ -335,6 +335,8 @@ class OpsipxeconfdInit:
 		self.update_config_file()
 		self.config = vars(parse_args())
 
+		opsi_config._upgrade_config = True
+
 		self.config["port"] = "/var/run/opsipxeconfd/opsipxeconfd.socket"
 		self.config["depotId"] = opsi_config.get("host", "id")
 		self.config["daemon"] = True
