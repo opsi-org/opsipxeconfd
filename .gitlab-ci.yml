@@ -5,7 +5,6 @@ stages:
   - build
   - publish
 
-
 .install_tools: &install_tools |
   export DEBIAN_FRONTEND=noninteractive
   apt update
@@ -52,7 +51,6 @@ stages:
   poetry run ruff opsipxeconfd tests
   poetry run mypy opsipxeconfd tests
 
-
 pylint-pytest:
   image:
     name: docker.uib.gmbh/opsi/opsi-server:4.3-development
@@ -67,9 +65,9 @@ pylint-pytest:
       alias: redis
   variables:
     REDIS_HOST: redis
-    OPSI_ADMIN_PASSWORD: vhahd8usaz  # also hardcoded in tests/utils.py
+    OPSI_ADMIN_PASSWORD: vhahd8usaz # also hardcoded in tests/utils.py
     OPSI_HOST_ROLE: configserver
-    OPSI_HOST_ID: "opsi-server.uib.gmbh"  # "test.uib.gmbh"
+    OPSI_HOST_ID: "opsi-server.uib.gmbh" # "test.uib.gmbh"
     OPSI_HOST_KEY: "550b759aedd834f2c41bf3d843779099"
     OPSI_TFTPBOOT: "false"
     MYSQL_HOST: mysql
@@ -84,7 +82,6 @@ pylint-pytest:
     - *pylint
     - *pytest
 
-
 build:linux-pyinstaller:
   stage: build
   script:
@@ -95,10 +92,10 @@ build:linux-pyinstaller:
     - mv dist/opsipxeconfd ./opsipxeconfd-amd64
     # Check if binary is working
     - ./opsipxeconfd-amd64/opsipxeconfd -c opsipxeconfd_data/opsipxeconfd.conf --version
-    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-tool -l info --binary-push opsipxeconfd-amd64/opsipxeconfd "$CI_JOB_ID"'
-    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-tool -l info --binary-push opsipxeconfd-amd64/opsipxeconfd'
+    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-tool -l info --binary-push opsipxeconfd-amd64 "$CI_JOB_ID"'
+    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-tool -l info --binary-push opsipxeconfd-amd64'
   artifacts:
-    name: 'opsipxeconfd-linux-pyinstaller'
+    name: "opsipxeconfd-linux-pyinstaller"
     paths:
       - opsipxeconfd-amd64
     expire_in: 2 day
@@ -115,14 +112,13 @@ build:arm64-pyinstaller:
     - mv dist/opsipxeconfd ./opsipxeconfd-arm64
     # Check if binary is working
     - ./opsipxeconfd-arm64/opsipxeconfd -c opsipxeconfd_data/opsipxeconfd.conf --version
-    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-tool -l info --binary-push opsipxeconfd-arm64/opsipxeconfd "$CI_JOB_ID"'
-    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-tool -l info --binary-push opsipxeconfd-arm64/opsipxeconfd'
+    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-tool -l info --binary-push opsipxeconfd-arm64 "$CI_JOB_ID"'
+    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-tool -l info --binary-push opsipxeconfd-arm64'
   artifacts:
-    name: 'opsipxeconfd-arm64-pyinstaller'
+    name: "opsipxeconfd-arm64-pyinstaller"
     paths:
       - opsipxeconfd-arm64
     expire_in: 2 day
-
 
 publish:obs_ext:
   stage: publish
