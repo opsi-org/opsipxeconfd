@@ -664,9 +664,8 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		configs = self.service.configState_getValues(  # type: ignore[attr-defined]  # pylint: disable=no-member
 			config_ids=["opsi-linux-bootimage.append"], object_ids=[host_id]
 		)
-		values = configs.get("clientconfig.configserver.url") or []
 		params = {}
-		for value in forceStringList(values):
+		for value in forceStringList(configs.get(host_id, {}).get("opsi-linux-bootimage.append", [])):
 			key = value
 			val = ""
 			if "=" in val:
