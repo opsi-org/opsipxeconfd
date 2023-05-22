@@ -402,7 +402,7 @@ class OpsipxeconfdInit:
 			with codecs.open(self.config["conffile"], "w", "utf-8") as file:
 				file.write(new_data)
 
-	def daemonize(self) -> None: # pylint: disable=broad-exception-raised,broad-except
+	def daemonize(self) -> None:
 		"""
 		Lets process run as daemon.
 
