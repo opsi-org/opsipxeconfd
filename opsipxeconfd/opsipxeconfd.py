@@ -185,7 +185,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		"""
 		self._createUnixSocket()
 
-	def _createUnixSocket(self) -> None:
+	def _createUnixSocket(self) -> None: # pylint: disable=broad-except
 		"""
 		Creates new UnixSocket.
 
@@ -474,7 +474,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			logger.error(err, exc_info=True)
 			raise err
 
-	def updateBootConfiguration(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements
+	def updateBootConfiguration(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements, disable=broad-except
 		self, hostId: str, cacheFile: str = None
 	) -> None:
 		"""
@@ -851,7 +851,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			return "%02X%02X%02X%02X" % tuple(  # pylint: disable=consider-using-generator,consider-using-f-string
 				[int(i) for i in host.getIpAddress().split(".")]
 			)
-		raise Exception(f"Neither hardware address nor ip address known for host '{host.id}'")
+		raise Exception(f"Neither hardware address nor ip address known for host '{host.id}'") # pylint: disable=broad-except
 
 	def _getConfigServiceAddress(self, hostId: str) -> str:
 		"""

@@ -53,7 +53,7 @@ def temporaryPidFile(filepath: str) -> None:
 				logger.error(err)
 
 			if running:
-				raise Exception(f"Another opsipxeconfd process is running (pid: {oldPid}), stop process first or change pidfile.")
+				raise Exception(f"Another opsipxeconfd process is running (pid: {oldPid}), stop process first or change pidfile.") # pylint: disable=broad-except
 	except IOError as err:
 		if err.errno != 2:  # errno 2 == no such file
 			raise err
