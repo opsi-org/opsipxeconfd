@@ -173,7 +173,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 						if "bootimageRootPassword" in key:
 							pwhash = encodedPassword(value)
 							appendLineProperties.append(f"pwh={pwhash}")
-						else
+						else:
 							appendLineProperties.append(f"{key}={value}")
 					else:
 						appendLineProperties.append(str(key))
