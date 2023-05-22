@@ -416,7 +416,7 @@ class OpsipxeconfdInit:
 				# Parent exits
 				sys.exit(0)
 		except OSError as err:
-			raise Exception(f"First fork failed: {err}") from err
+			raise Exception(f"First fork failed: {err}") from err # pylint: disable=broad-exception-raised
 
 		# Do not hinder umounts
 		os.chdir("/")
@@ -429,7 +429,7 @@ class OpsipxeconfdInit:
 			if self._pid > 0:
 				sys.exit(0)
 		except OSError as err:
-			raise Exception(f"Second fork failed: {err}") from err
+			raise Exception(f"Second fork failed: {err}") from err # pylint: disable=broad-exception-raised
 
 		# Close standard output and standard error.
 		os.close(0)
