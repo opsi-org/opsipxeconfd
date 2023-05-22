@@ -147,7 +147,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 
 				for key, value in self.append.items():
 					if value:
-						if "bootimageRootPassword" in key:
+						if "bootimagerootpassword" in key.lower():
 							pwhash = encodedPassword(value)
 							appendLineProperties.append(f"pwh={pwhash}")
 						else:
@@ -170,7 +170,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 				appendLineProperties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
-						if "bootimageRootPassword" in key:
+						if "bootimagerootpassword" in key.lower():
 							pwhash = encodedPassword(value)
 							appendLineProperties.append(f"pwh={pwhash}")
 						else:
@@ -188,7 +188,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 				appendLineProperties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
-						if "bootimageRootPassword" in key:
+						if "bootimagerootpassword" in key.lower():
 							pwhash = encodedPassword(value)
 							appendLineProperties.append(f"pwh={pwhash}")
 						else:
