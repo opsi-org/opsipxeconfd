@@ -185,7 +185,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		"""
 		self._createUnixSocket()
 
-	def _createUnixSocket(self) -> None:
+	def _createUnixSocket(self) -> None:  # pylint: disable=broad-except
 		"""
 		Creates new UnixSocket.
 
@@ -200,7 +200,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		try:
 			self._socket.bind(self.config["port"])
 		except Exception as err:
-			raise Exception(f"Failed to bind to socket '{self.config['port']}': {err}") from err
+			raise Exception(f"Failed to bind to socket '{self.config['port']}': {err}") from err  # pylint: disable=broad-exception-raised
 		self._socket.settimeout(0.1)
 		self._socket.listen(self.config["maxConnections"])
 
@@ -474,7 +474,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			logger.error(err, exc_info=True)
 			raise err
 
-	def updateBootConfiguration(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements
+	def updateBootConfiguration(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements,broad-exception-raised
 		self, hostId: str, cacheFile: str = None
 	) -> None:
 		"""
@@ -830,7 +830,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		return eliloMode
 
 	@staticmethod
-	def _getNameForPXEConfigFile(host: Host) -> str:
+	def _getNameForPXEConfigFile(host: Host) -> str:  # pylint: disable=broad-exception-raised
 		"""
 		Gets network address information.
 
@@ -851,7 +851,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			return "%02X%02X%02X%02X" % tuple(  # pylint: disable=consider-using-generator,consider-using-f-string
 				[int(i) for i in host.getIpAddress().split(".")]
 			)
-		raise Exception(f"Neither hardware address nor ip address known for host '{host.id}'")
+		raise Exception(f"Neither hardware address nor ip address known for host '{host.id}'")  # pylint: disable=broad-exception-raised
 
 	def _getConfigServiceAddress(self, hostId: str) -> str:
 		"""

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opsipxeconfd"
-version = "4.2.0.32"
+version = "4.2.0.33"
 description = "opsi pxe configuration service"
 homepage = "https://www.opsi.org"
 license = "AGPL-3.0"
@@ -23,6 +23,7 @@ python-opsi-common = ">=4.2.0.299,<4.3"
 mysqlclient = "^2.0"
 distro = {platform = "linux", version = "^1.5.0"}
 inotify = "^0.2.10"
+chardet = "^5.1.0"
 
 [tool.poetry.dev-dependencies]
 opsi-dev-tools = "^1.1"

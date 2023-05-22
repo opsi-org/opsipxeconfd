@@ -32,7 +32,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 	This class handles the sending of PXE boot information to clients.
 	"""
 
-	def __init__(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+	def __init__(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements,broad-exception-raised
 		self,
 		templatefile: str,
 		hostId: str,
@@ -107,7 +107,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		except KeyError:
 			pass  # Key may be non-existing
 
-	def _getPXEConfigContent(self, templateFile: str) -> str:  # pylint: disable=too-many-branches
+	def _getPXEConfigContent(self, templateFile: str) -> str:  # pylint: disable=too-many-branches,broad-exception-raised,broad-except
 		"""
 		Gets PXEConfig string.
 
@@ -147,7 +147,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 
 				for key, value in self.append.items():
 					if value:
-						if "bootimageRootPassword" in key:
+						if "bootimagerootpassword" in key.lower():
 							pwhash = encodedPassword(value)
 							appendLineProperties.append(f"pwh={pwhash}")
 						else:
@@ -158,22 +158,22 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 				if self._uefiModule and self.uefi:
 					content = f'{content}append="{" ".join(appendLineProperties)}"\n'
 				elif not self._uefiModule and self.uefi:
-					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")  # pylint: disable=broad-exception-raised
 				else:
 					content = f'{content}  append {" ".join(appendLineProperties)}\n'
 			elif line.lstrip().startswith("linux"):
 				logger.notice("UEFI GRUB configuration detected for %s", self.hostId)
 				if not self._uefiModule and self.uefi:
-					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")  # pylint: disable=broad-exception-raised
 
 				self.uefi = True
 				appendLineProperties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
-						if "bootimageRootPassword" in key:
+						if "bootimagerootpassword" in key.lower():
 							pwhash = encodedPassword(value)
 							appendLineProperties.append(f"pwh={pwhash}")
-						else
+						else:
 							appendLineProperties.append(f"{key}={value}")
 					else:
 						appendLineProperties.append(str(key))
@@ -182,13 +182,13 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 			elif line.lstrip().startswith("kernel ../"):
 				logger.notice("UEFI iPXE configuration detected for %s", self.hostId)
 				if not self._uefiModule and self.uefi:
-					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")  # pylint: disable=broad-exception-raised
 
 				self.uefi = True
 				appendLineProperties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
-						if "bootimageRootPassword" in key:
+						if "bootimagerootpassword" in key.lower():
 							pwhash = encodedPassword(value)
 							appendLineProperties.append(f"pwh={pwhash}")
 						else:

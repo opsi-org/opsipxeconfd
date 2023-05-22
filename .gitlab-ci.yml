@@ -36,7 +36,7 @@ stages:
   [ -e ../opsi-server ] && rm -r ../opsi-server
   url=$(git remote -v | grep fetch | cut -f2 | sed s'#/opsipxeconfd.git.*#/opsi-server.git#')
   #branch=$(git rev-parse --abbrev-ref HEAD)
-  branch=master
+  branch=v4.2
   GIT_TERMINAL_PROMPT=0 git clone --branch $branch $url ../opsi-server
   cp -a ../opsi-server/opsi-server_data/etc /etc/opsi
 
@@ -63,7 +63,6 @@ stages:
 
   # Install poetry
   pip3 install poetry
-  poetry config experimental.new-installer false
   poetry install
   poetry run opsipxeconfd --setup
   # Create adminuser used with opsiconfd-perftest.py
@@ -107,7 +106,6 @@ test:pylint-pytest:
 build:linux-pyinstaller:
   stage: build
   script:
-    - poetry config experimental.new-installer false
     - poetry install
     - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
     - mv opsipxeconfd opsipxeconfd.src
@@ -128,7 +126,6 @@ build:arm64-pyinstaller:
     - arm64
   script:
     - *install_tools
-    - poetry config experimental.new-installer false
     - poetry install
     - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
     - mv dist/opsipxeconfd ./opsipxeconfd-arm64
