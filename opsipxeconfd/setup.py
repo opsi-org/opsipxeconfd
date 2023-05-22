@@ -22,7 +22,11 @@ from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and
 
 logger = get_logger()
 
-def encodedPassword(clearPassword):
+def encodedPassword(clearPassword: str):
+	"""
+	Encode a password using sha512_crypt.
+
+	"""
 	while True:
 		pwhash = passlib.hash.sha512_crypt.using(rounds=5000).hash(clearPassword)
 		if not pwhash or "." in pwhash:
