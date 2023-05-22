@@ -87,6 +87,7 @@ def patchMenuFile(config: dict) -> None:
 
 	if defaultAppendParams:
 		try:
+			pwhEntry = ""
 			for element in defaultAppendParams:
 				if "bootimageRootPassword" in element:
 					clearRootPassword = element.split("=")[1]
