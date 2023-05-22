@@ -10,8 +10,8 @@ opsipxeconfd - setup
 """
 
 import os
+import passlib
 import re
-import passlib.hash
 
 from opsicommon.client.opsiservice import get_service_client, ServiceClient
 
