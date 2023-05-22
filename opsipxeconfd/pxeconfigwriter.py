@@ -18,6 +18,7 @@ from typing import List, Dict, Callable
 from inotify.adapters import Inotify
 
 from opsicommon.logging import logger, log_context
+from OPSI.Util.Task.ConfigureBootimage import encodedPassword
 from OPSI.Config import (
 	FILE_ADMIN_GROUP,
 	OPSICONFD_USER,
@@ -146,7 +147,11 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 
 				for key, value in self.append.items():
 					if value:
-						appendLineProperties.append(f"{key}={value}")
+						if "bootimageRootPassword" in key:
+							pwhash = encodedPassword(value)
+							appendLineProperties.append(f"pwh={pwhash}")
+						else:
+							appendLineProperties.append(f"{key}={value}")
 					else:
 						appendLineProperties.append(str(key))
 
@@ -165,7 +170,11 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 				appendLineProperties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
-						appendLineProperties.append(f"{key}={value}")
+						if "bootimageRootPassword" in key:
+							pwhash = encodedPassword(value)
+							appendLineProperties.append(f"pwh={pwhash}")
+						else
+							appendLineProperties.append(f"{key}={value}")
 					else:
 						appendLineProperties.append(str(key))
 
@@ -179,7 +188,11 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 				appendLineProperties = line.lstrip().split()[1:]
 				for key, value in self.append.items():
 					if value:
-						appendLineProperties.append(f"{key}={value}")
+						if "bootimageRootPassword" in key:
+							pwhash = encodedPassword(value)
+							appendLineProperties.append(f"pwh={pwhash}")
+						else:
+							appendLineProperties.append(f"{key}={value}")
 					else:
 						appendLineProperties.append(str(key))
 
