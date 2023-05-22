@@ -63,7 +63,6 @@ stages:
 
   # Install poetry
   pip3 install poetry
-  poetry config experimental.new-installer false
   poetry install
   poetry run opsipxeconfd --setup
   # Create adminuser used with opsiconfd-perftest.py
@@ -107,7 +106,6 @@ test:pylint-pytest:
 build:linux-pyinstaller:
   stage: build
   script:
-    - poetry config experimental.new-installer false
     - poetry install
     - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
     - mv opsipxeconfd opsipxeconfd.src
@@ -128,7 +126,6 @@ build:arm64-pyinstaller:
     - arm64
   script:
     - *install_tools
-    - poetry config experimental.new-installer false
     - poetry install
     - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
     - mv dist/opsipxeconfd ./opsipxeconfd-arm64
