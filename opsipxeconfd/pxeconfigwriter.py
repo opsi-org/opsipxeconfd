@@ -32,7 +32,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 	This class handles the sending of PXE boot information to clients.
 	"""
 
-	def __init__(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements # disable=broad-exception-raised
+	def __init__(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements,broad-exception-raised
 		self,
 		templatefile: str,
 		hostId: str,
@@ -107,7 +107,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		except KeyError:
 			pass  # Key may be non-existing
 
-	def _getPXEConfigContent(self, templateFile: str) -> str:  # pylint: disable=too-many-branches, disable=broad-exception-raised
+	def _getPXEConfigContent(self, templateFile: str) -> str:  # pylint: disable=too-many-branches,broad-exception-raised
 		"""
 		Gets PXEConfig string.
 
@@ -207,7 +207,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 			self._running = True
 			try:
 				self._run()
-			except Exception as err:  # pylint: disable=broad-except
+			except Exception as err:  # pylint: disable=broad-exception-raised
 				logger.error(err, exc_info=True)
 			self._running = False
 			self.stopped_event.set()

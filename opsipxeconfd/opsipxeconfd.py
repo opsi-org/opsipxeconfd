@@ -199,7 +199,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 		try:
 			self._socket.bind(self.config["port"])
-		except Exception as err: # pylint: disable=broad-except
+		except Exception as err: # pylint: disable=broad-exception-raised
 			raise Exception(f"Failed to bind to socket '{self.config['port']}': {err}") from err
 		self._socket.settimeout(0.1)
 		self._socket.listen(self.config["maxConnections"])
@@ -251,7 +251,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				self._clientConnections.append(cc)
 			cc.start()
 			logger.debug("Connection %s started.", cc.name)
-		except Exception as err:  # pylint: disable=broad-except
+		except Exception as err:  # pylint: disable=broad-exception-raised
 			logger.error("Failed to create control connection: %s", err, exc_info=True)
 
 			with self._clientConnectionLock:
@@ -279,7 +279,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				while self._running:
 					self._getConnection()
 				logger.notice("Opsipxeconfd main thread exiting...")
-			except Exception as err:  # pylint: disable=broad-except
+			except Exception as err:  # pylint: disable=broad-exception-raised
 				logger.error(err, exc_info=True)
 			finally:
 				self._running = False
@@ -306,7 +306,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 					pass  # Connection not in list
 
 			logger.debug("ClientConnection '%s' removed", connection.name)
-		except Exception as err:  # pylint: disable=broad-except
+		except Exception as err:  # pylint: disable=broad-exception-raised
 			logger.error("Failed to remove ClientConnection: %s", err)
 
 	def pxeConfigWriterCallback(self, pcw: PXEConfigWriter) -> None:
@@ -474,7 +474,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			logger.error(err, exc_info=True)
 			raise err
 
-	def updateBootConfiguration(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements,broad-except
+	def updateBootConfiguration(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements,broad-exception-raised
 		self, hostId: str, cacheFile: str = None
 	) -> None:
 		"""
@@ -830,7 +830,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		return eliloMode
 
 	@staticmethod
-	def _getNameForPXEConfigFile(host: Host) -> str: # pylint: disable=broad-except
+	def _getNameForPXEConfigFile(host: Host) -> str: # pylint: disable=broad-exception-raised
 		"""
 		Gets network address information.
 
