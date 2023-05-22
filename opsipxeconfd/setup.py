@@ -22,7 +22,7 @@ from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and
 
 logger = get_logger()
 
-def encodedPassword(clearPassword: str):
+def encodedPassword(clearPassword: str) -> str:
 	"""
 	Encode a password using sha512_crypt.
 
