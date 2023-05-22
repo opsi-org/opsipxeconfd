@@ -11,6 +11,7 @@ opsipxeconfd - setup
 
 import os
 import re
+import passlib.hash
 
 from opsicommon.client.opsiservice import get_service_client, ServiceClient
 
@@ -39,7 +40,6 @@ def patchMenuFile(config: dict) -> None:
 	"""
 
 	service: ServiceClient = get_service_client()
-	appendParameter: str | None = ""
 	configserverId: str | None = ""
 	try:
 		configs = service.jsonrpc("host_getObjects", params=[[], {"type": "OpsiConfigserver"}])[0]
@@ -80,7 +80,7 @@ def patchMenuFile(config: dict) -> None:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
 	else:
 		logger.error("configserver URL not found for %r", configserverUrl)
-	
+
 	if defaultAppendParams:
 		try:
 			for element in defaultAppendParams:
@@ -100,7 +100,7 @@ def patchMenuFile(config: dict) -> None:
 								continue
 
 							newlines.append(line)
-				
+
 					with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
 						writeMenu.writelines(newlines)
 		except FileNotFoundError:
