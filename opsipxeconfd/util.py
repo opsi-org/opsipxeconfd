@@ -24,7 +24,7 @@ from opsicommon.logging import logger
 
 
 @contextmanager
-def temporaryPidFile(filepath: str) -> None: # pylint: disable=broad-except
+def temporaryPidFile(filepath: str) -> None:  # pylint: disable=broad-except
 	"""
 	Maintain temporary PID file.
 
@@ -53,7 +53,7 @@ def temporaryPidFile(filepath: str) -> None: # pylint: disable=broad-except
 				logger.error(err)
 
 			if running:
-				raise Exception(f"Another opsipxeconfd process is running (pid: {oldPid}), stop process first or change pidfile.") # pylint: disable=broad-exception-raised
+				raise Exception(f"Another opsipxeconfd process is running (pid: {oldPid}), stop process first or change pidfile.")  # pylint: disable=broad-exception-raised
 	except IOError as err:
 		if err.errno != 2:  # errno 2 == no such file
 			raise err
