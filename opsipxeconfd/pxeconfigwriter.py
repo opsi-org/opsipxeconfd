@@ -107,7 +107,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 		except KeyError:
 			pass  # Key may be non-existing
 
-	def _getPXEConfigContent(self, templateFile: str) -> str:  # pylint: disable=too-many-branches,broad-exception-raised
+	def _getPXEConfigContent(self, templateFile: str) -> str:  # pylint: disable=too-many-branches,broad-exception-raised,broad-except
 		"""
 		Gets PXEConfig string.
 
@@ -158,13 +158,13 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 				if self._uefiModule and self.uefi:
 					content = f'{content}append="{" ".join(appendLineProperties)}"\n'
 				elif not self._uefiModule and self.uefi:
-					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de") # pylint: disable=broad-exception-raised
 				else:
 					content = f'{content}  append {" ".join(appendLineProperties)}\n'
 			elif line.lstrip().startswith("linux"):
 				logger.notice("UEFI GRUB configuration detected for %s", self.hostId)
 				if not self._uefiModule and self.uefi:
-					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de") # pylint: disable=broad-exception-raised
 
 				self.uefi = True
 				appendLineProperties = line.lstrip().split()[1:]
@@ -182,7 +182,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 			elif line.lstrip().startswith("kernel ../"):
 				logger.notice("UEFI iPXE configuration detected for %s", self.hostId)
 				if not self._uefiModule and self.uefi:
-					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de")
+					raise Exception("You have not licensed uefi module, please check your modules or contact info@uib.de") # pylint: disable=broad-exception-raised
 
 				self.uefi = True
 				appendLineProperties = line.lstrip().split()[1:]
@@ -207,7 +207,7 @@ class PXEConfigWriter(threading.Thread):  # pylint: disable=too-many-instance-at
 			self._running = True
 			try:
 				self._run()
-			except Exception as err:  # pylint: disable=broad-exception-raised
+			except Exception as err:  # pylint: disable=broad-except
 				logger.error(err, exc_info=True)
 			self._running = False
 			self.stopped_event.set()

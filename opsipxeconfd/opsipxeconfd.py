@@ -199,8 +199,8 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 		self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 		try:
 			self._socket.bind(self.config["port"])
-		except Exception as err: # pylint: disable=broad-exception-raised
-			raise Exception(f"Failed to bind to socket '{self.config['port']}': {err}") from err
+		except Exception as err:
+			raise Exception(f"Failed to bind to socket '{self.config['port']}': {err}") from err # pylint: disable=broad-exception-raised
 		self._socket.settimeout(0.1)
 		self._socket.listen(self.config["maxConnections"])
 
@@ -251,7 +251,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				self._clientConnections.append(cc)
 			cc.start()
 			logger.debug("Connection %s started.", cc.name)
-		except Exception as err:  # pylint: disable=broad-exception-raised
+		except Exception as err:  # pylint: disable=broad-except
 			logger.error("Failed to create control connection: %s", err, exc_info=True)
 
 			with self._clientConnectionLock:
@@ -279,7 +279,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 				while self._running:
 					self._getConnection()
 				logger.notice("Opsipxeconfd main thread exiting...")
-			except Exception as err:  # pylint: disable=broad-exception-raised
+			except Exception as err:  # pylint: disable=broad-except
 				logger.error(err, exc_info=True)
 			finally:
 				self._running = False
@@ -306,7 +306,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 					pass  # Connection not in list
 
 			logger.debug("ClientConnection '%s' removed", connection.name)
-		except Exception as err:  # pylint: disable=broad-exception-raised
+		except Exception as err:  # pylint: disable=broad-except
 			logger.error("Failed to remove ClientConnection: %s", err)
 
 	def pxeConfigWriterCallback(self, pcw: PXEConfigWriter) -> None:
@@ -851,7 +851,7 @@ class Opsipxeconfd(threading.Thread):  # pylint: disable=too-many-instance-attri
 			return "%02X%02X%02X%02X" % tuple(  # pylint: disable=consider-using-generator,consider-using-f-string
 				[int(i) for i in host.getIpAddress().split(".")]
 			)
-		raise Exception(f"Neither hardware address nor ip address known for host '{host.id}'")
+		raise Exception(f"Neither hardware address nor ip address known for host '{host.id}'") # pylint: disable=broad-exception-raised
 
 	def _getConfigServiceAddress(self, hostId: str) -> str:
 		"""
