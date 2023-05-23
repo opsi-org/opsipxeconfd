@@ -148,6 +148,8 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 							append_line_properties.append(f"pwh={pwhash}")
 						else:
 							append_line_properties.append(f"{key}={value}")
+					else:
+						append_line_properties.append(str(key))
 
 				if line.lstrip().startswith("append"):
 					content = f'{content}append="{" ".join(append_line_properties)}"\n'
