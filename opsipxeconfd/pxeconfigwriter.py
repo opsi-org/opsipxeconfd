@@ -145,9 +145,9 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 					if value:
 						if "bootimagerootpassword" in key.lower():
 							pwhash = encodedPassword(value)
-							appendLineProperties.append(f"pwh={pwhash}")
+							append_line_properties.append(f"pwh={pwhash}")
 						else:
-							appendLineProperties.append(f"{key}={value}")
+							append_line_properties.append(f"{key}={value}")
 
 				if line.lstrip().startswith("append"):
 					content = f'{content}append="{" ".join(append_line_properties)}"\n'
