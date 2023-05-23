@@ -19,6 +19,7 @@ from inotify.adapters import Inotify  # type: ignore[import]
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.logging import get_logger, log_context
 from opsicommon.objects import ProductOnClient
+from setup import encodedPassword
 
 logger = get_logger()
 opsi_config = OpsiConfig()
@@ -142,9 +143,11 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 
 				for key, value in self.append.items():
 					if value:
-						append_line_properties.append(f"{key}={value}")
-					else:
-						append_line_properties.append(str(key))
+						if "bootimagerootpassword" in key.lower():
+							pwhash = encodedPassword(value)
+							appendLineProperties.append(f"pwh={pwhash}")
+						else:
+							appendLineProperties.append(f"{key}={value}")
 
 				if line.lstrip().startswith("append"):
 					content = f'{content}append="{" ".join(append_line_properties)}"\n'
