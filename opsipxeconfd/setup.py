@@ -11,7 +11,7 @@ opsipxeconfd - setup
 
 import os
 import re
-import passlib # type: ignore[import]
+import passlib.hash # type: ignore[import]
 
 from opsicommon.client.opsiservice import get_service_client, ServiceClient
 
