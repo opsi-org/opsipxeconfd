@@ -19,7 +19,7 @@ from inotify.adapters import Inotify  # type: ignore[import]
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.logging import get_logger, log_context
 from opsicommon.objects import ProductOnClient
-from setup import encodedPassword
+from opsipxeconfd.setup import encodedPassword
 
 logger = get_logger()
 opsi_config = OpsiConfig()
