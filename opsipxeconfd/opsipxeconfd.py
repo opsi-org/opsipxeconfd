@@ -668,7 +668,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		for value in forceStringList(configs.get(host_id, {}).get("opsi-linux-bootimage.append", [])):
 			key = value
 			val = ""
-			if "=" in val:
+			if "=" in key:
 				key, val = value.split("=", 1)
 			params[key.lower().strip()] = val.strip()
 		return params
