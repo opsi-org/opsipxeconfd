@@ -91,7 +91,7 @@ def patchMenuFile(config: dict) -> None:
 			for element in defaultAppendParams:
 				if "bootimageRootPassword" in element:
 					clearRootPassword = element.split("=")[1]
-					endcodedRootPassword = encode_Password(clearRootPassword)
+					endcodedRootPassword = encode_password(clearRootPassword)
 					pwhEntry = f"pwh={endcodedRootPassword}"
 				if "pwh=" in element:
 					pwhEntry = element
