@@ -1,20 +1,9 @@
-image: docker.uib.gmbh/opsi/dev/pybuilder:uib-python-3.10
+image: docker.uib.gmbh/opsi/dev/pybuilder:uib-python-3.11
 
 stages:
   - test
   - build
   - publish
-
-.install_tools: &install_tools |
-  export DEBIAN_FRONTEND=noninteractive
-  apt update
-  apt -y install debhelper osc tar wget
-  if [ "$(dpkg --print-architecture)" = "amd64" ]; then
-    wget "$OPSIDEVTOOLS_URL_LINUX_X64" -O opsi-dev-tools.tar.gz
-  else
-    wget "$OPSIDEVTOOLS_URL_LINUX_ARM64" -O opsi-dev-tools.tar.gz
-  fi
-  tar -xvf opsi-dev-tools.tar.gz
 
 .prepare_tests: &prepare_tests |
   bash /entrypoint.sh &
@@ -28,7 +17,7 @@ stages:
   make EXTRATESTOPTS=--list-tests altinstall
   cd ..
   python3.11 -m pip install certifi
-  curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | SSL_CERT_FILE=$(python3.11 -c "import certifi;print(certifi.where())") python3.11 - --version=1.3.2
+  curl -sSL https://install.python-poetry.org | SSL_CERT_FILE=$(python3.11 -c "import certifi;print(certifi.where())") python3.11 -
   ln -s /root/.local/bin/poetry /usr/local/bin/poetry
   while ! nc -v -z -w3 localhost 4447 > /dev/null 2>&1; do sleep 1; done
   source /entrypoint.sh set_environment_vars  # to set hosts for redis/grafana
@@ -85,15 +74,14 @@ pylint-pytest:
 build:linux-pyinstaller:
   stage: build
   script:
-    - poetry config experimental.new-installer false
     - poetry install
-    - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
+    - poetry run opsi-dev-cli -l info pyinstaller build
     - mv opsipxeconfd opsipxeconfd.src
     - mv dist/opsipxeconfd ./opsipxeconfd-amd64
     # Check if binary is working
     - ./opsipxeconfd-amd64/opsipxeconfd --version
-    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-tool -l info --binary-push opsipxeconfd-amd64 "$CI_JOB_ID"'
-    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-tool -l info --binary-push opsipxeconfd-amd64'
+    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-cli -l info binary push opsipxeconfd-amd64 --prerelease="$CI_JOB_ID"'
+    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-cli -l info binary push opsipxeconfd-amd64'
   artifacts:
     name: "opsipxeconfd-linux-pyinstaller"
     paths:
@@ -105,15 +93,13 @@ build:arm64-pyinstaller:
   tags:
     - arm64
   script:
-    - *install_tools
-    - poetry config experimental.new-installer false
     - poetry install
-    - poetry run opsi-dev-tool -l info --pyinstaller-poetry-build
+    - poetry run opsi-dev-cli -l info pyinstaller build
     - mv dist/opsipxeconfd ./opsipxeconfd-arm64
     # Check if binary is working
     - ./opsipxeconfd-arm64/opsipxeconfd --version
-    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-tool -l info --binary-push opsipxeconfd-arm64 "$CI_JOB_ID"'
-    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-tool -l info --binary-push opsipxeconfd-arm64'
+    - '[ "$CI_COMMIT_TAG" = "" ] && opsi-dev-cli -l info binary push opsipxeconfd-arm64 --prerelease="$CI_JOB_ID"'
+    - '[ "$CI_COMMIT_TAG" = "" ] || opsi-dev-cli -l info binary push opsipxeconfd-arm64'
   artifacts:
     name: "opsipxeconfd-arm64-pyinstaller"
     paths:
@@ -122,11 +108,10 @@ build:arm64-pyinstaller:
 
 publish:obs_ext:
   stage: publish
-  dependencies:
-    - build:linux-pyinstaller
-    - build:arm64-pyinstaller
   script:
-    - *install_tools
-    - ./opsi-dev-tool -l info --obs-update-package https://build.opensuse.org home:uibmz:opsi:4.3:development
+    - opsi-dev-tool -l info --obs-update-package https://build.opensuse.org home:uibmz:opsi:4.3:development
+    - opsi-dev-cli -l 5 changelog from-git output
+    - opsi-dev-cli release-service register-package-version opsipxeconfd SERVER_PACKAGE --changelog-file output/changelog.md
+    - opsi-dev-cli release-service push-repository-state opsipxeconfd SERVER_PACKAGE SERVER_PACKAGE-4.3-development
   only:
     - tags

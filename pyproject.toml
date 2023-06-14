@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opsipxeconfd"
-version = "4.3.0.8"
+version = "4.3.0.9"
 description = "opsi pxe configuration service"
 homepage = "https://www.opsi.org"
 license = "AGPL-3.0"
@@ -16,7 +16,7 @@ name = "uibpypi"
 url = "http://pypi.uib.gmbh:8080/simple"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.11,<3.12"
 python-opsi-common = "^4.3.0.2"
 inotify = "^0.2.10"
 configargparse = "^1.5.3"
