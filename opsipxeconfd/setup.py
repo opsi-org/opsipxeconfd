@@ -86,6 +86,7 @@ def patchMenuFile(config: dict) -> None:
 		logger.error("configserver URL not found for %r", configserverUrl)
 
 	if defaultAppendParams:
+		newlines = []
 		try:
 			pwhEntry = ""
 			for element in defaultAppendParams:
@@ -95,23 +96,20 @@ def patchMenuFile(config: dict) -> None:
 					pwhEntry = f"pwh={endcodedRootPassword}"
 				if "pwh=" in element:
 					pwhEntry = element
-				if pwhEntry:
-					with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
-						for line in readMenu:
-							if line.strip().startswith("linux"):
-								if "pwh=" in line:
-									line = re.sub(r"\s?pwh=\S+", "", line)
-								newlines.append(line.replace("console=ttyS0", "console=ttyS0 " + pwhEntry))
-								continue
+				with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
+					for line in readMenu:
+						if line.strip().startswith("linux"):
+							if "pwh=" in line:
+								line = re.sub(r"\s?pwh=\S+", "", line)
+							newlines.append(line.replace("console=ttyS0", "console=ttyS0 " + pwhEntry))
+							continue
 
-							newlines.append(line)
+						newlines.append(line)
 
-					with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
-						writeMenu.writelines(newlines)
+				with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
+					writeMenu.writelines(newlines)
 		except FileNotFoundError:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
-	else:
-		logger.error("failed to add password hash to grub.cfg")
 
 def setup_files(log_file: str) -> None:
 	"""
