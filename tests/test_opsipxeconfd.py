@@ -71,7 +71,7 @@ def test_grub_pxe_config_writer() -> None:
 		"hn": host_id.split(".")[0],
 		"dn": ".".join(host_id.split(".")[1:]),
 		"product": None,
-		"service": None,
+		"service": "https://server.uib.gmbh:4447/rpc",
 		"pwh": "$6$salt$password"
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
