@@ -36,7 +36,7 @@ CONFFILE = "/etc/opsi/opsipxeconfd.conf"
 PID_FILE = "tests/test_data/pidfile.pid"
 
 
-def test_pxe_onfig_writer() -> None:
+def test_pxe_config_writer() -> None:
 	host_id = forceHostId(getfqdn())
 	pxe_config_template = os.path.join(TEST_DATA, PXE_TEMPLATE_FILE)
 	append = {
@@ -54,6 +54,30 @@ def test_pxe_onfig_writer() -> None:
 	# append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
 	#   hn=test dn=uib.gmbh product service
 	assert " ".join(["kernel", PXE_TEMPLATE_FILE]) in content
+
+PXE_TEMPLATE_FILE = "install-grub-x64"
+
+def test_grub_pxe_config_writer() -> None:
+	host_id = forceHostId(getfqdn())
+	pxe_config_template = os.path.join(TEST_DATA, PXE_TEMPLATE_FILE)
+	append = {
+		"pckey": None,
+		"hn": host_id.split(".")[0],
+		"dn": ".".join(host_id.split(".")[1:]),
+		"product": None,
+		"service": None,
+		"pwh": "$6$salt$password"
+	}
+	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
+	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
+	# set timeout=0
+	# menuentry 'Start netboot installation' {
+	# set gfxpayload=keep
+	# linux (pxe)/linux/install-x64 initrd=miniroot-x64 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
+	#   hn=test dn=uib.gmbh product service pwh=$6$salt$password
+	# initrd (pxe)/linux/miniroot-x64
+	# }
+	assert " ".join(["linux", PXE_TEMPLATE_FILE]) in content
 
 
 def test_pid_file() -> None:
