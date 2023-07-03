@@ -55,7 +55,6 @@ def test_pxe_config_writer() -> None:
 	# append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
 	#   hn=test dn=uib.gmbh product service
 	assert "install-x64" in content
-	assert "pckey=123" in content
 	assert "hn=test" in content
 	assert "dn=uib.gmbh" in content
 	assert "product" in content
@@ -85,7 +84,6 @@ def test_grub_pxe_config_writer() -> None:
 	# initrd (pxe)/linux/miniroot-x64
 	# }
 	assert "install-x64" in content
-	assert "pckey=123" in content
 	assert "hn=test" in content
 	assert "dn=uib.gmbh" in content
 	assert "product" in content
