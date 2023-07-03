@@ -1,0 +1,30 @@
+default menu.c32
+timeout 10
+prompt 0
+noescape 1
+
+menu title opsi boot menu
+menu width 55
+menu rows 3
+menu helpmsgrow 10
+menu timeoutrow 15
+menu tabmsgrow -1
+menu hshift 14
+menu vshift 9
+
+menu color tabmsg       30;40      #00000000 #00000000 std
+
+label hd
+  menu label Boot from ^local drive
+  text help
+                 Boot operating system from local drive.
+  endtext
+  localboot 0
+
+label install-x64
+  menu label Start o^psi bootimage (x64)
+  text help
+                 Start opsi linux bootimage 64-Bit from tftp server.
+  endtext
+  kernel install-x64
+  append initrd=miniroot-x64 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
