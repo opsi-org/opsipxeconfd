@@ -40,22 +40,27 @@ def test_pxe_config_writer() -> None:
 	host_id = forceHostId(getfqdn())
 	pxe_config_template = os.path.join(TEST_DATA, PXE_TEMPLATE_FILE)
 	append = {
-		"pckey": None,
+		"pckey": "123",
 		"hn": host_id.split(".")[0],
 		"dn": ".".join(host_id.split(".")[1:]),
 		"product": None,
-		"service": None,
+		"service": "https://server.uib.gmbh:4447/rpc",
+		"pwh": "$6$salt$password"
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
 	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
-	print(f"CONTENT: {content}")
-	print(" ".join(["linux", PXE_TEMPLATE_FILE]))
 	# default opsi-install-x64
 	# label opsi-install-x64
 	# kernel install-x64
 	# append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
 	#   hn=test dn=uib.gmbh product service
-	assert " ".join(["kernel", PXE_TEMPLATE_FILE]) in content
+	assert " ".join(["kernel", "install-x64"]) in content
+	assert " ".join(["kernel", "pckey=123"]) in content
+	assert " ".join(["kernel", "hn=test"]) in content
+	assert " ".join(["kernel", "dn=uib.gmbh"]) in content
+	assert " ".join(["kernel", "product"]) in content
+	assert " ".join(["kernel", "service=https://server.uib.gmbh:4447/rpc"]) in content
+	assert " ".join(["kernel", "pwh=$6$salt$password"]) in content
 
 GRUB_PXE_TEMPLATE_FILE = "install-grub-x64"
 
@@ -63,7 +68,7 @@ def test_grub_pxe_config_writer() -> None:
 	host_id = forceHostId(getfqdn())
 	pxe_config_template = os.path.join(TEST_DATA, GRUB_PXE_TEMPLATE_FILE)
 	append = {
-		"pckey": None,
+		"pckey": "123",
 		"hn": host_id.split(".")[0],
 		"dn": ".".join(host_id.split(".")[1:]),
 		"product": None,
@@ -72,8 +77,6 @@ def test_grub_pxe_config_writer() -> None:
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
 	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
-	print(f"CONTENT: {content}")
-	print(" ".join(["linux", GRUB_PXE_TEMPLATE_FILE]))
 	# set timeout=0
 	# menuentry 'Start netboot installation' {
 	# set gfxpayload=keep
@@ -81,7 +84,13 @@ def test_grub_pxe_config_writer() -> None:
 	#   hn=test dn=uib.gmbh product service pwh=$6$salt$password
 	# initrd (pxe)/linux/miniroot-x64
 	# }
-	assert " ".join(["linux", GRUB_PXE_TEMPLATE_FILE]) in content
+	assert " ".join(["linux", "install-x64"]) in content
+	assert " ".join(["linux", "pckey=123"]) in content
+	assert " ".join(["linux", "hn=test"]) in content
+	assert " ".join(["linux", "dn=uib.gmbh"]) in content
+	assert " ".join(["linux", "product"]) in content
+	assert " ".join(["linux", "service=https://server.uib.gmbh:4447/rpc"]) in content
+	assert " ".join(["linux", "pwh=$6$salt$password"]) in content
 
 
 def test_pid_file() -> None:
