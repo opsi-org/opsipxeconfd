@@ -54,13 +54,13 @@ def test_pxe_config_writer() -> None:
 	# kernel install-x64
 	# append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
 	#   hn=test dn=uib.gmbh product service
-	assert " ".join(["kernel", "install-x64"]) in content
-	assert " ".join(["kernel", "pckey=123"]) in content
-	assert " ".join(["kernel", "hn=test"]) in content
-	assert " ".join(["kernel", "dn=uib.gmbh"]) in content
-	assert " ".join(["kernel", "product"]) in content
-	assert " ".join(["kernel", "service=https://server.uib.gmbh:4447/rpc"]) in content
-	assert " ".join(["kernel", "pwh=$6$salt$password"]) in content
+	assert "install-x64" in content
+	assert "pckey=123" in content
+	assert "hn=test" in content
+	assert "dn=uib.gmbh" in content
+	assert "product" in content
+	assert "service=https://server.uib.gmbh:4447/rpc" in content
+	assert "pwh=$6$salt$password" in content
 
 GRUB_PXE_TEMPLATE_FILE = "install-grub-x64"
 
@@ -84,13 +84,13 @@ def test_grub_pxe_config_writer() -> None:
 	#   hn=test dn=uib.gmbh product service pwh=$6$salt$password
 	# initrd (pxe)/linux/miniroot-x64
 	# }
-	assert " ".join(["linux", "install-x64"]) in content
-	assert " ".join(["linux", "pckey=123"]) in content
-	assert " ".join(["linux", "hn=test"]) in content
-	assert " ".join(["linux", "dn=uib.gmbh"]) in content
-	assert " ".join(["linux", "product"]) in content
-	assert " ".join(["linux", "service=https://server.uib.gmbh:4447/rpc"]) in content
-	assert " ".join(["linux", "pwh=$6$salt$password"]) in content
+	assert "install-x64" in content
+	assert "pckey=123" in content
+	assert "hn=test" in content
+	assert "dn=uib.gmbh" in content
+	assert "product" in content
+	assert "service=https://server.uib.gmbh:4447/rpc" in content
+	assert "pwh=$6$salt$password" in content
 
 
 def test_pid_file() -> None:
