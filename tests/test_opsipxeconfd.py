@@ -48,6 +48,8 @@ def test_pxe_config_writer() -> None:
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
 	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
+	print(f"CONTENT: {content}")
+	print(" ".join(["linux", PXE_TEMPLATE_FILE]))
 	# default opsi-install-x64
 	# label opsi-install-x64
 	# kernel install-x64
@@ -70,6 +72,8 @@ def test_grub_pxe_config_writer() -> None:
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
 	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
+	print(f"CONTENT: {content}")
+	print(" ".join(["linux", GRUB_PXE_TEMPLATE_FILE]))
 	# set timeout=0
 	# menuentry 'Start netboot installation' {
 	# set gfxpayload=keep
