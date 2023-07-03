@@ -55,11 +55,11 @@ def test_pxe_config_writer() -> None:
 	#   hn=test dn=uib.gmbh product service
 	assert " ".join(["kernel", PXE_TEMPLATE_FILE]) in content
 
-PXE_TEMPLATE_FILE = "install-grub-x64"
+GRUB_PXE_TEMPLATE_FILE = "install-grub-x64"
 
 def test_grub_pxe_config_writer() -> None:
 	host_id = forceHostId(getfqdn())
-	pxe_config_template = os.path.join(TEST_DATA, PXE_TEMPLATE_FILE)
+	pxe_config_template = os.path.join(TEST_DATA, GRUB_PXE_TEMPLATE_FILE)
 	append = {
 		"pckey": None,
 		"hn": host_id.split(".")[0],
@@ -77,7 +77,7 @@ def test_grub_pxe_config_writer() -> None:
 	#   hn=test dn=uib.gmbh product service pwh=$6$salt$password
 	# initrd (pxe)/linux/miniroot-x64
 	# }
-	assert " ".join(["linux", PXE_TEMPLATE_FILE]) in content
+	assert " ".join(["linux", GRUB_PXE_TEMPLATE_FILE]) in content
 
 
 def test_pid_file() -> None:
