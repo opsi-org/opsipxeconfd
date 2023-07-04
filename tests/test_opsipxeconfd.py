@@ -98,7 +98,6 @@ def test_patch_menu_file() -> None:
 		content = filehandle.read()
 		print(content)
 	assert 'service' in content
-	
 
 def test_pid_file() -> None:
 	if os.path.exists(PID_FILE):
