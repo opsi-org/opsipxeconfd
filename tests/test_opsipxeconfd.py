@@ -12,6 +12,7 @@ from socket import getfqdn
 from opsicommon.types import forceHostId
 
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter  # type: ignore[import]
+from opsipxeconfd.setup import patchMenuFile # type: ignore[import]
 from opsipxeconfd.util import pid_file  # type: ignore[import]
 
 default_opts = argparse.Namespace(
@@ -90,6 +91,14 @@ def test_grub_pxe_config_writer() -> None:
 	assert "service=https://server.uib.gmbh:4447/rpc" in content
 	assert "pwh=$6$salt$password" in content
 
+def test_patch_menu_file() -> None:
+	config = {'pxeDir': TEST_DATA}
+	patchMenuFile(config)
+	with open(TEST_DATA + 'grub.cfg', 'r', encoding='utf-8') as filehandle:
+		content = filehandle.read()
+		print(content)
+	assert 'service' in content
+	
 
 def test_pid_file() -> None:
 	if os.path.exists(PID_FILE):
