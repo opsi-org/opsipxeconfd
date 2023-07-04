@@ -107,7 +107,7 @@ def test_service_patch_menu_file() -> None:
 	assert 'pwh' not in content
 
 @mock.patch('defaultAppendParams')
-def test_pwh_patch_menu_file() -> None:
+def test_pwh_patch_menu_file(mock_default_append_params) -> None:
 	mock_default_append_params.return_value = {'pwh': '$6$salt$123456'}
 	config = {'pxeDir': TEST_DATA}
 	patchMenuFile(config)
