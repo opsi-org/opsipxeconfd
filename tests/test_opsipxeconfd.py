@@ -98,7 +98,8 @@ def test_patch_menu_file() -> None:
 		content = filehandle.read()
 		print(content)
 	assert 'service' in content
-
+	assert 'pwh' in content
+	
 def test_pid_file() -> None:
 	if os.path.exists(PID_FILE):
 		os.remove(PID_FILE)
