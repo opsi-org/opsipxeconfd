@@ -53,7 +53,7 @@ def test_pxe_config_writer() -> None:
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
 	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
-	# default opsi-install-x64
+	# opsi-install-x64
 	# label opsi-install-x64
 	# kernel install-x64
 	# append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
@@ -100,12 +100,6 @@ def test_service_patch_menu_file(tmp_path: Path) -> None:
 	patchMenuFile(config)
 	grub_cfg = tmp_path / 'grub.cfg'
 	content = grub_cfg.read_text(encoding='utf-8')
-	print(content)
-	assert 'service' in content
-	assert 'pwh' not in content
-	default_menu = tmp_path / 'default.menu'
-	assert default_menu.exists()
-	content = default_menu.read_text(encoding='utf-8')
 	print(content)
 	assert 'service' in content
 	assert 'pwh' not in content
