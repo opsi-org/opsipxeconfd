@@ -58,7 +58,7 @@ def getConfigsFromService() -> tuple[str, list[str]]:
 		pass
 	finally:
 		service.disconnect()
-	return None,[]
+	return "",[]
 
 def patchMenuFile(config: dict) -> None:
 	"""
