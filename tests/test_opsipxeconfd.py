@@ -100,10 +100,13 @@ def test_service_patch_menu_file(tmp_path: Path) -> None:
 	patchMenuFile(config)
 	grub_cfg = tmp_path / 'grub.cfg'
 	content = grub_cfg.read_text(encoding='utf-8')
+	print(content)
 	assert 'service' in content
 	assert 'pwh' not in content
 	default_menu = tmp_path / 'default.menu'
+	assert default_menu.exists()
 	content = default_menu.read_text(encoding='utf-8')
+	print(content)
 	assert 'service' in content
 	assert 'pwh' not in content
 
@@ -116,6 +119,7 @@ def test_pwh_patch_menu_file(tmp_path: Path) -> None:
 		patchMenuFile(config)
 		grub_cfg = tmp_path / 'grub.cfg'
 		content = grub_cfg.read_text(encoding='utf-8')
+		print(content)
 		assert 'pwh=$6$salt$123456' in content
 		assert 'https://service.uib.gmbh:4447/rpc' in content
 

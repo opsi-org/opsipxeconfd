@@ -70,6 +70,7 @@ def patchMenuFile(config: dict) -> None:
 	"""
 
 	configserverUrl,defaultAppendParams = getConfigsFromService()
+	print(f"VALUES ARE: {configserverUrl} {defaultAppendParams}")
 	newlines = []
 	if configserverUrl:
 		try:
