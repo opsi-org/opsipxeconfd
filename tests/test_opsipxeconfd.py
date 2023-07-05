@@ -108,7 +108,7 @@ def test_service_patch_menu_file(tmp_path: Path) -> None:
 	assert 'pwh' not in content
 
 def test_pwh_patch_menu_file(tmp_path: Path) -> None:
-	def mockGetConfigFromService():
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456']
 	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
 		shutil.copytree(TEST_DATA, tmp_path)
