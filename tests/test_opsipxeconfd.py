@@ -114,7 +114,7 @@ def test_pwh_patch_menu_file(tmp_path: Path) -> None:
 		grub_cfg = tmp_path / 'grub.cfg'
 		content = grub_cfg.read_text(encoding='utf-8')
 		print(content)
-		assert 'pwh=$6$salt$123456' not in content
+		assert 'pwh=$6$salt$123456' in content
 		assert 'https://service.uib.gmbh:4447/rpc' in content
 
 def test_pid_file() -> None:
