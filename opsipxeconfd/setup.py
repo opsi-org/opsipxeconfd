@@ -34,7 +34,7 @@ def encode_password(clearPassword: str) -> str:
 		else:
 			return pwhash
 
-def getConfigsFromService() -> tuple[str, list[str]]:
+def getConfigsFromService() -> tuple(str, list[str]):
 
 	service: ServiceClient = get_service_client()
 	configserverId: str | None = ""
