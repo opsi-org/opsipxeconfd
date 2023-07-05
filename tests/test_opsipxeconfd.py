@@ -117,6 +117,27 @@ def test_pwh_patch_menu_file(tmp_path: Path) -> None:
 		assert 'pwh=$6$salt$123456' in content
 		assert 'https://service.uib.gmbh:4447/rpc' in content
 
+def test_pwh_patch_menu_removal(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		print(content)
+		assert 'pwh=$6$salt$123456' in content
+		assert 'https://service.uib.gmbh:4447/rpc' in content
+		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
+			return 'https://service.uib.gmbh:4447/rpc', []
+		with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockRemovePwhFromGrubCfg):
+			patchMenuFile(config)
+			content = grub_cfg.read_text(encoding='utf-8')
+			print(content)
+			assert 'pwh=$6$salt$123456' not in content
+			assert 'https://service.uib.gmbh:4447/rpc' in content
+
 def test_pid_file() -> None:
 	if os.path.exists(PID_FILE):
 		os.remove(PID_FILE)
