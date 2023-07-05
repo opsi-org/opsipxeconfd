@@ -95,7 +95,7 @@ def test_grub_pxe_config_writer() -> None:
 	assert "pwh=$6$salt$password" in content
 
 def test_service_patch_menu_file(tmp_path: Path) -> None:
-	shutil.copytree(TEST_DATA, str(tmp_path))
+	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 	config = {'pxeDir': str(tmp_path)}
 	patchMenuFile(config)
 	grub_cfg = tmp_path / 'grub.cfg'
@@ -111,7 +111,7 @@ def test_pwh_patch_menu_file(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456']
 	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
-		shutil.copytree(TEST_DATA, str(tmp_path))
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 		config = {'pxeDir': str(tmp_path)}
 		patchMenuFile(config)
 		grub_cfg = tmp_path / 'grub.cfg'
