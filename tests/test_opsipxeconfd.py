@@ -7,6 +7,8 @@ This file is part of opsi - https://www.opsi.org
 """
 import argparse
 import os
+import shutil
+from pathlib import Path
 from socket import getfqdn
 from unittest import mock
 
@@ -92,29 +94,30 @@ def test_grub_pxe_config_writer() -> None:
 	assert "service=https://server.uib.gmbh:4447/rpc" in content
 	assert "pwh=$6$salt$password" in content
 
-def test_service_patch_menu_file() -> None:
-	config = {'pxeDir': TEST_DATA}
+def test_service_patch_menu_file(tmp_path: Path) -> None:
+	shutil.copytree(TEST_DATA, tmp_path)
+	config = {'pxeDir': str(tmp_path)}
 	patchMenuFile(config)
-	with open(TEST_DATA + 'grub.cfg', 'r', encoding='utf-8') as filehandle:
-		content = filehandle.read()
-		print(content)
+	grub_cfg = tmp_path / 'grub.cfg'
+	content = grub_cfg.read_text(encoding='utf-8')
 	assert 'service' in content
 	assert 'pwh' not in content
-	with open(TEST_DATA + 'default.menu', 'w', encoding='utf-8') as filehandle:
-		content = filehandle.read()
-		print(content)
+	default_menu = tmp_path / 'default.menu'
+	content = default_menu.read_text(encoding='utf-8')
 	assert 'service' in content
 	assert 'pwh' not in content
 
-@mock.patch('defaultAppendParams')
-def test_pwh_patch_menu_file(mock_defaultAppendParams: list) -> None:
-	mock_defaultAppendParams.return_value = ['pwh=$6$salt$123456']
-	config = {'pxeDir': TEST_DATA}
-	patchMenuFile(config)
-	with open(TEST_DATA + 'grub.cfg', 'r', encoding='utf-8') as filehandle:
-		content = filehandle.read()
-		print(content)
-	assert 'pwh=$6$salt$123456' in content
+def test_pwh_patch_menu_file(tmp_path: Path) -> None:
+	def mockGetConfigFromService():
+		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, tmp_path)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		assert 'pwh=$6$salt$123456' in content
+		assert 'https://service.uib.gmbh:4447/rpc' in content
 
 def test_pid_file() -> None:
 	if os.path.exists(PID_FILE):

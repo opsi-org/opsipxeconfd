@@ -34,14 +34,7 @@ def encode_password(clearPassword: str) -> str:
 		else:
 			return pwhash
 
-def patchMenuFile(config: dict) -> None:
-	"""
-	Patch the address to the `configServer` and a password hash into `menufile`.
-
-	To find out where to patch we look for lines that starts with the
-	given `searchString` (excluding preceding whitespace).
-
-	"""
+def getConfigsFromService() -> tuple[str, list[str]]:
 
 	service: ServiceClient = get_service_client()
 	configserverId: str | None = ""
@@ -59,12 +52,24 @@ def patchMenuFile(config: dict) -> None:
 			configserverUrl += "/rpc"
 
 		appendConfigs = service.jsonrpc("config_getObjects", params=[[], {"id": "opsi-linux-bootimage.append"}])[0]
-		defaultAppendParams = appendConfigs.defaultValues
+		return configserverUrl,appendConfigs.defaultValues
 
 	except OpsiServiceConnectionError:
 		pass
 	finally:
 		service.disconnect()
+	return None,[]
+
+def patchMenuFile(config: dict) -> None:
+	"""
+	Patch the address to the `configServer` and a password hash into `menufile`.
+
+	To find out where to patch we look for lines that starts with the
+	given `searchString` (excluding preceding whitespace).
+
+	"""
+
+	configserverUrl,defaultAppendParams = getConfigsFromService()
 	newlines = []
 	if configserverUrl:
 		try:
