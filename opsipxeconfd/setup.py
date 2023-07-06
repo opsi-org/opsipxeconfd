@@ -108,6 +108,8 @@ def patchMenuFile(config: dict) -> None:
 								line = re.sub(r"\s?pwh=\S+", "", line)
 							if pwhEntry:
 								newlines.append(line.replace("console=ttyS0", "console=ttyS0 " + pwhEntry))
+							else:
+								newlines.append(line)
 							continue
 
 						newlines.append(line)
