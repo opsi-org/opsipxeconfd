@@ -72,6 +72,9 @@ def patchMenuFile(config: dict) -> None:
 	configserverUrl,defaultAppendParams = getConfigsFromService()
 
 	if defaultAppendParams or configserverUrl:
+		linuxDefaultDict = {}
+		linuxAppendDict = {}
+		linuxNewlinesDict = {}
 		newlines = []
 		try:
 			pwhEntry = ""
@@ -85,16 +88,39 @@ def patchMenuFile(config: dict) -> None:
 			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
 				for line in readMenu:
 					if line.strip().startswith("linux"):
+						linuxAppendDict = {}
 						if "pwh=" in line:
 							line = re.sub(r"\s?pwh=\S+", "", line)
 						if "service=" in line:
 							line = re.sub(r"\s?service=\S+", "", line)
+						if not linuxDefaultDict:
+							for element in line.split(" "):
+								if "=" in element:
+									linuxDefaultDict[element.split("=")[0]] = element.split("=")[1]
+								else:
+									linuxDefaultDict[element] = ""
+						linuxNewlinesDict = linuxDefaultDict.copy()
+						for element in line.split(" "):
+								if "=" in element:
+									linuxAppendDict[element.split("=")[0]] = element.split("=")[1]
+								else:
+									linuxAppendDict[element] = ""
 						if pwhEntry:
-							line = line.replace("console=ttyS0", "console=ttyS0 " + pwhEntry)
+							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1]
 						if configserverUrl:
-							line = line.replace("console=ttyS0", "console=ttyS0 service=" + configserverUrl)
+							linuxNewlinesDict["service"] = configserverUrl
+						for key, value in linuxAppendDict.items():
+							if key not in linuxDefaultDict:
+								linuxNewlinesDict[key] = value						
 						if not configserverUrl:
 							logger.error("configserver URL not found for %r", configserverUrl)
+						line = ""
+						for key, value in linuxNewlinesDict.items():
+							if value:
+								line += key + '=' + value + ' '
+							else:
+								line += key + ' '
+						
 
 					newlines.append(line)
 
