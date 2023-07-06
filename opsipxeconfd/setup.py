@@ -70,25 +70,6 @@ def patchMenuFile(config: dict) -> None:
 	"""
 
 	configserverUrl,defaultAppendParams = getConfigsFromService()
-	newlines = []
-	if configserverUrl:
-		try:
-			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
-				for line in readMenu:
-					if line.strip().startswith("linux"):
-						if "service=" in line:
-							line = re.sub(r"\s?service=\S+", "", line)
-						newlines.append(line.replace("console=ttyS0", "console=ttyS0 service=" + configserverUrl))
-						continue
-
-					newlines.append(line)
-
-			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
-				writeMenu.writelines(newlines)
-		except FileNotFoundError:
-			logger.error("%r/grub.cfg not found", config["pxeDir"])
-	else:
-		logger.error("configserver URL not found for %r", configserverUrl)
 
 	if defaultAppendParams:
 		newlines = []
@@ -115,6 +96,26 @@ def patchMenuFile(config: dict) -> None:
 					writeMenu.writelines(newlines)
 		except FileNotFoundError:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
+
+	if configserverUrl:
+		newlines = []
+		try:
+			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
+				for line in readMenu:
+					if line.strip().startswith("linux"):
+						if "service=" in line:
+							line = re.sub(r"\s?service=\S+", "", line)
+						newlines.append(line.replace("console=ttyS0", "console=ttyS0 service=" + configserverUrl))
+						continue
+
+					newlines.append(line)
+
+			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
+				writeMenu.writelines(newlines)
+		except FileNotFoundError:
+			logger.error("%r/grub.cfg not found", config["pxeDir"])
+	else:
+		logger.error("configserver URL not found for %r", configserverUrl)
 
 def setup_files(log_file: str) -> None:
 	"""
