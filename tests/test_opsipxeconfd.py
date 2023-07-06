@@ -130,7 +130,7 @@ def test_pwh_patch_menu_removal(tmp_path: Path) -> None:
 		assert 'pwh=$6$salt$123456' in content
 		assert 'https://service.uib.gmbh:4447/rpc' in content
 		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
-			return 'https://service.uib.gmbh:4447/rpc', []
+			return 'https://service.uib.gmbh:4447/rpc', ['']
 		with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockRemovePwhFromGrubCfg):
 			patchMenuFile(config)
 			content = grub_cfg.read_text(encoding='utf-8')
