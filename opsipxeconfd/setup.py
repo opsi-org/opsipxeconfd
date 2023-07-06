@@ -10,7 +10,7 @@ opsipxeconfd - setup
 """
 
 import os
-import re
+#import re
 import passlib.hash # type: ignore[import]
 
 from opsicommon.client.opsiservice import get_service_client, ServiceClient
@@ -105,6 +105,10 @@ def patchMenuFile(config: dict) -> None:
 								linuxAppendDict[element.split("=")[0]] = element.split("=")[1]
 							else:
 								linuxAppendDict[element] = ""
+						if "pwh" in linuxAppendDict:
+							linuxAppendDict.pop("pwh")
+						if "service" in linuxAppendDict:
+							linuxAppendDict.pop("service")
 						if pwhEntry:
 							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1]
 						if configserverUrl:
