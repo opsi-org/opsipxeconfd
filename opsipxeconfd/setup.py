@@ -89,16 +89,16 @@ def patchMenuFile(config: dict) -> None:
 				for line in readMenu:
 					if line.strip().startswith("linux"):
 						linuxAppendDict.clear()
-						if "pwh=" in line:
-							line = re.sub(r"\s?pwh=\S+", "", line)
-						if "service=" in line:
-							line = re.sub(r"\s?service=\S+", "", line)
 						if not linuxDefaultDict:
 							for element in line.split(" "):
 								if "=" in element:
 									linuxDefaultDict[element.split("=")[0]] = element.split("=")[1]
 								else:
 									linuxDefaultDict[element] = ""
+						if "pwh" in linuxDefaultDict:
+							linuxDefaultDict.pop("pwh")
+						if "service" in linuxDefaultDict:
+							linuxDefaultDict.pop("service")
 						linuxNewlinesDict = linuxDefaultDict.copy()
 						for element in line.split(" "):
 							if "=" in element:
