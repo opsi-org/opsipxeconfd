@@ -82,18 +82,18 @@ def patchMenuFile(config: dict) -> None:
 					pwhEntry = f"pwh={endcodedRootPassword}"
 				if "pwh=" in element:
 					pwhEntry = element
-				with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
-					for line in readMenu:
-						if line.strip().startswith("linux"):
-							if "pwh=" in line:
-								line = re.sub(r"\s?pwh=\S+", "", line)
-							if pwhEntry:
-								line = line.replace("console=ttyS0", "console=ttyS0 " + pwhEntry)
+			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
+				for line in readMenu:
+					if line.strip().startswith("linux"):
+						if "pwh=" in line:
+							line = re.sub(r"\s?pwh=\S+", "", line)
+						if pwhEntry:
+							line = line.replace("console=ttyS0", "console=ttyS0 " + pwhEntry)
 
-						newlines.append(line)
+					newlines.append(line)
 
-				with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
-					writeMenu.writelines(newlines)
+			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
+				writeMenu.writelines(newlines)
 		except FileNotFoundError:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
 
