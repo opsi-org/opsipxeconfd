@@ -49,7 +49,10 @@ def test_pxe_config_writer() -> None:
 		"dn": ".".join(host_id.split(".")[1:]),
 		"product": None,
 		"service": "https://server.uib.gmbh:4447/rpc",
-		"pwh": "$6$salt$password"
+		"pwh": "$6$salt$password",
+		"acpi",
+		"nomodeset",
+		"nomsi",
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
 	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
@@ -64,6 +67,9 @@ def test_pxe_config_writer() -> None:
 	assert "product" in content
 	assert "service=https://server.uib.gmbh:4447/rpc" in content
 	assert "pwh=$6$salt$password" in content
+	assert "acpi" in content
+	assert "nomodeset" in content
+	assert "nomsi" in content
 
 GRUB_PXE_TEMPLATE_FILE = "install-grub-x64"
 
