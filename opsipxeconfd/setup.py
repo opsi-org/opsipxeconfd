@@ -101,17 +101,17 @@ def patchMenuFile(config: dict) -> None:
 									linuxDefaultDict[element] = ""
 						linuxNewlinesDict = linuxDefaultDict.copy()
 						for element in line.split(" "):
-								if "=" in element:
-									linuxAppendDict[element.split("=")[0]] = element.split("=")[1]
-								else:
-									linuxAppendDict[element] = ""
+							if "=" in element:
+								linuxAppendDict[element.split("=")[0]] = element.split("=")[1]
+							else:
+								linuxAppendDict[element] = ""
 						if pwhEntry:
 							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1]
 						if configserverUrl:
 							linuxNewlinesDict["service"] = configserverUrl
 						for key, value in linuxAppendDict.items():
 							if key not in linuxDefaultDict:
-								linuxNewlinesDict[key] = value						
+								linuxNewlinesDict[key] = value
 						if not configserverUrl:
 							logger.error("configserver URL not found for %r", configserverUrl)
 						line = ""
@@ -120,7 +120,6 @@ def patchMenuFile(config: dict) -> None:
 								line += key + '=' + value + ' '
 							else:
 								line += key + ' '
-						
 
 					newlines.append(line)
 
