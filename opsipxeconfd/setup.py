@@ -88,7 +88,7 @@ def patchMenuFile(config: dict) -> None:
 			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
 				for line in readMenu:
 					if line.strip().startswith("linux"):
-						linuxAppendDict = {}
+						linuxAppendDict.clear()
 						if "pwh=" in line:
 							line = re.sub(r"\s?pwh=\S+", "", line)
 						if "service=" in line:
