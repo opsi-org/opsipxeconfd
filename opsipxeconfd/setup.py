@@ -122,10 +122,10 @@ def patchMenuFile(config: dict) -> None:
 						line = ""
 						for key, value in linuxNewlinesDict.items():
 							if value:
-								line += key + '=' + value + ' '
+								line += key.rstrip() + '=' + value.rstrip() + ' '
 							else:
-								line += key + ' '
-							line = line + '\n'
+								line += key.rstrip() + ' '
+						line = line + '\n'
 						print(line)
 
 					newlines.append(line)
