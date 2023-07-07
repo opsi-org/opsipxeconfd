@@ -88,9 +88,6 @@ def patchMenuFile(config: dict) -> None:
 			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
 				for line in readMenu:
 					if line.strip().startswith("linux"):
-						print(line)
-						if linuxDefaultDict:
-							print(f"linuxDefaultDict before: {linuxDefaultDict}")
 						linuxAppendDict.clear()
 						if not linuxDefaultDict:
 							for element in line.split(" "):
@@ -98,24 +95,20 @@ def patchMenuFile(config: dict) -> None:
 									linuxDefaultDict[element.split("=")[0]] = element.split("=")[1].strip()
 								else:
 									linuxDefaultDict[element] = ""
-						print(f"linuxDefaultDict after: {linuxDefaultDict}")
 						if "pwh" in linuxDefaultDict:
 							linuxDefaultDict.pop("pwh")
 						if "service" in linuxDefaultDict:
 							linuxDefaultDict.pop("service")
-						print(f"linuxDefaultDict after pop: {linuxDefaultDict}")
 						linuxNewlinesDict = linuxDefaultDict.copy()
 						for element in line.split(" "):
 							if "=" in element:
 								linuxAppendDict[element.split("=")[0]] = element.split("=")[1].strip()
 							else:
 								linuxAppendDict[element] = ""
-						print(f"linuxAppendDict after: {linuxAppendDict}")
 						if "pwh" in linuxAppendDict:
 							linuxAppendDict.pop("pwh")
 						if "service" in linuxAppendDict:
 							linuxAppendDict.pop("service")
-						print(f"linuxAppendDict after pop: {linuxAppendDict}")
 						if pwhEntry:
 							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].strip()
 						if configserverUrl:
@@ -132,7 +125,6 @@ def patchMenuFile(config: dict) -> None:
 							else:
 								line += key + ' '
 						line = line + '\n'
-						print(f"line: {line}")
 
 					newlines.append(line)
 
