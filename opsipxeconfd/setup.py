@@ -118,7 +118,6 @@ def patchMenuFile(config: dict) -> None:
 								linuxNewlinesDict[key] = value
 						if not configserverUrl:
 							logger.error("configserver URL not found for %r", configserverUrl)
-						print(linuxNewlinesDict)
 						line = ""
 						for key, value in linuxNewlinesDict.items():
 							if value:
@@ -126,16 +125,11 @@ def patchMenuFile(config: dict) -> None:
 							else:
 								line += key.rstrip() + ' '
 						line = line + '\n'
-						print(line)
 
 					newlines.append(line)
 
 			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
 				writeMenu.writelines(newlines)
-
-			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
-				for line in readMenu:
-					print(line)
 
 		except FileNotFoundError:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
