@@ -125,7 +125,7 @@ def patchMenuFile(config: dict) -> None:
 								line += key + '=' + value + ' '
 							else:
 								line += key + ' '
-						line = line + '\n'
+							line = line + '\n'
 						print(line)
 
 					newlines.append(line)
