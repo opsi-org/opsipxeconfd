@@ -130,8 +130,11 @@ def patchMenuFile(config: dict) -> None:
 
 					newlines.append(line)
 
+			for line in newlines:
+				print(line)
 			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
 				writeMenu.writelines(newlines)
+
 		except FileNotFoundError:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
 
