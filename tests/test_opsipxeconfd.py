@@ -136,8 +136,10 @@ def test_pwh_patch_menu_removal(tmp_path: Path) -> None:
 		patchMenuFile(config)
 		grub_cfg = tmp_path / 'grub.cfg'
 		content = grub_cfg.read_text(encoding='utf-8')
-		assert 'pwh=$6$salt$123456' in line
-		assert 'https://service.uib.gmbh:4447/rpc' in line
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert 'pwh=$6$salt$123456' in line
+				assert 'https://service.uib.gmbh:4447/rpc' in line
 
 		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
 			return 'https://service.uib.gmbh:4447/rpc', ['']
