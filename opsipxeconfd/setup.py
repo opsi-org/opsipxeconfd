@@ -95,7 +95,7 @@ def patchMenuFile(config: dict) -> None:
 						if not linuxDefaultDict:
 							for element in line.split(" "):
 								if "=" in element:
-									linuxDefaultDict[element.split("=")[0]] = element.split("=")[1]
+									linuxDefaultDict[element.split("=")[0]] = element.split("=")[1].strip()
 								else:
 									linuxDefaultDict[element] = ""
 						print(f"linuxDefaultDict after: {linuxDefaultDict}")
@@ -107,7 +107,7 @@ def patchMenuFile(config: dict) -> None:
 						linuxNewlinesDict = linuxDefaultDict.copy()
 						for element in line.split(" "):
 							if "=" in element:
-								linuxAppendDict[element.split("=")[0]] = element.split("=")[1]
+								linuxAppendDict[element.split("=")[0]] = element.split("=")[1].strip()
 							else:
 								linuxAppendDict[element] = ""
 						print(f"linuxAppendDict after: {linuxAppendDict}")
@@ -117,7 +117,7 @@ def patchMenuFile(config: dict) -> None:
 							linuxAppendDict.pop("service")
 						print(f"linuxAppendDict after pop: {linuxAppendDict}")
 						if pwhEntry:
-							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1]
+							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].strip()
 						if configserverUrl:
 							linuxNewlinesDict["service"] = configserverUrl
 						for key, value in linuxAppendDict.items():
