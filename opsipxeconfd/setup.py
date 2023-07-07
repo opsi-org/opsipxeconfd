@@ -10,7 +10,7 @@ opsipxeconfd - setup
 """
 
 import os
-import re
+#import re
 import passlib.hash # type: ignore[import]
 
 from opsicommon.client.opsiservice import get_service_client, ServiceClient
@@ -34,14 +34,7 @@ def encode_password(clearPassword: str) -> str:
 		else:
 			return pwhash
 
-def patchMenuFile(config: dict) -> None:
-	"""
-	Patch the address to the `configServer` and a password hash into `menufile`.
-
-	To find out where to patch we look for lines that starts with the
-	given `searchString` (excluding preceding whitespace).
-
-	"""
+def getConfigsFromService() -> tuple[str, list[str]]:
 
 	service: ServiceClient = get_service_client()
 	configserverId: str | None = ""
@@ -59,33 +52,30 @@ def patchMenuFile(config: dict) -> None:
 			configserverUrl += "/rpc"
 
 		appendConfigs = service.jsonrpc("config_getObjects", params=[[], {"id": "opsi-linux-bootimage.append"}])[0]
-		defaultAppendParams = appendConfigs.defaultValues
+		return configserverUrl,appendConfigs.defaultValues
 
 	except OpsiServiceConnectionError:
 		pass
 	finally:
 		service.disconnect()
-	newlines = []
-	if configserverUrl:
-		try:
-			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
-				for line in readMenu:
-					if line.strip().startswith("linux"):
-						if "service=" in line:
-							line = re.sub(r"\s?service=\S+", "", line)
-						newlines.append(line.replace("console=ttyS0", "console=ttyS0 service=" + configserverUrl))
-						continue
+	return "",[]
 
-					newlines.append(line)
+def patchMenuFile(config: dict) -> None:
+	"""
+	Patch the address to the `configServer` and a password hash into `menufile`.
 
-			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
-				writeMenu.writelines(newlines)
-		except FileNotFoundError:
-			logger.error("%r/grub.cfg not found", config["pxeDir"])
-	else:
-		logger.error("configserver URL not found for %r", configserverUrl)
+	To find out where to patch we look for lines that starts with the
+	given `searchString` (excluding preceding whitespace).
 
-	if defaultAppendParams:
+	"""
+
+	configserverUrl,defaultAppendParams = getConfigsFromService()
+
+	if defaultAppendParams or configserverUrl:
+		linuxDefaultDict: dict[str, str] = {}
+		linuxAppendDict: dict[str, str] = {}
+		linuxNewlinesDict: dict[str, str] = {}
+		newlines = []
 		try:
 			pwhEntry = ""
 			for element in defaultAppendParams:
@@ -95,23 +85,53 @@ def patchMenuFile(config: dict) -> None:
 					pwhEntry = f"pwh={endcodedRootPassword}"
 				if "pwh=" in element:
 					pwhEntry = element
-				if pwhEntry:
-					with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
-						for line in readMenu:
-							if line.strip().startswith("linux"):
-								if "pwh=" in line:
-									line = re.sub(r"\s?pwh=\S+", "", line)
-								newlines.append(line.replace("console=ttyS0", "console=ttyS0 " + pwhEntry))
-								continue
+			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
+				for line in readMenu:
+					if line.strip().startswith("linux"):
+						linuxAppendDict.clear()
+						if not linuxDefaultDict:
+							for element in line.split(" "):
+								if "=" in element:
+									linuxDefaultDict[element.split("=")[0]] = element.split("=")[1].strip()
+								else:
+									linuxDefaultDict[element] = ""
+						if "pwh" in linuxDefaultDict:
+							linuxDefaultDict.pop("pwh")
+						if "service" in linuxDefaultDict:
+							linuxDefaultDict.pop("service")
+						linuxNewlinesDict = linuxDefaultDict.copy()
+						for element in line.split(" "):
+							if "=" in element:
+								linuxAppendDict[element.split("=")[0]] = element.split("=")[1].strip()
+							else:
+								linuxAppendDict[element] = ""
+						if "pwh" in linuxAppendDict:
+							linuxAppendDict.pop("pwh")
+						if "service" in linuxAppendDict:
+							linuxAppendDict.pop("service")
+						if pwhEntry:
+							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].strip()
+						if configserverUrl:
+							linuxNewlinesDict["service"] = configserverUrl
+						for key, value in linuxAppendDict.items():
+							if key not in linuxDefaultDict:
+								linuxNewlinesDict[key] = value
+						if not configserverUrl:
+							logger.error("configserver URL not found for %r", configserverUrl)
+						line = ""
+						for key, value in linuxNewlinesDict.items():
+							if value:
+								line += key + '=' + value + ' '
+							else:
+								line += key + ' '
+						line = line + '\n'
 
-							newlines.append(line)
+					newlines.append(line)
 
-					with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
-						writeMenu.writelines(newlines)
+			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
+				writeMenu.writelines(newlines)
 		except FileNotFoundError:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
-	else:
-		logger.error("failed to add password hash to grub.cfg")
 
 def setup_files(log_file: str) -> None:
 	"""
