@@ -88,6 +88,7 @@ def patchMenuFile(config: dict) -> None:
 			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
 				for line in readMenu:
 					if line.strip().startswith("linux"):
+						print(line)
 						linuxAppendDict.clear()
 						if not linuxDefaultDict:
 							for element in line.split(" "):
@@ -124,6 +125,8 @@ def patchMenuFile(config: dict) -> None:
 								line += key + '=' + value + ' '
 							else:
 								line += key + ' '
+						line = line + '\n'
+						print(line)
 
 					newlines.append(line)
 
