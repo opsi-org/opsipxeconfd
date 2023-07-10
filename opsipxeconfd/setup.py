@@ -95,16 +95,19 @@ def patchMenuFile(config: dict) -> None:
 									linuxDefaultDict[element.split("=")[0].strip()] = element.split("=")[1].strip()
 								else:
 									linuxDefaultDict[element] = ""
+						logger.notice(f"linuxDefaultDict is {linuxDefaultDict}")
 						if "pwh" in linuxDefaultDict:
 							linuxDefaultDict.pop("pwh")
 						if "service" in linuxDefaultDict:
 							linuxDefaultDict.pop("service")
+						logger.notice(f"linuxDefaultDict after pop {linuxDefaultDict}")
 						linuxNewlinesDict = linuxDefaultDict.copy()
 						for element in line.split(" "):
 							if "=" in element:
 								linuxAppendDict[element.split("=")[0].rstrip()] = element.split("=")[1].rstrip()
 							else:
 								linuxAppendDict[element.rstrip()] = ""
+						logger.notice(f"linuxNewlinesDict is {linuxNewlinesDict}")
 						if "pwh" in linuxAppendDict:
 							linuxAppendDict.pop("pwh")
 						if "service" in linuxAppendDict:
@@ -113,6 +116,7 @@ def patchMenuFile(config: dict) -> None:
 							linuxNewlinesDict["service"] = configserverUrl
 						if pwhEntry:
 							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].strip()
+						logger.notice(f"linuxAppendDict is {linuxAppendDict}")
 						for key, value in linuxAppendDict.items():
 							if key not in linuxDefaultDict:
 								linuxNewlinesDict[key] = value
