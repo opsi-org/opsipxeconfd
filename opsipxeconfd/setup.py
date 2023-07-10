@@ -109,10 +109,10 @@ def patchMenuFile(config: dict) -> None:
 							linuxAppendDict.pop("pwh")
 						if "service" in linuxAppendDict:
 							linuxAppendDict.pop("service")
-						if pwhEntry:
-							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].strip()
 						if configserverUrl:
 							linuxNewlinesDict["service"] = configserverUrl
+						if pwhEntry:
+							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].strip()
 						for key, value in linuxAppendDict.items():
 							if key not in linuxDefaultDict:
 								linuxNewlinesDict[key] = value
