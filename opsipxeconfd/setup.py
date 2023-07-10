@@ -92,9 +92,9 @@ def patchMenuFile(config: dict) -> None:
 						if not linuxDefaultDict:
 							for element in line.split(" "):
 								if "=" in element:
-									linuxDefaultDict[element.split("=")[0].strip()] = element.split("=")[1].strip()
+									linuxDefaultDict[element.split("=")[0].rstrip()] = element.split("=")[1].rstrip()
 								else:
-									linuxDefaultDict[element] = ""
+									linuxDefaultDict[element.rstrip()] = ""
 						logger.notice(f"linuxDefaultDict is {linuxDefaultDict}")
 						if "pwh" in linuxDefaultDict:
 							linuxDefaultDict.pop("pwh")
@@ -115,7 +115,7 @@ def patchMenuFile(config: dict) -> None:
 						if configserverUrl:
 							linuxNewlinesDict["service"] = configserverUrl
 						if pwhEntry:
-							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].strip()
+							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].rstrip()
 						logger.notice(f"linuxAppendDict is {linuxAppendDict}")
 						for key, value in linuxAppendDict.items():
 							if key not in linuxDefaultDict:
