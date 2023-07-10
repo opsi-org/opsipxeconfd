@@ -92,9 +92,9 @@ def patchMenuFile(config: dict) -> None:
 						if not linuxDefaultDict:
 							for element in line.split(" "):
 								if "=" in element:
-									linuxDefaultDict[element.split("=")[0].rstrip()] = element.split("=")[1].rstrip()
+									linuxDefaultDict[element.split("=")[0].strip()] = element.split("=")[1].strip()
 								else:
-									linuxDefaultDict[element.rstrip()] = ""
+									linuxDefaultDict[element.strip()] = ""
 						if "pwh" in linuxDefaultDict:
 							linuxDefaultDict.pop("pwh")
 						if "service" in linuxDefaultDict:
@@ -102,9 +102,9 @@ def patchMenuFile(config: dict) -> None:
 						linuxNewlinesDict = linuxDefaultDict.copy()
 						for element in line.split(" "):
 							if "=" in element:
-								linuxAppendDict[element.split("=")[0].rstrip()] = element.split("=")[1].rstrip()
+								linuxAppendDict[element.split("=")[0].strip()] = element.split("=")[1].strip()
 							else:
-								linuxAppendDict[element.rstrip()] = ""
+								linuxAppendDict[element.strip()] = ""
 						if "pwh" in linuxAppendDict:
 							linuxAppendDict.pop("pwh")
 						if "service" in linuxAppendDict:
@@ -112,19 +112,13 @@ def patchMenuFile(config: dict) -> None:
 						if configserverUrl:
 							linuxNewlinesDict["service"] = configserverUrl
 						if pwhEntry:
-							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].rstrip()
+							linuxNewlinesDict[pwhEntry.split("=")[0].strip()] = pwhEntry.split("=")[1].strip()
 						for key, value in linuxAppendDict.items():
 							if key not in linuxDefaultDict:
 								linuxNewlinesDict[key] = value
 						if not configserverUrl:
 							logger.error("configserver URL not found for %r", configserverUrl)
-						line = ""
-						for key, value in linuxNewlinesDict.items():
-							if value:
-								line += key + '=' + value + ' '
-							else:
-								line += key + ' '
-						line = line + '\n'
+						line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
 
 					newlines.append(line)
 
