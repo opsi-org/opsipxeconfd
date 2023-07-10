@@ -72,9 +72,9 @@ def patchMenuFile(config: dict) -> None:
 	configserverUrl,defaultAppendParams = getConfigsFromService()
 
 	if defaultAppendParams or configserverUrl:
-		linuxDefaultDict: dict[str, str] = {}
-		linuxAppendDict: dict[str, str] = {}
-		linuxNewlinesDict: dict[str, str] = {}
+		linuxDefaultDict: dict[str, str|None] = {}
+		linuxAppendDict: dict[str, str|None] = {}
+		linuxNewlinesDict: dict[str, str|None] = {}
 		newlines = []
 		try:
 			pwhEntry = ""
@@ -92,9 +92,9 @@ def patchMenuFile(config: dict) -> None:
 						if not linuxDefaultDict:
 							for element in line.split(" "):
 								if "=" in element:
-									linuxDefaultDict[element.split("=")[0]] = element.split("=")[1].strip()
+									linuxDefaultDict[element.split("=")[0].strip(' \n\r')] = element.split("=")[1].strip(' \n\r')
 								else:
-									linuxDefaultDict[element] = ""
+									linuxDefaultDict[element.strip(' \n\r')] = None
 						if "pwh" in linuxDefaultDict:
 							linuxDefaultDict.pop("pwh")
 						if "service" in linuxDefaultDict:
@@ -102,34 +102,29 @@ def patchMenuFile(config: dict) -> None:
 						linuxNewlinesDict = linuxDefaultDict.copy()
 						for element in line.split(" "):
 							if "=" in element:
-								linuxAppendDict[element.split("=")[0]] = element.split("=")[1].strip()
+								linuxAppendDict[element.split("=")[0].strip(' \n\r')] = element.split("=")[1].strip(' \n\r')
 							else:
-								linuxAppendDict[element] = ""
+								linuxAppendDict[element.strip(' \n\r')] = None
 						if "pwh" in linuxAppendDict:
 							linuxAppendDict.pop("pwh")
 						if "service" in linuxAppendDict:
 							linuxAppendDict.pop("service")
-						if pwhEntry:
-							linuxNewlinesDict[pwhEntry.split("=")[0]] = pwhEntry.split("=")[1].strip()
 						if configserverUrl:
 							linuxNewlinesDict["service"] = configserverUrl
+						if pwhEntry:
+							linuxNewlinesDict[pwhEntry.split("=")[0].strip(' \n\r')] = pwhEntry.split("=")[1].strip(' \n\r')
 						for key, value in linuxAppendDict.items():
 							if key not in linuxDefaultDict:
 								linuxNewlinesDict[key] = value
 						if not configserverUrl:
 							logger.error("configserver URL not found for %r", configserverUrl)
-						line = ""
-						for key, value in linuxNewlinesDict.items():
-							if value:
-								line += key + '=' + value + ' '
-							else:
-								line += key + ' '
-						line = line + '\n'
+						line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
 
 					newlines.append(line)
 
 			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
 				writeMenu.writelines(newlines)
+
 		except FileNotFoundError:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
 

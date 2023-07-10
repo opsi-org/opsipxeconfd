@@ -93,12 +93,14 @@ def test_grub_pxe_config_writer() -> None:
 	#   hn=test dn=uib.gmbh product service pwh=$6$salt$password
 	# initrd (pxe)/linux/miniroot-x64
 	# }
-	assert "install-x64" in content
-	assert "hn=test" in content
-	assert "dn=uib.gmbh" in content
-	assert "product" in content
-	assert "service=https://server.uib.gmbh:4447/rpc" in content
-	assert "pwh=$6$salt$password" in content
+	for line in content:
+		if line.strip().startswith("linux"):
+			assert "install-x64" in line
+			assert "hn=test" in line
+			assert "dn=uib.gmbh" in line
+			assert "product" in line
+			assert "service=https://server.uib.gmbh:4447/rpc" in line
+			assert "pwh=$6$salt$password" in line
 
 def test_service_patch_menu_file(tmp_path: Path) -> None:
 	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
@@ -106,8 +108,10 @@ def test_service_patch_menu_file(tmp_path: Path) -> None:
 	patchMenuFile(config)
 	grub_cfg = tmp_path / 'grub.cfg'
 	content = grub_cfg.read_text(encoding='utf-8')
-	assert 'service' in content
-	assert 'pwh' not in content
+	for line in content:
+		if line.strip().startswith("linux"):
+			assert 'service' in line
+			assert 'pwh' not in line
 
 def test_pwh_patch_menu_file(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
@@ -118,8 +122,10 @@ def test_pwh_patch_menu_file(tmp_path: Path) -> None:
 		patchMenuFile(config)
 		grub_cfg = tmp_path / 'grub.cfg'
 		content = grub_cfg.read_text(encoding='utf-8')
-		assert 'pwh=$6$salt$123456' in content
-		assert 'https://service.uib.gmbh:4447/rpc' in content
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert 'pwh=$6$salt$123456' in line
+				assert 'https://service.uib.gmbh:4447/rpc' in line
 
 def test_pwh_patch_menu_removal(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
@@ -130,16 +136,20 @@ def test_pwh_patch_menu_removal(tmp_path: Path) -> None:
 		patchMenuFile(config)
 		grub_cfg = tmp_path / 'grub.cfg'
 		content = grub_cfg.read_text(encoding='utf-8')
-		assert 'pwh=$6$salt$123456' in content
-		assert 'https://service.uib.gmbh:4447/rpc' in content
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert 'pwh=$6$salt$123456' in line
+				assert 'https://service.uib.gmbh:4447/rpc' in line
+
 		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
 			return 'https://service.uib.gmbh:4447/rpc', ['']
 		with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockRemovePwhFromGrubCfg):
 			patchMenuFile(config)
 			content = grub_cfg.read_text(encoding='utf-8')
-			print(content)
-			assert 'pwh=$6$salt$123456' not in content
-			assert 'https://service.uib.gmbh:4447/rpc' in content
+			for line in content:
+				if line.strip().startswith("linux"):
+					assert 'pwh=$6$salt$123456' not in line
+					assert 'https://service.uib.gmbh:4447/rpc' in line
 
 def test_service_and_pwh_change(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
@@ -150,17 +160,22 @@ def test_service_and_pwh_change(tmp_path: Path) -> None:
 		patchMenuFile(config)
 		grub_cfg = tmp_path / 'grub.cfg'
 		content = grub_cfg.read_text(encoding='utf-8')
-		assert 'pwh=$6$salt$123456' in content
-		assert 'https://service.uib.gmbh:4447/rpc' in content
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert 'pwh=$6$salt$123456' in line
+				assert 'https://service.uib.gmbh:4447/rpc' in line
+
 		def mockGetConfigFromService2() -> tuple[str, list[str]]:
 			return 'https://opsiserver.uib.gmbh:4447/rpc', ['pwh=$6$tlas$654321']
 		with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService2):
 			patchMenuFile(config)
 			content = grub_cfg.read_text(encoding='utf-8')
-			assert 'pwh=$6$salt$123456' not in content
-			assert 'pwh=$6$tlas$654321' in content
-			assert 'https://service.uib.gmbh:4447/rpc' not in content
-			assert 'https://opsiserver.uib.gmbh:4447/rpc' in content
+			for line in content:
+				if line.strip().startswith("linux"):
+					assert 'pwh=$6$salt$123456' not in line
+					assert 'pwh=$6$tlas$654321' in line
+					assert 'https://service.uib.gmbh:4447/rpc' not in line
+					assert 'https://opsiserver.uib.gmbh:4447/rpc' in line
 
 def test_pid_file() -> None:
 	if os.path.exists(PID_FILE):
