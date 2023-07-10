@@ -118,7 +118,7 @@ def patchMenuFile(config: dict) -> None:
 								linuxNewlinesDict[key] = value
 						if not configserverUrl:
 							logger.error("configserver URL not found for %r", configserverUrl)
-						line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
+						line = " ".join(k if v is "" else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
 
 					newlines.append(line)
 
