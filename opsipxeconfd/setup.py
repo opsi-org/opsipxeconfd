@@ -72,9 +72,9 @@ def patchMenuFile(config: dict) -> None:
 	configserverUrl,defaultAppendParams = getConfigsFromService()
 
 	if defaultAppendParams or configserverUrl:
-		linuxDefaultDict: dict[str, str] = {}
-		linuxAppendDict: dict[str, str] = {}
-		linuxNewlinesDict: dict[str, str] = {}
+		linuxDefaultDict: dict[str, str|None] = {}
+		linuxAppendDict: dict[str, str|None] = {}
+		linuxNewlinesDict: dict[str, str|None] = {}
 		newlines = []
 		try:
 			pwhEntry = ""
