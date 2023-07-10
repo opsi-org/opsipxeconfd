@@ -102,9 +102,9 @@ def patchMenuFile(config: dict) -> None:
 						linuxNewlinesDict = linuxDefaultDict.copy()
 						for element in line.split(" "):
 							if "=" in element:
-								linuxAppendDict[element.split("=")[0].strip()] = element.split("=")[1].strip()
+								linuxAppendDict[element.split("=")[0].rstrip()] = element.split("=")[1].rstrip()
 							else:
-								linuxAppendDict[element.strip()] = ""
+								linuxAppendDict[element.rstrip()] = ""
 						if "pwh" in linuxAppendDict:
 							linuxAppendDict.pop("pwh")
 						if "service" in linuxAppendDict:
@@ -125,6 +125,7 @@ def patchMenuFile(config: dict) -> None:
 							else:
 								line += key + ' '
 						line = line + '\n'
+						logger.notice(f"linux line is {line}")
 
 					newlines.append(line)
 
