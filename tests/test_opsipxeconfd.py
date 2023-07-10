@@ -138,7 +138,7 @@ def test_pwh_patch_menu_removal(tmp_path: Path) -> None:
 		content = grub_cfg.read_text(encoding='utf-8')
 		for line in content:
 			if line.strip().startswith("linux"):
-				assert 'pwh=$6$salt$123456' in line
+				assert 'pwh=\$6\$salt\$123456' in line
 				assert 'https://service.uib.gmbh:4447/rpc' in line
 
 		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
@@ -148,7 +148,7 @@ def test_pwh_patch_menu_removal(tmp_path: Path) -> None:
 			content = grub_cfg.read_text(encoding='utf-8')
 			for line in content:
 				if line.strip().startswith("linux"):
-					assert 'pwh=$6$salt$123456' not in line
+					assert 'pwh=\$6\$salt\$123456' not in line
 					assert 'https://service.uib.gmbh:4447/rpc' in line
 
 def test_service_and_pwh_change(tmp_path: Path) -> None:
@@ -162,7 +162,7 @@ def test_service_and_pwh_change(tmp_path: Path) -> None:
 		content = grub_cfg.read_text(encoding='utf-8')
 		for line in content:
 			if line.strip().startswith("linux"):
-				assert 'pwh=$6$salt$123456' in line
+				assert 'pwh=\$6\$salt\$123456' in line
 				assert 'https://service.uib.gmbh:4447/rpc' in line
 
 		def mockGetConfigFromService2() -> tuple[str, list[str]]:
@@ -173,7 +173,7 @@ def test_service_and_pwh_change(tmp_path: Path) -> None:
 			for line in content:
 				if line.strip().startswith("linux"):
 					assert 'pwh=$6$salt$123456' not in line
-					assert 'pwh=$6$tlas$654321' in line
+					assert 'pwh=\$6\$tlas\$654321' in line
 					assert 'https://service.uib.gmbh:4447/rpc' not in line
 					assert 'https://opsiserver.uib.gmbh:4447/rpc' in line
 
