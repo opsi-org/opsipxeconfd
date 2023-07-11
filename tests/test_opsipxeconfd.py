@@ -10,7 +10,6 @@ import os
 
 from OPSI.Types import forceHostId
 from OPSI.Util import getfqdn
-from OPSI.Util.Task.ConfigureBootimage import patchMenuFile, getMenuFiles, patchRootPasswordInDefaultConfigs, patchServiceUrlInDefaultConfigs
 
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
 from opsipxeconfd.util import temporaryPidFile
@@ -82,7 +81,7 @@ def test_pxeconfigwriter():
 		"hn": hostId.split(".")[0],
 		"dn": ".".join(hostId.split(".")[1:]),
 		"product": None,
-		"service": "",
+		"service": None,
 	}
 	productPropertyStates = {}
 	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, True, True)
