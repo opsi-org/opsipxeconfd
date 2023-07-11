@@ -85,6 +85,8 @@ def patchMenuFile(config: dict) -> None:
 					pwhEntry = f"pwh={endcodedRootPassword}"
 				if "pwh=" in element:
 					pwhEntry = element
+				if pwhEntry:
+					pwhEntry = pwhEntry.replace("$", r"\$")
 			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
 				for line in readMenu:
 					if line.strip().startswith("linux"):
