@@ -10,7 +10,7 @@ import os
 
 from OPSI.Types import forceHostId
 from OPSI.Util import getfqdn
-from OPSI.Util.Task.ConfigureBootimage import patchMenuFile, getMenuFiles, patchRootPasswordInDefaultConfigs, patchServiceUrlInDefaultConfigs
+#from OPSI.Util.Task.ConfigureBootimage import patchMenuFile, getMenuFiles, patchRootPasswordInDefaultConfigs, patchServiceUrlInDefaultConfigs
 
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
 from opsipxeconfd.util import temporaryPidFile
