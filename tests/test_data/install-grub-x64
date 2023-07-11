@@ -1,0 +1,6 @@
+set timeout=0
+menuentry 'Start netboot installation' {
+set gfxpayload=keep
+linux (pxe)/linux/install-x64 initrd=miniroot-x64 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
+initrd (pxe)/linux/miniroot-x64
+}

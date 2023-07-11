@@ -10,6 +10,7 @@ import os
 
 from OPSI.Types import forceHostId
 from OPSI.Util import getfqdn
+from OPSI.Util.Task.ConfigureBootimage import patchMenuFile, getMenuFiles, patchRootPasswordInDefaultConfigs, patchServiceUrlInDefaultConfigs
 
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
 from opsipxeconfd.util import temporaryPidFile
@@ -77,12 +78,17 @@ def test_pxeconfigwriter():
 	pxeConfigTemplate = os.path.join(TEST_DATA, PXE_TEMPLATE_FILE)
 	pxefile = CONFFILE
 	append = {
-		"pckey": None,
-		"hn": hostId.split(".")[0],
-		"dn": ".".join(hostId.split(".")[1:]),
+		"pckey": "123",
+		"hn": host_id.split(".")[0],
+		"dn": ".".join(host_id.split(".")[1:]),
 		"product": None,
-		"service": None,
+		"service": "https://server.uib.gmbh:4447/rpc",
+		"pwh": "$6$salt$password",
+		"acpi": None,
+		"nomodeset": None,
+		"nomsi": None,
 	}
+
 	productPropertyStates = {}
 	pcw = PXEConfigWriter(pxeConfigTemplate, hostId, productOnClients, append, productPropertyStates, pxefile, True, True)
 	content = pcw._getPXEConfigContent(pxeConfigTemplate)  # pylint: disable=protected-access
@@ -90,7 +96,16 @@ def test_pxeconfigwriter():
 	# label opsi-install-x64
 	# kernel install-x64
 	# append initrd=miniroot-x64.bz2 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0 hn=test dn=uib.gmbh product service  # pylint: disable=line-too-long
-	assert " ".join(["kernel", PXE_TEMPLATE_FILE]) in content
+	assert "install-x64" in content
+	assert "hn=test" in content
+	assert "dn=uib.gmbh" in content
+	assert "product" in content
+	assert "service=https://server.uib.gmbh:4447/rpc" in content
+	assert "pwh=$6$salt$password" in content
+	assert "acpi" in content
+	assert "nomodeset" in content
+	assert "nomsi" in content
+
 
 
 def test_temporarypidfile():
