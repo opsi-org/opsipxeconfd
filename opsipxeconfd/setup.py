@@ -86,7 +86,7 @@ def patchMenuFile(config: dict) -> None:
 				if "pwh=" in element:
 					pwhEntry = element
 				if pwhEntry:
-					pwhEntry = pwhEntry.replace("$", "\$")
+					pwhEntry = pwhEntry.replace("$", r"\$")
 			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
 				for line in readMenu:
 					if line.strip().startswith("linux"):
