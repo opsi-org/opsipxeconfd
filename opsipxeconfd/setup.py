@@ -78,6 +78,7 @@ def patchMenuFile(config: dict) -> None:
 		newlines = []
 		try:
 			pwhEntry = ""
+			langEntry = ""
 			for element in defaultAppendParams:
 				if "bootimageRootPassword" in element:
 					clearRootPassword = element.split("=")[1]
@@ -87,6 +88,8 @@ def patchMenuFile(config: dict) -> None:
 					pwhEntry = element
 				if pwhEntry:
 					pwhEntry = pwhEntry.replace("$", r"\$")
+				if "lang=" in element:
+					langEntry = element
 			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
 				for line in readMenu:
 					if line.strip().startswith("linux"):
@@ -101,6 +104,8 @@ def patchMenuFile(config: dict) -> None:
 							linuxDefaultDict.pop("pwh")
 						if "service" in linuxDefaultDict:
 							linuxDefaultDict.pop("service")
+						if "lang" in linuxDefaultDict:
+							linuxDefaultDict.pop("lang")
 						linuxNewlinesDict = linuxDefaultDict.copy()
 						for element in line.split(" "):
 							if "=" in element:
@@ -115,6 +120,8 @@ def patchMenuFile(config: dict) -> None:
 							linuxNewlinesDict["service"] = configserverUrl
 						if pwhEntry:
 							linuxNewlinesDict[pwhEntry.split("=")[0].strip(' \n\r')] = pwhEntry.split("=")[1].strip(' \n\r')
+						if langEntry:
+							linuxNewlinesDict["lang"] = langEntry
 						for key, value in linuxAppendDict.items():
 							if key not in linuxDefaultDict:
 								linuxNewlinesDict[key] = value
