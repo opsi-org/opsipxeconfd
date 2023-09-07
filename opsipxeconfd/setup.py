@@ -90,49 +90,55 @@ def patchMenuFile(config: dict) -> None:
 					pwhEntry = pwhEntry.replace("$", r"\$")
 				if "lang=" in element:
 					langEntry = element
-			with open(config["pxeDir"] + "/grub.cfg", "r", encoding="utf-8") as readMenu:
-				for line in readMenu:
-					if line.strip().startswith("linux"):
-						linuxAppendDict.clear()
-						if not linuxDefaultDict:
+			grubFiles = ["/grub.cfg"]
+			if os.path.exists(config["pxeDir"] + "/grub-menu.cfg"):
+				grubFiles.append("/grub-menu.cfg")
+			for grubFile in grubFiles:
+				with open(config["pxeDir"] + grubFile, "r", encoding="utf-8") as readMenu:
+					for line in readMenu:
+						if line.strip().startswith("linux"):
+							linuxAppendDict.clear()
+							if not linuxDefaultDict:
+								for element in line.split(" "):
+									if "=" in element:
+										linuxDefaultDict[element.split("=")[0].strip(' \n\r')] = element.split("=")[1].strip(' \n\r')
+									else:
+										linuxDefaultDict[element.strip(' \n\r')] = None
+							if "pwh" in linuxDefaultDict:
+								linuxDefaultDict.pop("pwh")
+							if "service" in linuxDefaultDict:
+								linuxDefaultDict.pop("service")
+							if "lang" in linuxDefaultDict:
+								linuxDefaultDict.pop("lang")
+							linuxNewlinesDict = linuxDefaultDict.copy()
 							for element in line.split(" "):
 								if "=" in element:
-									linuxDefaultDict[element.split("=")[0].strip(' \n\r')] = element.split("=")[1].strip(' \n\r')
+									linuxAppendDict[element.split("=")[0].strip(' \n\r')] = element.split("=")[1].strip(' \n\r')
 								else:
-									linuxDefaultDict[element.strip(' \n\r')] = None
-						if "pwh" in linuxDefaultDict:
-							linuxDefaultDict.pop("pwh")
-						if "service" in linuxDefaultDict:
-							linuxDefaultDict.pop("service")
-						if "lang" in linuxDefaultDict:
-							linuxDefaultDict.pop("lang")
-						linuxNewlinesDict = linuxDefaultDict.copy()
-						for element in line.split(" "):
-							if "=" in element:
-								linuxAppendDict[element.split("=")[0].strip(' \n\r')] = element.split("=")[1].strip(' \n\r')
-							else:
-								linuxAppendDict[element.strip(' \n\r')] = None
-						if "pwh" in linuxAppendDict:
-							linuxAppendDict.pop("pwh")
-						if "service" in linuxAppendDict:
-							linuxAppendDict.pop("service")
-						if configserverUrl:
-							linuxNewlinesDict["service"] = configserverUrl
-						if pwhEntry:
-							linuxNewlinesDict[pwhEntry.split("=")[0].strip(' \n\r')] = pwhEntry.split("=")[1].strip(' \n\r')
-						if langEntry:
-							linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(' \n\r')
-						for key, value in linuxAppendDict.items():
-							if key not in linuxDefaultDict:
-								linuxNewlinesDict[key] = value
-						if not configserverUrl:
-							logger.error("configserver URL not found for %r", configserverUrl)
-						line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
+									linuxAppendDict[element.strip(' \n\r')] = None
+							if "pwh" in linuxAppendDict:
+								linuxAppendDict.pop("pwh")
+							if "service" in linuxAppendDict:
+								linuxAppendDict.pop("service")
+							if configserverUrl:
+								linuxNewlinesDict["service"] = configserverUrl
+							if pwhEntry:
+								linuxNewlinesDict[pwhEntry.split("=")[0].strip(' \n\r')] = pwhEntry.split("=")[1].strip(' \n\r')
+							if langEntry:
+								linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(' \n\r')
+							for key, value in linuxAppendDict.items():
+								if key not in linuxDefaultDict:
+									linuxNewlinesDict[key] = value
+							if not configserverUrl:
+								logger.error("configserver URL not found for %r", configserverUrl)
+							line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
 
-					newlines.append(line)
+						newlines.append(line)
 
-			with open(config["pxeDir"] + "/grub.cfg", "w", encoding="utf-8") as writeMenu:
-				writeMenu.writelines(newlines)
+			for grubFile in grubFiles:
+				with open(config["pxeDir"] + grubFile, "w", encoding="utf-8") as writeMenu:
+					writeMenu.writelines(newlines)
+
 
 		except FileNotFoundError:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
