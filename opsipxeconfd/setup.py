@@ -120,6 +120,8 @@ def patchMenuFile(config: dict) -> None:
 								linuxAppendDict.pop("pwh")
 							if "service" in linuxAppendDict:
 								linuxAppendDict.pop("service")
+							if ""lang" in linuxAppendDict:
+								linuxAppendDict.pop("lang")
 							if configserverUrl:
 								linuxNewlinesDict["service"] = configserverUrl
 							if pwhEntry:
