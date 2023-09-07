@@ -75,7 +75,6 @@ def patchMenuFile(config: dict) -> None:
 		linuxDefaultDict: dict[str, str|None] = {}
 		linuxAppendDict: dict[str, str|None] = {}
 		linuxNewlinesDict: dict[str, str|None] = {}
-		newlines = []
 		try:
 			pwhEntry = ""
 			langEntry = ""
@@ -94,6 +93,7 @@ def patchMenuFile(config: dict) -> None:
 			if os.path.exists(config["pxeDir"] + "/grub-menu.cfg"):
 				grubFiles.append("/grub-menu.cfg")
 			for grubFile in grubFiles:
+				newlines = []
 				with open(config["pxeDir"] + grubFile, "r", encoding="utf-8") as readMenu:
 					for line in readMenu:
 						if line.strip().startswith("linux"):
@@ -137,7 +137,6 @@ def patchMenuFile(config: dict) -> None:
 
 						newlines.append(line)
 
-			for grubFile in grubFiles:
 				with open(config["pxeDir"] + grubFile, "w", encoding="utf-8") as writeMenu:
 					writeMenu.writelines(newlines)
 
