@@ -121,7 +121,7 @@ def patchMenuFile(config: dict) -> None:
 						if pwhEntry:
 							linuxNewlinesDict[pwhEntry.split("=")[0].strip(' \n\r')] = pwhEntry.split("=")[1].strip(' \n\r')
 						if langEntry:
-							linuxNewlinesDict["lang"] = langEntry
+							linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(' \n\r')
 						for key, value in linuxAppendDict.items():
 							if key not in linuxDefaultDict:
 								linuxNewlinesDict[key] = value
