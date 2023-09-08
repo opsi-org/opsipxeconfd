@@ -106,6 +106,8 @@ def test_grub_pxe_config_writer() -> None:
 			assert r"pwh=\$6\$salt\$password" in line
 			assert "lang=de" in line
 
+########### OLD GRUB CFG ################
+
 def test_service_patch_menu_file(tmp_path: Path) -> None:
 	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 	config = {'pxeDir': str(tmp_path)}
@@ -182,6 +184,204 @@ def test_service_and_pwh_change(tmp_path: Path) -> None:
 		config = {'pxeDir': str(tmp_path)}
 		patchMenuFile(config)
 		grub_cfg = tmp_path / 'grub.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert r'pwh=\$6\$salt\$123456' in line
+				assert 'https://service.uib.gmbh:4447/rpc' in line
+				assert 'lang=us' in line
+
+		def mockGetConfigFromService2() -> tuple[str, list[str]]:
+			return 'https://opsiserver.uib.gmbh:4447/rpc', ['pwh=$6$tlas$654321', 'lang=de']
+		with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService2):
+			patchMenuFile(config)
+			content = grub_cfg.read_text(encoding='utf-8')
+			for line in content:
+				if line.strip().startswith("linux"):
+					assert 'pwh=$6$salt$123456' not in line
+					assert r'pwh=\$6\$tlas\$654321' in line
+					assert 'https://service.uib.gmbh:4447/rpc' not in line
+					assert 'https://opsiserver.uib.gmbh:4447/rpc' in line
+					assert 'lang=us' not in line
+					assert 'lang=de' in line
+
+########### GRUB CFG ################
+
+def test_service_patch_new_grub_file(tmp_path: Path) -> None:
+	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+	config = {'pxeDir': str(tmp_path)}
+	patchMenuFile(config)
+	grub_cfg = tmp_path / 'grub.cfg'
+	content = grub_cfg.read_text(encoding='utf-8')
+	for line in content:
+		if line.strip().startswith("linux"):
+			assert 'service' not in line
+			assert 'pwh' not in line
+			assert 'lang' not in line
+
+def test_pwh_patch_new_grub_file(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert r'pwh=\$6\$salt\$123456' not in line
+				assert 'https://service.uib.gmbh:4447/rpc' not in line
+				assert 'lang=de' not in line
+
+def test_lang_patch_new_grub_file(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return 'https://service.uib.gmbh:4447/rpc', ['lang=de']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert 'lang=de' not in line
+				assert 'https://service.uib.gmbh:4447/rpc' not in line
+				assert 'pwh' not in line
+
+def test_pwh_patch_new_grub_removal_in_grub_cfg(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456', 'lang=us']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert r'pwh=\$6\$salt\$123456' not in line
+				assert 'https://service.uib.gmbh:4447/rpc' not in line
+				assert 'lang=us' not in line
+
+		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
+			return 'https://service.uib.gmbh:4447/rpc', ['']
+		with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockRemovePwhFromGrubCfg):
+			patchMenuFile(config)
+			content = grub_cfg.read_text(encoding='utf-8')
+			for line in content:
+				if line.strip().startswith("linux"):
+					assert r'pwh=\$6\$salt\$123456' not in line
+					assert 'https://service.uib.gmbh:4447/rpc' not in line
+					assert 'lang=us' not in line
+
+def test_service_and_pwh_change_in_grub_cfg(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456', 'lang=us']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert r'pwh=\$6\$salt\$123456' not in line
+				assert 'https://service.uib.gmbh:4447/rpc' not in line
+				assert 'lang=us' not in line
+
+		def mockGetConfigFromService2() -> tuple[str, list[str]]:
+			return 'https://opsiserver.uib.gmbh:4447/rpc', ['pwh=$6$tlas$654321', 'lang=de']
+		with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService2):
+			patchMenuFile(config)
+			content = grub_cfg.read_text(encoding='utf-8')
+			for line in content:
+				if line.strip().startswith("linux"):
+					assert 'pwh=$6$salt$123456' not in line
+					assert r'pwh=\$6\$tlas\$654321' not in line
+					assert 'https://service.uib.gmbh:4447/rpc' not in line
+					assert 'https://opsiserver.uib.gmbh:4447/rpc' not in line
+					assert 'lang=us' not in line
+					assert 'lang=de' not in line
+
+########### GRUB MENU ################
+
+def test_service_patch_new_grub_menu_file(tmp_path: Path) -> None:
+	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+	config = {'pxeDir': str(tmp_path)}
+	patchMenuFile(config)
+	grub_cfg = tmp_path / 'grub-menu.cfg'
+	content = grub_cfg.read_text(encoding='utf-8')
+	for line in content:
+		if line.strip().startswith("linux"):
+			assert 'service' not in line
+			assert 'pwh' not in line
+			assert 'lang' not in line
+
+def test_pwh_patch_new_grub_menu_file(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub-menu.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert r'pwh=\$6\$salt\$123456' in line
+				assert 'https://service.uib.gmbh:4447/rpc' in line
+				assert 'lang=de' not in line
+
+def test_lang_patch_new_grub_menu_file(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return 'https://service.uib.gmbh:4447/rpc', ['lang=de']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub-menu.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert 'lang=de' in line
+				assert 'https://service.uib.gmbh:4447/rpc' in line
+				assert 'pwh' not in line
+
+def test_pwh_patch_new_grub_removal_in_grub_menu(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456', 'lang=us']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub-menu.cfg'
+		content = grub_cfg.read_text(encoding='utf-8')
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert r'pwh=\$6\$salt\$123456' in line
+				assert 'https://service.uib.gmbh:4447/rpc' in line
+				assert 'lang=us' in line
+
+		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
+			return 'https://service.uib.gmbh:4447/rpc', ['']
+		with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockRemovePwhFromGrubCfg):
+			patchMenuFile(config)
+			content = grub_cfg.read_text(encoding='utf-8')
+			for line in content:
+				if line.strip().startswith("linux"):
+					assert r'pwh=\$6\$salt\$123456' not in line
+					assert 'https://service.uib.gmbh:4447/rpc' in line
+					assert 'lang=us' not in line
+
+def test_service_and_pwh_change_in_grub_menu(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return 'https://service.uib.gmbh:4447/rpc', ['pwh=$6$salt$123456', 'lang=us']
+	with mock.patch('opsipxeconfd.setup.getConfigsFromService', mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {'pxeDir': str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / 'grub-menu.cfg'
 		content = grub_cfg.read_text(encoding='utf-8')
 		for line in content:
 			if line.strip().startswith("linux"):
