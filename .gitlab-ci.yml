@@ -42,7 +42,7 @@ stages:
 
 pylint-pytest:
   image:
-    name: docker.uib.gmbh/opsi/opsi-server:4.3-development
+    name: docker.uib.gmbh/opsi/opsi-server:4.3-stable
     entrypoint: [""]
   services:
     - name: mysql:latest
