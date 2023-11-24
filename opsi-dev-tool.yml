@@ -1,6 +1,10 @@
 pyinstaller-poetry:
   one_file: no
   strip: yes
+  extra_args:
+    # Do not use contents-directory for now
+    - "--contents-directory"
+    - "."
   scripts:
     - script: run-opsipxeconfd
       binaries:

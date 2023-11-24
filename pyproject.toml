@@ -12,12 +12,16 @@ include = [
 ]
 
 [[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[[tool.poetry.source]]
 name = "uibpypi"
 url = "http://pypi.uib.gmbh:8080/simple"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-python-opsi-common = "^4.3.0.2"
+python-opsi-common = "^4.3.1.0"
 inotify = "^0.2.10"
 configargparse = "^1.5.3"
 passlib = "^1.7.4"
@@ -26,21 +30,18 @@ passlib = "^1.7.4"
 opsipxeconfd = "opsipxeconfd.__main__:main"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.0.243"
+ruff = "^0.1"
 pytest = "^7.2"
 pytest-cov = "^4.0"
-pyinstaller = "^5.5"
-pylint = "^2.12"
-tan = "^22.8"
-mypy = "^0.991"
-
-[tool.black]
-line-length = 140
-target-version = ['py39', 'py310']
-use-tabs = true
+pyinstaller = "^6.2"
+pylint = "^3.0"
+mypy = "^1.7"
 
 [tool.ruff]
 line-length = 140
+
+[tool.ruff.format]
+indent-style = "tab"
 
 [tool.mypy]
 disallow_untyped_calls = true
