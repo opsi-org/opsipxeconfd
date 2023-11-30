@@ -13,7 +13,7 @@ import os
 import shutil
 import time
 from threading import Event, Thread
-from typing import Callable, Dict
+from typing import Callable
 
 from inotify.adapters import Inotify  # type: ignore[import]
 from opsicommon.config.opsi import OpsiConfig
@@ -38,8 +38,8 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		template_file: str,
 		host_id: str,
 		product_on_client: ProductOnClient,
-		append: Dict,
-		product_property_states: Dict,
+		append: dict,
+		product_property_states: dict,
 		pxefiles: list[str],
 		secure_boot_module: bool,
 		uefi_module: bool,
@@ -58,17 +58,17 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		:type host_id:str
 		:param product_on_client: ProductOnClient.
 		:type product_on_client: ProductOnClient
-		:param append: Dictionary of additional Information (pckey).
-		:type append: Dict
+		:param append: dictionary of additional Information (pckey).
+		:type append: dict
 		:param productPropertyStates: Data to be collected by _getPXEConfigContent.
-		:type productPropertyStates: Dict
+		:type productPropertyStates: dict
 		:param pxefiles: Path of the PXEfiles.
 		:type pxefile: list[str]
 		:param callback: Optional Callback (executed after running PXEConfigWriter).
 		:type callback: Callable
-		:param backendinfo: Dictionary with information about the backend.
+		:param backendinfo: dictionary with information about the backend.
 		                This data is parsed for uifi module license at init.
-		:type backendinfo: Dict
+		:type backendinfo: dict
 		"""
 		Thread.__init__(self)
 		self.daemon = True
