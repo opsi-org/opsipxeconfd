@@ -19,6 +19,7 @@ from inotify.adapters import Inotify  # type: ignore[import]
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.logging import get_logger, log_context
 from opsicommon.objects import ProductOnClient
+
 from opsipxeconfd.setup import encode_password
 
 logger = get_logger()
@@ -39,7 +40,7 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		product_on_client: ProductOnClient,
 		append: Dict,
 		product_property_states: Dict,
-		pxefile: str,
+		pxefiles: list[str],
 		secure_boot_module: bool,
 		uefi_module: bool,
 		callback: Callable | None = None,
@@ -61,12 +62,12 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		:type append: Dict
 		:param productPropertyStates: Data to be collected by _getPXEConfigContent.
 		:type productPropertyStates: Dict
-		:param pxefile: Path of the PXEfile.
-		:type pxefile: str
+		:param pxefiles: Path of the PXEfiles.
+		:type pxefile: list[str]
 		:param callback: Optional Callback (executed after running PXEConfigWriter).
 		:type callback: Callable
 		:param backendinfo: Dictionary with information about the backend.
-				This data is parsed for uifi module license at init.
+		                This data is parsed for uifi module license at init.
 		:type backendinfo: Dict
 		"""
 		Thread.__init__(self)
@@ -76,7 +77,7 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		self.product_property_states = product_property_states
 		self.host_id = host_id
 		self.product_on_client = product_on_client
-		self.pxefile = pxefile
+		self.pxefiles = pxefiles
 		self._secure_boot_module = bool(secure_boot_module)
 		self._uefi_module = bool(uefi_module)
 		self._callback = callback
@@ -86,9 +87,9 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		self.stopped_event = Event()
 
 		logger.info(
-			"PXEConfigWriter initializing: template_file '%s', pxefile '%s', host_id '%s', append %s",
+			"PXEConfigWriter initializing: template_file '%s', pxefiles %s, host_id '%s', append %s",
 			self.template_file,
-			self.pxefile,
+			self.pxefiles,
 			self.host_id,
 			self.append,
 		)
@@ -131,7 +132,7 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		for line in template_lines:
 			line = line.rstrip()
 
-			for (property_id, value) in self.product_property_states.items():
+			for property_id, value in self.product_property_states.items():
 				logger.trace("Property: '%s': value: '%s'", property_id, value)
 				line = line.replace(f"%{property_id}%", value)
 
@@ -178,40 +179,45 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		to it. At the end the hooked callback is executed.
 		"""
 
-		logger.notice("Creating config %r and waiting for access", self.pxefile)
+		logger.notice("Creating config %r and waiting for access", self.pxefiles)
 
-		if os.path.exists(self.pxefile):
-			logger.debug("Removing old config file %r", self.pxefile)
-			os.unlink(self.pxefile)
-
-		logger.debug("Creating config file %r", self.pxefile)
-		with open(self.pxefile, "w", encoding="utf-8") as file:
-			file.write(self.content)
-		shutil.chown(self.pxefile, -1, opsi_config.get("groups", "admingroup"))
-		os.chmod(self.pxefile, 0o644)
-
-		logger.debug("Watching config file %r for read with inotify", self.pxefile)
 		inotify = Inotify()
-		inotify.add_watch(self.pxefile)
 
-		file_accessed = False
+		for pxefile in self.pxefiles:
+			if os.path.exists(pxefile):
+				logger.debug("Removing old config file %r", pxefile)
+				os.unlink(pxefile)
+
+			logger.debug("Creating config file %r", pxefile)
+			with open(pxefile, "w", encoding="utf-8") as file:
+				file.write(self.content)
+			shutil.chown(pxefile, -1, opsi_config.get("groups", "admingroup"))
+			os.chmod(pxefile, 0o644)
+
+			logger.debug("Watching config file %r for read with inotify", pxefile)
+
+			inotify.add_watch(pxefile)
+
+		file_accessed = None
 		while not self._should_stop and not file_accessed:
 			for event in inotify.event_gen(yield_nones=False, timeout_s=3):
 				logger.trace("Inotify event: %s", event)
-				if "IN_CLOSE_NOWRITE" in event[1]:
-					file_accessed = True
+				(_, type_names, path, _filename) = event
+				if "IN_CLOSE_NOWRITE" in type_names:
+					file_accessed = path
 					break
 
 		if file_accessed:
-			logger.info("Config file %r was accessed", self.pxefile)
+			logger.info("Config file %r was accessed", file_accessed)
 			if self._callback:
 				self._callback(self)
 
-		if os.path.exists(self.pxefile):
-			logger.notice("Deleting config file %r", self.pxefile)
-			os.unlink(self.pxefile)
-		else:
-			logger.notice("Config file %r already deleted", self.pxefile)
+		for pxefile in self.pxefiles:
+			if os.path.exists(pxefile):
+				logger.notice("Deleting config file %r", pxefile)
+				os.unlink(pxefile)
+			else:
+				logger.notice("Config file %r already deleted", pxefile)
 
 	def stop(self) -> None:
 		"""

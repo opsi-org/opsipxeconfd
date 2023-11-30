@@ -12,9 +12,8 @@ opsipxeconfd
 import grp
 import os
 import stat
-from socket import AF_UNIX, SOCK_STREAM
+from socket import AF_UNIX, SOCK_STREAM, socket
 from socket import error as socket_error
-from socket import socket
 from threading import Lock, Thread
 from time import asctime, localtime, sleep, time
 from typing import Any
@@ -56,7 +55,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		Settings are set according to the proveded config dictionary.
 
 		:param config: Opsipxeconfd configuration dictionary as loaded from file
-			or specified on command line at execution
+		        or specified on command line at execution
 		:type config: Dict
 		"""
 		Thread.__init__(self)
@@ -390,7 +389,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		result += f"\n{len(self._pxe_config_writers)} boot configuration(s) set\n"
 		for pcw in self._pxe_config_writers:
 			result += (
-				f"Boot config for client '{pcw.host_id}' (path '{pcw.pxefile}'; configuration {pcw.append}) "
+				f"Boot config for client '{pcw.host_id}' (path: {pcw.pxefiles}; configuration: {pcw.append}) "
 				f"set since {asctime(localtime(pcw.start_time))}\n"
 			)
 		logger.notice(result)
@@ -464,20 +463,20 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			pxe_config_template = self._get_pxe_config_template(product_on_client, product)
 			logger.debug("Using pxe config template '%s'", pxe_config_template)
 
-			pxe_config_name = self._get_name_for_pxe_config_file(host)
-
-			pxefile = os.path.join(self.config["pxeDir"], pxe_config_name)
-			if os.path.exists(pxefile):
-				for pcw in self._pxe_config_writers:
-					if pcw.pxefile == pxefile:
+			pxefiles = [os.path.join(self.config["pxeDir"], f) for f in self._get_pxe_config_file_names(host)]
+			stop_pxe_config_writers: set[PXEConfigWriter] = set()
+			for pcw in self._pxe_config_writers:
+				for pxefile in pxefiles:
+					if pxefile in pcw.pxefiles:
 						if host.id == pcw.host_id:
-							logger.notice("PXE boot configuration '%s' for client '%s' already exists.", pxefile, host.id)
-							return "Boot configuration kept"
-						raise RuntimeError(
-							f"PXE boot configuration '{pxefile}' already exists. Clients '{host.id}' and '{pcw.host_id}' using same address?"
-						)
-				logger.debug("PXE boot configuration '%s' already exists, removing.", pxefile)
-				os.unlink(pxefile)
+							stop_pxe_config_writers.add(pcw)
+						else:
+							raise RuntimeError(
+								f"PXE boot configuration files {pxefiles} already exist. Clients '{host.id}' and '{pcw.host_id}' using same address?"
+							)
+			for pcw in stop_pxe_config_writers:
+				pcw.stop()
+				pcw.join()
 
 			service_address = self._get_config_service_address(host_id)
 
@@ -513,7 +512,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 					product_on_client=product_on_client,
 					append=append,
 					product_property_states=product_property_states,
-					pxefile=pxefile,
+					pxefiles=pxefiles,
 					secure_boot_module=self._secure_boot_module,
 					uefi_module=self._uefi_module,
 					callback=self.pxe_config_writer_callback,
@@ -559,9 +558,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			pcw.stopped_event.wait(5)
 			logger.notice("PXE boot configuration for host '%s' removed", host_id)
 
-	def _get_pxe_config_template(
-		self, product_on_client: ProductOnClient, product: NetbootProduct
-	) -> str:  # pylint: disable=too-many-branches
+	def _get_pxe_config_template(self, product_on_client: ProductOnClient, product: NetbootProduct) -> str:  # pylint: disable=too-many-branches
 		"""
 		Get pxe template to use.
 
@@ -599,31 +596,17 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		return pxe_config_template
 
 	@staticmethod
-	def _get_name_for_pxe_config_file(host: Host) -> str:
-		"""
-		Gets network address information.
-
-		This method requests the ipv4 and the hardware address of
-		a host and returns it as string.
-
-		:param host: Host instance to get network address information from.
-		:type host: Host
-
-		:returns: String containing network address information of the host.
-		:rtype: str
-		"""
+	def _get_pxe_config_file_names(host: Host) -> list[str]:
+		file_names = []
 		if host.systemUUID:
 			logger.debug("Got system UUID '%s' for host '%s'", host.systemUUID, host.id)
-			return host.systemUUID
+			file_names.append(host.systemUUID)
 		if host.hardwareAddress:
 			logger.debug("Got hardware address '%s' for host '%s'", host.hardwareAddress, host.id)
-			return f"01-{host.hardwareAddress.replace(':', '-')}"
-		if host.ipAddress:
-			logger.warning("Failed to get hardware address for host '%s', using ip address '%s'", host.id, host.ipAddress)
-			return "%02X%02X%02X%02X" % tuple(  # pylint: disable=consider-using-generator,consider-using-f-string
-				[int(i) for i in host.ipAddress.split(".")]
-			)
-		raise RuntimeError(f"Neither system UUID, hardware address nor ip address known for host '{host.id}'")
+			file_names.append(f"01-{host.hardwareAddress.replace(':', '-')}")
+		if not file_names:
+			raise RuntimeError(f"Neither system UUID nor hardware address known for host '{host.id}'")
+		return file_names
 
 	def _get_config_service_address(self, host_id: str) -> str:
 		"""
