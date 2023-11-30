@@ -69,7 +69,7 @@ def test_pxe_config_writer(tmp_path: Path) -> None:
 	pcw = PXEConfigWriter(
 		template_file=pxe_config_template,
 		host_id=host_id,
-		product_on_client=None,
+		product_on_client=None,  # type: ignore[arg-type]
 		append=append,
 		product_property_states={},
 		pxefiles=[str(f) for f in pxefiles],
