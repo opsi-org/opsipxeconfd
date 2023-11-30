@@ -476,7 +476,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 							)
 			for pcw in stop_pxe_config_writers:
 				pcw.stop()
-				pcw.join()
+				pcw.join(5)
 
 			service_address = self._get_config_service_address(host_id)
 
@@ -520,7 +520,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				with self._pxe_config_writers_lock:
 					self._pxe_config_writers.append(pxe_config_writer)
 				pxe_config_writer.start()
-				logger.notice("PXE boot configuration for host %s is now set at '%s'", host_id, pxefile)
+				logger.notice("PXE boot configuration for host %s is now set at %s", host_id, pxefiles)
 				return "Boot configuration updated"
 			except Exception as err:
 				logger.error("Failed to create pxe config writer: %s", err)
