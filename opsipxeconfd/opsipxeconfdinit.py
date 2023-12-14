@@ -359,8 +359,6 @@ class OpsipxeconfdInit:
 			return  # TODO: exit code handling
 
 		if self.config.get("command") == "start":
-			setup(self.config)
-
 			# Call signal_handler on signal SIGHUP, SIGTERM, SIGINT
 			signal(SIGHUP, self.signal_handler)
 			signal(SIGTERM, self.signal_handler)
@@ -368,6 +366,8 @@ class OpsipxeconfdInit:
 
 			if self.config["daemon"]:
 				self.daemonize()
+
+			setup(self.config)
 			with log_context({"instance": "Opsipxeconfd start"}):
 				with pid_file(self.config["pidFile"]):
 					self._opsipxeconfd = Opsipxeconfd(self.config)

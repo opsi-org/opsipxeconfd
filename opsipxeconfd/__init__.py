@@ -7,4 +7,4 @@ This file is part of opsi - https://www.opsi.org
 See LICENSES/README.md for more Information
 """
 
-__version__ = "4.3.1.2"
+__version__ = "4.3.2.1"
