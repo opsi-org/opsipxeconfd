@@ -367,9 +367,9 @@ class OpsipxeconfdInit:
 			if self.config["daemon"]:
 				self.daemonize()
 
-			setup(self.config)
 			with log_context({"instance": "Opsipxeconfd start"}):
 				with pid_file(self.config["pidFile"]):
+					setup(self.config)
 					self._opsipxeconfd = Opsipxeconfd(self.config)
 					self._opsipxeconfd.start()
 					sleep(1)
