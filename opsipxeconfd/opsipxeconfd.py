@@ -15,19 +15,15 @@ import stat
 from socket import AF_UNIX, SOCK_STREAM, socket
 from socket import error as socket_error
 from threading import Lock, Thread
-from time import asctime, localtime, sleep, time
+from time import asctime, localtime, time
 from typing import Any
 
-from opsicommon.client.opsiservice import ServiceClient
-from opsicommon.config.opsi import OpsiConfig  # type: ignore[import]
-from opsicommon.exceptions import (
-	OpsiServiceAuthenticationError,
-	OpsiServiceError,
-	OpsiServiceVerificationError,
-)
+from opsicommon.config.opsi import OpsiConfig
 from opsicommon.logging import get_logger, log_context, secret_filter
 from opsicommon.objects import Host, NetbootProduct, ProductOnClient
 from opsicommon.types import forceHostId, forceStringList
+
+from opsipxeconfd.setup import get_service_connection
 
 from .logging import init_logging
 from .pxeconfigwriter import PXEConfigWriter
@@ -72,15 +68,8 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		self._opsi_admin_gid = grp.getgrnam(opsi_config.get("groups", "admingroup"))[2]
 		self._secure_boot_module = False
 		self._uefi_module = False
-		self.service = ServiceClient(
-			address=opsi_config.get("service", "url"),
-			username=opsi_config.get("host", "id"),
-			password=opsi_config.get("host", "key"),
-			jsonrpc_create_objects=True,
-			jsonrpc_create_methods=True,
-			ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
-		)
 		logger.comment("opsi pxe configuration service starting")
+		self.service = get_service_connection()
 
 	def set_config(self, config: dict[str, Any]) -> None:
 		"""
@@ -269,22 +258,6 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			self._running = True
 			logger.notice("Starting opsipxeconfd main thread")
 			try:
-				max_attempts = 3
-				for attempt in range(1, max_attempts + 1):
-					try:
-						logger.notice("Connecting to opsi service at %r (attempt %d)", self.service.base_url, attempt)
-						self.service.connect()
-					except (OpsiServiceAuthenticationError, OpsiServiceVerificationError):
-						raise
-					except OpsiServiceError as err:  # pylint: disable=broad-except
-						message = f"Failed to connect to opsi service at {self.service.base_url!r}: {err}"
-						if attempt == max_attempts:
-							raise RuntimeError(message) from err
-
-						message = f"{message}, retry in 5 seconds."
-						logger.warning(message)
-						sleep(5)
-
 				logger.info("Setting needed boot configurations")
 				self._startup_task = StartupTask(self)
 				self._startup_task.start()

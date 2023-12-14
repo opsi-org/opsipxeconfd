@@ -10,17 +10,24 @@ opsipxeconfd - setup
 """
 
 import os
-#import re
-import passlib.hash # type: ignore[import]
+from time import sleep
 
-from opsicommon.client.opsiservice import get_service_client, ServiceClient
-
+import passlib.hash  # type: ignore[import]
+from opsicommon.client.opsiservice import (
+	OpsiServiceAuthenticationError,
+	OpsiServiceError,
+	OpsiServiceVerificationError,
+	ServiceClient,
+)
+from opsicommon.config.opsi import OpsiConfig
 from opsicommon.exceptions import OpsiServiceConnectionError
 from opsicommon.logging import get_logger
 from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
 
 logger = get_logger()
+opsi_config = OpsiConfig()
+
 
 def encode_password(clearPassword: str) -> str:
 	"""
@@ -34,9 +41,37 @@ def encode_password(clearPassword: str) -> str:
 		else:
 			return pwhash
 
-def getConfigsFromService() -> tuple[str, list[str]]:
 
-	service: ServiceClient = get_service_client()
+def get_service_connection() -> ServiceClient:
+	service = ServiceClient(
+		address=opsi_config.get("service", "url"),
+		username=opsi_config.get("host", "id"),
+		password=opsi_config.get("host", "key"),
+		jsonrpc_create_objects=True,
+		jsonrpc_create_methods=True,
+		ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
+	)
+	max_attempts = 6
+	for attempt in range(1, max_attempts + 1):
+		try:
+			logger.notice("Connecting to opsi service at %r (attempt %d)", service.base_url, attempt)
+			service.connect()
+			break
+		except (OpsiServiceAuthenticationError, OpsiServiceVerificationError):
+			raise
+		except OpsiServiceError as err:  # pylint: disable=broad-except
+			message = f"Failed to connect to opsi service at {service.base_url!r}: {err}"
+			if attempt == max_attempts:
+				raise RuntimeError(message) from err
+
+			message = f"{message}, retry in 5 seconds."
+			logger.warning(message)
+			sleep(5)
+	return service
+
+
+def getConfigsFromService() -> tuple[str, list[str]]:
+	service: ServiceClient = get_service_connection()
 	configserverId: str | None = ""
 	try:
 		configs = service.jsonrpc("host_getObjects", params=[[], {"type": "OpsiConfigserver"}])[0]
@@ -52,13 +87,14 @@ def getConfigsFromService() -> tuple[str, list[str]]:
 			configserverUrl += "/rpc"
 
 		appendConfigs = service.jsonrpc("config_getObjects", params=[[], {"id": "opsi-linux-bootimage.append"}])[0]
-		return configserverUrl,appendConfigs.defaultValues
+		return configserverUrl, appendConfigs.defaultValues
 
 	except OpsiServiceConnectionError:
 		pass
 	finally:
 		service.disconnect()
-	return "",[]
+	return "", []
+
 
 def patchMenuFile(config: dict) -> None:
 	"""
@@ -69,12 +105,12 @@ def patchMenuFile(config: dict) -> None:
 
 	"""
 
-	configserverUrl,defaultAppendParams = getConfigsFromService()
+	configserverUrl, defaultAppendParams = getConfigsFromService()
 
 	if defaultAppendParams or configserverUrl:
-		linuxDefaultDict: dict[str, str|None] = {}
-		linuxAppendDict: dict[str, str|None] = {}
-		linuxNewlinesDict: dict[str, str|None] = {}
+		linuxDefaultDict: dict[str, str | None] = {}
+		linuxAppendDict: dict[str, str | None] = {}
+		linuxNewlinesDict: dict[str, str | None] = {}
 		try:
 			pwhEntry = ""
 			langEntry = ""
@@ -101,9 +137,9 @@ def patchMenuFile(config: dict) -> None:
 							if not linuxDefaultDict:
 								for element in line.split(" "):
 									if "=" in element:
-										linuxDefaultDict[element.split("=")[0].strip(' \n\r')] = element.split("=")[1].strip(' \n\r')
+										linuxDefaultDict[element.split("=")[0].strip(" \n\r")] = element.split("=")[1].strip(" \n\r")
 									else:
-										linuxDefaultDict[element.strip(' \n\r')] = None
+										linuxDefaultDict[element.strip(" \n\r")] = None
 							if "pwh" in linuxDefaultDict:
 								linuxDefaultDict.pop("pwh")
 							if "service" in linuxDefaultDict:
@@ -113,9 +149,9 @@ def patchMenuFile(config: dict) -> None:
 							linuxNewlinesDict = linuxDefaultDict.copy()
 							for element in line.split(" "):
 								if "=" in element:
-									linuxAppendDict[element.split("=")[0].strip(' \n\r')] = element.split("=")[1].strip(' \n\r')
+									linuxAppendDict[element.split("=")[0].strip(" \n\r")] = element.split("=")[1].strip(" \n\r")
 								else:
-									linuxAppendDict[element.strip(' \n\r')] = None
+									linuxAppendDict[element.strip(" \n\r")] = None
 							if "pwh" in linuxAppendDict:
 								linuxAppendDict.pop("pwh")
 							if "service" in linuxAppendDict:
@@ -125,9 +161,9 @@ def patchMenuFile(config: dict) -> None:
 							if configserverUrl:
 								linuxNewlinesDict["service"] = configserverUrl
 							if pwhEntry:
-								linuxNewlinesDict[pwhEntry.split("=")[0].strip(' \n\r')] = pwhEntry.split("=")[1].strip(' \n\r')
+								linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = pwhEntry.split("=")[1].strip(" \n\r")
 							if langEntry:
-								linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(' \n\r')
+								linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(" \n\r")
 							for key, value in linuxAppendDict.items():
 								if key not in linuxDefaultDict:
 									linuxNewlinesDict[key] = value
@@ -140,9 +176,9 @@ def patchMenuFile(config: dict) -> None:
 				with open(config["pxeDir"] + grubFile, "w", encoding="utf-8") as writeMenu:
 					writeMenu.writelines(newlines)
 
-
 		except FileNotFoundError:
 			logger.error("%r/grub.cfg not found", config["pxeDir"])
+
 
 def setup_files(log_file: str) -> None:
 	"""
