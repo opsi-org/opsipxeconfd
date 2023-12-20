@@ -14,10 +14,10 @@ Restart=always
 RestartSec=5
 KillMode=process
 TimeoutStopSec=15
-PIDFile=/var/run/opsipxeconfd/opsipxeconfd.pid
-ExecStartPre=-/bin/mkdir -p /var/run/opsipxeconfd
-ExecStartPre=-/bin/chgrp opsiadmin /var/run/opsipxeconfd
-ExecStartPre=-/bin/chmod 770 /var/run/opsipxeconfd
+PIDFile=/run/opsipxeconfd/opsipxeconfd.pid
+ExecStartPre=-/bin/mkdir -p /run/opsipxeconfd
+ExecStartPre=-/bin/chgrp opsiadmin /run/opsipxeconfd
+ExecStartPre=-/bin/chmod 770 /run/opsipxeconfd
 
 [Install]
 WantedBy=multi-user.target
