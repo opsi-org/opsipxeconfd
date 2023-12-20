@@ -8,7 +8,15 @@ See LICENSES/README.md for more Information
 """
 
 import sys
+import warnings
+
 from opsicommon.logging import logger
+
+if getattr(sys, "frozen", False):
+	# Disable warnings if frozen
+	warnings.simplefilter("ignore", ResourceWarning)
+	warnings.simplefilter("ignore", DeprecationWarning)
+
 from .opsipxeconfdinit import OpsipxeconfdInit
 
 
