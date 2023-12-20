@@ -17,7 +17,7 @@ if getattr(sys, "frozen", False):
 	warnings.simplefilter("ignore", ResourceWarning)
 	warnings.simplefilter("ignore", DeprecationWarning)
 
-from .opsipxeconfdinit import OpsipxeconfdInit
+from .opsipxeconfdinit import OpsipxeconfdInit  # pylint: disable=wrong-import-position
 
 
 def main() -> None:
