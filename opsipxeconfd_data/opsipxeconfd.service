@@ -1,11 +1,6 @@
 [Unit]
 Description=Opsi PXE Configuration Service
-After=mysql.service
-After=smbd.service
 After=opsiconfd.service
-Wants=isc-dhcp-server.service
-Wants=mysql.service
-Wants=smbd.service
 
 [Service]
 Type=forking

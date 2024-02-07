@@ -12,12 +12,13 @@ maintainers = [ "uib GmbH <info@uib.de>",]
 authors = [ "uib GmbH <info@uib.de>",]
 include = [ "run-opsipxeconfd", "opsipxeconfd_data/**/*",]
 [[tool.poetry.source]]
-name = "PyPI"
+name = "uibpypi"
+url = "https://pypi.uib.gmbh/simple"
 priority = "primary"
 
 [[tool.poetry.source]]
-name = "uibpypi"
-url = "http://pypi.uib.gmbh:8080/simple"
+name = "PyPI"
+priority = "supplemental"
 
 [tool.ruff]
 line-length = 140
