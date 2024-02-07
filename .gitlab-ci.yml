@@ -22,7 +22,7 @@ stages:
   while ! nc -v -z -w3 localhost 4447 > /dev/null 2>&1; do sleep 1; done
   source /entrypoint.sh set_environment_vars  # to set hosts for redis/grafana
   poetry install
-  poetry run opsipxeconfd --setup
+  poetry run opsipxeconfd setup
 
 .pytest: &pytest |
   poetry run opsipxeconfd start --log-level 6 &
