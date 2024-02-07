@@ -19,7 +19,7 @@ from opsicommon.client.opsiservice import (OpsiServiceAuthenticationError,
                                            ServiceClient)
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.exceptions import OpsiServiceConnectionError
-from opsicommon.logging import get_logger, secret_filter
+from opsicommon.logging import get_logger
 from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import \
     setup_users_and_groups as po_setup_users_and_groups
