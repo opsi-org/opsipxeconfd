@@ -15,7 +15,8 @@ from unittest import mock
 
 from opsicommon.types import forceHostId
 
-from opsipxeconfd.pxeconfigwriter import PXEConfigWriter  # type: ignore[import]
+from opsipxeconfd.pxeconfigwriter import \
+    PXEConfigWriter  # type: ignore[import]
 from opsipxeconfd.setup import patchMenuFile  # type: ignore[import]
 from opsipxeconfd.util import pid_file  # type: ignore[import]
 
@@ -52,7 +53,7 @@ def test_pxe_config_writer(tmp_path: Path) -> None:
 		"dn": ".".join(host_id.split(".")[1:]),
 		"product": None,
 		"service": "https://server.uib.gmbh:4447/rpc",
-		"pwh": r"\$6\$salt\$password",
+		"pwh": "$6$salt$password",
 		"acpi": None,
 		"nomodeset": None,
 		"nomsi": None,
@@ -116,7 +117,7 @@ def test_grub_pxe_config_writer() -> None:
 		"dn": ".".join(host_id.split(".")[1:]),
 		"product": None,
 		"service": "https://server.uib.gmbh:4447/rpc",
-		"pwh": r"\$6\$salt\$password",
+		"pwh": r"$6$salt$password",
 		"lang": "de",
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
