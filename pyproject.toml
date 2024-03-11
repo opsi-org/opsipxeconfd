@@ -32,10 +32,10 @@ follow_imports = "silent"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-python-opsi-common = "^4.3.1.0"
-inotify = "^0.2.10"
-configargparse = "^1.5.3"
-passlib = "^1.7.4"
+python-opsi-common = ">=4.3.3,<4.4"
+inotify = "^0.2"
+configargparse = "^1.5"
+passlib = "^1.7"
 
 [tool.poetry.scripts]
 opsipxeconfd = "opsipxeconfd.__main__:main"
@@ -44,7 +44,7 @@ opsipxeconfd = "opsipxeconfd.__main__:main"
 indent-style = "tab"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.1"
+ruff = "^0.3"
 pytest = "^7.2"
 pytest-cov = "^4.0"
 pyinstaller = "^6.2"
