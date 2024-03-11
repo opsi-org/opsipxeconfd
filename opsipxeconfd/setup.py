@@ -27,6 +27,8 @@ from opsicommon.logging import get_logger, secret_filter
 from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
 
+from opsipxeconfd import __version__
+
 logger = get_logger()
 opsi_config = OpsiConfig()
 
@@ -78,6 +80,7 @@ def get_service_connection() -> ServiceClient:
 		address=opsi_config.get("service", "url"),
 		username=opsi_config.get("host", "id"),
 		password=opsi_config.get("host", "key"),
+		user_agent=f"opsipxeconfd {__version__}",
 		ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
 		client_cert_file=client_cert_file,
 		client_key_file=client_key_file,

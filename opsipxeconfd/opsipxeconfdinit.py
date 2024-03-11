@@ -275,7 +275,8 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		"command",
 		nargs="?",
 		choices=("start", "stop", "status", "update", "setup"),
-		metavar="<command>",
+		metavar="COMMAND",
+		help="The COMMAND to perform (start/stop/status/update/setup).",
 	)
 
 	opts = parser.parse_args()
