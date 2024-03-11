@@ -15,17 +15,16 @@ import subprocess
 from time import sleep
 
 import passlib.hash  # type: ignore[import]
-from opsicommon.client.opsiservice import (
-	OpsiServiceAuthenticationError,
-	OpsiServiceError,
-	OpsiServiceVerificationError,
-	ServiceClient,
-)
+from opsicommon.client.opsiservice import (OpsiServiceAuthenticationError,
+                                           OpsiServiceError,
+                                           OpsiServiceVerificationError,
+                                           ServiceClient)
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.exceptions import OpsiServiceConnectionError
 from opsicommon.logging import get_logger, secret_filter
 from opsicommon.server.rights import set_rights
-from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
+from opsicommon.server.setup import \
+    setup_users_and_groups as po_setup_users_and_groups
 
 logger = get_logger()
 opsi_config = OpsiConfig()
@@ -148,7 +147,7 @@ def patchMenuFile(config: dict) -> None:
 			langEntry = ""
 			for element in defaultAppendParams:
 				if "bootimageRootPassword" in element:
-					clearRootPassword = element.split("=")[1]
+					clearRootPassword = element.split("=", maxsplit=1 )[1]
 					endcodedRootPassword = encode_password(clearRootPassword)
 					pwhEntry = f"pwh={endcodedRootPassword}"
 				if "pwh=" in element:
@@ -192,10 +191,14 @@ def patchMenuFile(config: dict) -> None:
 								linuxAppendDict.pop("lang")
 							if configserverUrl:
 								linuxNewlinesDict["service"] = configserverUrl
+								logger.debug("Patching service in %r: %s", grubFile, configserverUrl)
 							if pwhEntry:
-								linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = pwhEntry.split("=")[1].strip(" \n\r")
+								pwh = pwhEntry.split("=", maxsplit=1)[1]
+								linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = pwh
+								logger.debug("Patching pwh in %r: %s", grubFile, pwh)
 							if langEntry:
 								linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(" \n\r")
+								logger.debug("Patching lang in %r: %s", grubFile, langEntry.split("=")[1].strip(" \n\r"))
 							for key, value in linuxAppendDict.items():
 								if key not in linuxDefaultDict:
 									linuxNewlinesDict[key] = value
