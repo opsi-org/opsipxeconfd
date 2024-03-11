@@ -36,7 +36,7 @@ logger = get_logger()
 opsi_config = OpsiConfig()
 
 
-class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
+class Opsipxeconfd(Thread):
 	"""
 	class Opsipxeconfd
 
@@ -111,7 +111,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				self._startup_task.join(10)
 			except RuntimeError:
 				pass  # Probably not yet started
-			except Exception as err:  # pylint: disable=broad-except
+			except Exception as err:
 				logger.debug("Error during stop: %s", err, exc_info=True)
 
 		logger.info("Stopping pxe config writers")
@@ -119,7 +119,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			try:
 				logger.debug("Stopping %s", pcw)
 				pcw.stop()
-			except Exception as err:  # pylint: disable=broad-except
+			except Exception as err:
 				logger.error("Failed to stop %s: %s", pcw, err, exc_info=True)
 
 		for pcw in self._pxe_config_writers:
@@ -131,7 +131,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		if self._socket:
 			try:
 				self._socket.close()
-			except Exception as err:  # pylint: disable=broad-except
+			except Exception as err:
 				logger.error("Failed to close socket: %s", err)
 
 	def reload(self) -> None:
@@ -148,7 +148,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		self._create_socket()
 
 	def _get_licensing_info(self) -> None:
-		info = self.service.backend_getLicensingInfo()  # type: ignore[attr-defined]  # pylint: disable=no-member
+		info = self.service.backend_getLicensingInfo()  # type: ignore[attr-defined]
 		logger.debug("Got licensing info from service: %s", info)
 		if "uefi" in info["available_modules"]:
 			self._uefi_module = True
@@ -237,7 +237,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				self._client_connections.append(client_connection)
 			client_connection.start()
 			logger.debug("Connection %s started.", client_connection.name)
-		except Exception as err:  # pylint: disable=broad-except
+		except Exception as err:
 			logger.error("Failed to create control connection: %s", err, exc_info=True)
 
 			if client_connection:
@@ -265,7 +265,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				while self._running:
 					self._get_connection()
 				logger.notice("Opsipxeconfd main thread exiting...")
-			except Exception as err:  # pylint: disable=broad-except
+			except Exception as err:
 				logger.error(err, exc_info=True)
 				self.error = str(err)
 			finally:
@@ -294,7 +294,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 					pass  # Connection not in list
 
 			logger.debug("ClientConnection '%s' removed", connection.name)
-		except Exception as err:  # pylint: disable=broad-except
+		except Exception as err:
 			logger.error("Failed to remove ClientConnection: %s", err)
 
 	def pxe_config_writer_callback(self, pcw: PXEConfigWriter) -> None:
@@ -318,13 +318,13 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				except ValueError:
 					pass  # Writer not in list
 			logger.debug("PXE config writer removed")
-		except Exception as err:  # pylint: disable=broad-except
+		except Exception as err:
 			logger.error("Failed to remove PXE config writer: %s", err)
 
 		# renew objects and check if anythin changes on service since callback
 		try:
 			product_on_client: ProductOnClient = sorted(
-				self.service.productOnClient_getObjects(  # type: ignore[attr-defined]  # pylint: disable=no-member
+				self.service.productOnClient_getObjects(  # type: ignore[attr-defined]
 					productType="NetbootProduct",
 					clientId=pcw.product_on_client.clientId,
 					productId=pcw.product_on_client.productId,
@@ -339,7 +339,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		product_on_client.setActionProgress("pxe boot configuration read")
 		if not always:
 			product_on_client.setActionRequest("none")
-		self.service.productOnClient_updateObjects([product_on_client])  # type: ignore[attr-defined]  # pylint: disable=no-member
+		self.service.productOnClient_updateObjects([product_on_client])  # type: ignore[attr-defined]
 
 	def status(self) -> str:
 		"""
@@ -376,9 +376,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			raise err
 		return "Boot configuration removed"
 
-	def update_boot_configuration(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,inconsistent-return-statements
-		self, host_id: str
-	) -> str:
+	def update_boot_configuration(self, host_id: str) -> str:
 		"""
 		Updates Boot Configuration.
 
@@ -396,13 +394,13 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			self._remove_current_config_writers(host_id)
 
 			try:
-				host = self.service.host_getObjects(id=host_id)[0]  # type: ignore[attr-defined]  # pylint: disable=no-member
+				host = self.service.host_getObjects(id=host_id)[0]  # type: ignore[attr-defined]
 			except IndexError:
 				logger.info("Host %r not found", host_id)
 				return "Boot configuration updated"
 
 			try:
-				product_on_client = self.service.productOnClient_getObjects(  # type: ignore[attr-defined]  # pylint: disable=no-member
+				product_on_client = self.service.productOnClient_getObjects(  # type: ignore[attr-defined]
 					productType="NetbootProduct",
 					clientId=host_id,
 					actionRequest=["setup", "uninstall", "update", "always", "once", "custom"],
@@ -415,7 +413,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 
 			logger.debug("Searching for product '%s' on depot '%s'", product_on_client.productId, depot_id)
 			try:
-				product_on_depot = self.service.productOnDepot_getObjects(  # type: ignore[attr-defined]  # pylint: disable=no-member
+				product_on_depot = self.service.productOnDepot_getObjects(  # type: ignore[attr-defined]
 					productType="NetbootProduct", productId=product_on_client.productId, depotId=depot_id
 				)[0]
 			except IndexError:
@@ -423,7 +421,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 				return "Boot configuration updated"
 
 			try:
-				product = self.service.product_getObjects(  # type: ignore[attr-defined]  # pylint: disable=no-member
+				product = self.service.product_getObjects(  # type: ignore[attr-defined]
 					type="NetbootProduct",
 					id=product_on_depot.productId,
 					productVersion=product_on_depot.productVersion,
@@ -471,7 +469,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			# Get product property states
 			product_property_states = {
 				property_id: ",".join(values)
-				for property_id, values in self.service.productPropertyState_getValues(  # type: ignore[attr-defined]  # pylint: disable=no-member
+				for property_id, values in self.service.productPropertyState_getValues(  # type: ignore[attr-defined]
 					product_ids=[product.id], object_ids=[host_id]
 				).items()
 			}
@@ -531,7 +529,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 			pcw.stopped_event.wait(5)
 			logger.notice("PXE boot configuration for host '%s' removed", host_id)
 
-	def _get_pxe_config_template(self, product_on_client: ProductOnClient, product: NetbootProduct) -> str:  # pylint: disable=too-many-branches
+	def _get_pxe_config_template(self, product_on_client: ProductOnClient, product: NetbootProduct) -> str:
 		"""
 		Get pxe template to use.
 
@@ -594,7 +592,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		:returns: url of the configserver.
 		:rtype: str
 		"""
-		configs = self.service.configState_getValues(  # type: ignore[attr-defined]  # pylint: disable=no-member
+		configs = self.service.configState_getValues(  # type: ignore[attr-defined]
 			config_ids=["clientconfig.configserver.url"], object_ids=[host_id]
 		)
 		logger.debug(configs)
@@ -617,7 +615,7 @@ class Opsipxeconfd(Thread):  # pylint: disable=too-many-instance-attributes
 		:returns: key-value pairs as tuple (value possibly empty) as yield.
 		:rtype: Tuple
 		"""
-		configs = self.service.configState_getValues(  # type: ignore[attr-defined]  # pylint: disable=no-member
+		configs = self.service.configState_getValues(  # type: ignore[attr-defined]
 			config_ids=["opsi-linux-bootimage.append"], object_ids=[host_id]
 		)
 		params = {}

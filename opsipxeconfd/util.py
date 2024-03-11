@@ -56,7 +56,7 @@ def pid_file(pid_file_path: str) -> Generator[None, None, None]:
 				logger.debug("Removing pid file %r...", pid_file_path)
 				os.unlink(pid_file_path)
 				logger.info("Removed pid file %r", pid_file_path)
-			except Exception as err:  # pylint: disable=broad-except
+			except Exception as err:
 				logger.error("Failed to remove pid file %r: %s", pid_file_path, err)
 
 
@@ -120,11 +120,11 @@ class StartupTask(Thread):
 
 					try:
 						self._opsipxeconfd.update_boot_configuration(client_id)
-					except Exception as err:  # pylint: disable=broad-except
+					except Exception as err:
 						logger.error("Failed to update PXE boot config for client '%s': %s", client_id, err)
 
 			logger.notice("Finished setting initial boot configurations")
-		except Exception as err:  # pylint: disable=broad-except
+		except Exception as err:
 			logger.error(err, exc_info=True)
 		finally:
 			self._running = False
@@ -193,7 +193,7 @@ class ClientConnection(Thread):
 
 				try:
 					self._socket.send(result.encode("utf-8"))
-				except Exception as err:  # pylint: disable=broad-except
+				except Exception as err:
 					logger.warning("Sending result over socket failed: '%s'", err)
 			finally:
 				if self._running and self._callback:
@@ -246,6 +246,6 @@ class ClientConnection(Thread):
 				return self._opsipxeconfd.remove_boot_configuration(forceHostId(arguments[0]))
 
 			raise ValueError(f"Command '{cmd}' not supported")
-		except Exception as err:  # pylint: disable=broad-except
+		except Exception as err:
 			logger.error("Processing command '%s' failed: %s", cmd, err)
 			return f"{ERROR_MARKER}: {err}"

@@ -17,7 +17,7 @@ if getattr(sys, "frozen", False):
 	warnings.simplefilter("ignore", ResourceWarning)
 	warnings.simplefilter("ignore", DeprecationWarning)
 
-from .opsipxeconfdinit import OpsipxeconfdInit  # pylint: disable=wrong-import-position
+from .opsipxeconfdinit import OpsipxeconfdInit
 
 
 def main() -> None:
@@ -30,7 +30,7 @@ def main() -> None:
 		OpsipxeconfdInit()
 	except SystemExit:
 		pass
-	except Exception as err:  # pylint: disable=broad-except
+	except Exception as err:
 		logger.error(err, exc_info=True)
 		print(f"ERROR: {err}", file=sys.stderr)
 		sys.exit(1)

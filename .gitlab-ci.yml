@@ -36,8 +36,7 @@ stages:
   echo "---------------------------------------"
   echo "Run linters"
   echo "---------------------------------------"
-  poetry run pylint --disable=R,fixme opsipxeconfd tests
-  poetry run ruff opsipxeconfd tests
+  poetry run ruff check opsipxeconfd tests
   poetry run mypy opsipxeconfd tests
 
 pylint-pytest:

@@ -63,7 +63,7 @@ def create_unix_socket(port: str, timeout: float = 5.0) -> Generator[socket, Non
 		raise RuntimeError(f"Failed to connect to socket '{port}': {err}") from err
 
 
-class ServerConnection:  # pylint: disable=too-few-public-methods
+class ServerConnection:
 	def __init__(self, port: str, timeout: float = 10.0) -> None:
 		self.port = port
 		self.timeout = forceInt(timeout)
@@ -76,7 +76,7 @@ class ServerConnection:  # pylint: disable=too-few-public-methods
 				for part in iter(lambda: unix_socket.recv(4096), b""):
 					logger.trace("Received %s", part)
 					result += forceUnicode(part)
-			except Exception as err:  # pylint: disable=broad-except
+			except Exception as err:
 				raise RuntimeError(f"Failed to receive: {err}") from err
 
 		if result.startswith(ERROR_MARKER):
@@ -85,11 +85,11 @@ class ServerConnection:  # pylint: disable=too-few-public-methods
 		return result
 
 
-class OpsipxeconfdConfigFileParser(ConfigFileParser):  # pylint: disable=abstract-method
+class OpsipxeconfdConfigFileParser(ConfigFileParser):
 	def get_syntax_description(self) -> str:
 		return ""
 
-	def parse(self, stream: StringIO) -> dict[str, Any]:  # pylint: disable=too-many-branches
+	def parse(self, stream: StringIO) -> dict[str, Any]:
 		items = OrderedDict()
 		for i, line in enumerate(stream):
 			line = line.strip()
@@ -387,7 +387,7 @@ class OpsipxeconfdInit:
 				result = con.send_command(" ".join(forceUnicodeList(command)))
 				print(result)
 
-	def signal_handler(self, signo: int, frame: FrameType | None) -> None:  # pylint: disable=unused-argument
+	def signal_handler(self, signo: int, frame: FrameType | None) -> None:
 		"""
 		Signal Handler for OpsipxeconfdInit.
 

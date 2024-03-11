@@ -43,5 +43,5 @@ def init_logging(config: Dict) -> None:
 			file_rotate_max_bytes=config.get("maxLogSize", 0) * 1000 * 1000,
 			file_rotate_backup_count=config.get("keepRotatedLogs", 0),
 		)
-	except Exception as err:  # pylint: disable=broad-except
+	except Exception as err:
 		handle_log_exception(err)

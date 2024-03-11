@@ -26,14 +26,14 @@ logger = get_logger()
 opsi_config = OpsiConfig()
 
 
-class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
+class PXEConfigWriter(Thread):
 	"""
 	class PXEConfigWriter
 
 	This class handles the sending of PXE boot information to clients.
 	"""
 
-	def __init__(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+	def __init__(
 		self,
 		template_file: str,
 		host_id: str,
@@ -107,7 +107,7 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 		except KeyError:
 			pass  # Key may be non-existing
 
-	def _get_pxe_config_content(self, template_file: str) -> str:  # pylint: disable=too-many-branches,too-many-statements
+	def _get_pxe_config_content(self, template_file: str) -> str:
 		"""
 		Gets PXEConfig string.
 
@@ -169,7 +169,7 @@ class PXEConfigWriter(Thread):  # pylint: disable=too-many-instance-attributes
 			self._running = True
 			try:
 				self._run()
-			except Exception as err:  # pylint: disable=broad-except
+			except Exception as err:
 				logger.error(err, exc_info=True)
 			self._running = False
 			self.stopped_event.set()

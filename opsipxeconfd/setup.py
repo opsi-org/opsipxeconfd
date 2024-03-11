@@ -93,7 +93,7 @@ def get_service_connection() -> ServiceClient:
 			break
 		except (OpsiServiceAuthenticationError, OpsiServiceVerificationError):
 			raise
-		except OpsiServiceError as err:  # pylint: disable=broad-except
+		except OpsiServiceError as err:
 			message = f"Failed to connect to opsi service at {service.base_url!r}: {err}"
 			if attempt == max_attempts:
 				raise RuntimeError(message) from err
