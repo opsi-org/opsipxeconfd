@@ -9,7 +9,9 @@
 opsipxeconfd - setup
 """
 
+import json
 import os
+import subprocess
 from time import sleep
 
 import passlib.hash  # type: ignore[import]
@@ -21,7 +23,7 @@ from opsicommon.client.opsiservice import (
 )
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.exceptions import OpsiServiceConnectionError
-from opsicommon.logging import get_logger
+from opsicommon.logging import get_logger, secret_filter
 from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
 
@@ -42,7 +44,36 @@ def encode_password(clearPassword: str) -> str:
 			return pwhash
 
 
+def get_opsiconfd_config() -> dict[str, str]:
+	config = {"ssl_server_key": "", "ssl_server_cert": "", "ssl_server_key_passphrase": ""}
+	try:
+		proc = subprocess.run(["opsiconfd", "get-config"], shell=False, check=True, capture_output=True, text=True, encoding="utf-8")
+		for attr, value in json.loads(proc.stdout).items():
+			if attr in config.keys() and value is not None:
+				config[attr] = value
+				if attr == "ssl_server_key_passphrase":
+					secret_filter.add_secrets(value)
+	except Exception as err:
+		logger.debug("Failed to get opsiconfd config %s", err)
+	return config
+
+
 def get_service_connection() -> ServiceClient:
+	client_cert_file = None
+	client_key_file = None
+	client_key_password = None
+	cfg = get_opsiconfd_config()
+	logger.debug("opsiconfd config: %r", cfg)
+	if (
+		cfg["ssl_server_key"]
+		and os.path.exists(cfg["ssl_server_key"])
+		and cfg["ssl_server_cert"]
+		and os.path.exists(cfg["ssl_server_cert"])
+	):
+		client_cert_file = cfg["ssl_server_cert"]
+		client_key_file = cfg["ssl_server_key"]
+		client_key_password = cfg["ssl_server_key_passphrase"]
+
 	service = ServiceClient(
 		address=opsi_config.get("service", "url"),
 		username=opsi_config.get("host", "id"),
@@ -50,6 +81,9 @@ def get_service_connection() -> ServiceClient:
 		jsonrpc_create_objects=True,
 		jsonrpc_create_methods=True,
 		ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
+		client_cert_file=client_cert_file,
+		client_key_file=client_key_file,
+		client_key_password=client_key_password,
 	)
 	max_attempts = 6
 	for attempt in range(1, max_attempts + 1):
