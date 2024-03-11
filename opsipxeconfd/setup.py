@@ -78,8 +78,6 @@ def get_service_connection() -> ServiceClient:
 		address=opsi_config.get("service", "url"),
 		username=opsi_config.get("host", "id"),
 		password=opsi_config.get("host", "key"),
-		jsonrpc_create_objects=True,
-		jsonrpc_create_methods=True,
 		ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
 		client_cert_file=client_cert_file,
 		client_key_file=client_key_file,
