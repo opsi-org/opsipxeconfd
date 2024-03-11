@@ -5,6 +5,7 @@ This file is part of opsi - https://www.opsi.org
 
 :license: GNU Affero General Public License version 3
 """
+
 import argparse
 import os
 import shutil
@@ -15,8 +16,7 @@ from unittest import mock
 
 from opsicommon.types import forceHostId
 
-from opsipxeconfd.pxeconfigwriter import \
-    PXEConfigWriter  # type: ignore[import]
+from opsipxeconfd.pxeconfigwriter import PXEConfigWriter  # type: ignore[import]
 from opsipxeconfd.setup import patchMenuFile  # type: ignore[import]
 from opsipxeconfd.util import pid_file  # type: ignore[import]
 
