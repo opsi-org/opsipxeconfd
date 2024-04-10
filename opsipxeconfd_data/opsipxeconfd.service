@@ -1,6 +1,7 @@
 [Unit]
-Description=Opsi PXE Configuration Service
+Description=opsi PXE configuration service
 After=opsiconfd.service
+After=winbind.service
 
 [Service]
 Type=forking
