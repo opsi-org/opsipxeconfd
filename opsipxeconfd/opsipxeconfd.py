@@ -11,7 +11,7 @@ opsipxeconfd
 
 import grp
 import os
-import stat
+from pathlib import Path
 from socket import AF_UNIX, SOCK_STREAM, socket
 from socket import error as socket_error
 from threading import Lock, Thread
@@ -179,19 +179,20 @@ class Opsipxeconfd(Thread):
 		resulting socket file.
 		"""
 		logger.notice("Creating unix socket %s", self.config["port"])
-		if os.path.exists(self.config["port"]):
-			os.unlink(self.config["port"])
+		path = Path(self.config["port"])
+		if path.exists():
+			path.unlink()
 		self._socket = socket(AF_UNIX, SOCK_STREAM)
 		try:
-			self._socket.bind(self.config["port"])
+			self._socket.bind(str(path))
 		except Exception as err:
-			raise RuntimeError(f"Failed to bind to socket '{self.config['port']}': {err}") from err
+			raise RuntimeError(f"Failed to bind to socket '{path}': {err}") from err
 		self._socket.settimeout(0.1)
 		self._socket.listen(self.config["maxConnections"])
 
-		self._set_access_rights_for_socket(self.config["port"])
+		self._set_access_rights_for_socket(path)
 
-	def _set_access_rights_for_socket(self, path: str) -> None:
+	def _set_access_rights_for_socket(self, path: Path) -> None:
 		"""
 		Sets access rights for UnixSocket.
 
@@ -199,13 +200,14 @@ class Opsipxeconfd(Thread):
 		and gives group ownership to opsiadmin group.
 
 		:param path: Path of the UnixSocket.
-		:type path: str
+		:type path: Path
 		"""
 		logger.debug("Setting rights on socket '%s'", path)
-		mode = os.stat(path)[0]
-		# Adding read + write access for group and other.
-		os.chmod(path, mode | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
 		os.chown(path, -1, self._opsi_admin_gid)
+		os.chmod(path, 0o660)
+		if path.parent.name == "opsipxeconfd":
+			os.chown(path.parent, -1, self._opsi_admin_gid)
+			path.parent.chmod(0o750)
 		logger.debug("Done setting rights on socket '%s'", path)
 
 	def _get_connection(self) -> None:
