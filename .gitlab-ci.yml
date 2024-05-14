@@ -19,7 +19,11 @@ stages:
   python3.11 -m pip install certifi
   curl -sSL https://install.python-poetry.org | SSL_CERT_FILE=$(python3.11 -c "import certifi;print(certifi.where())") python3.11 -
   ln -s /root/.local/bin/poetry /usr/local/bin/poetry
+  echo "---------------------------------------"
+  echo "Wait for opsiconfd"
   while ! nc -v -z -w3 localhost 4447 > /dev/null 2>&1; do sleep 1; done
+  echo "opsiconfd is up"
+  echo "---------------------------------------"
   source /entrypoint.sh set_environment_vars  # to set hosts for redis/grafana
   poetry install
   poetry run opsipxeconfd --log-file 6 --log-level-file 6 --log-level-stderr 6 setup
