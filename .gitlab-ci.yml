@@ -53,6 +53,7 @@ pylint-pytest:
       command:
         - --max_connections=1000
         - --mysql-native-password=ON
+        - --default-auth=mysql_native_password
       alias: mysql
     - name: redislabs/redistimeseries:latest
       alias: redis
