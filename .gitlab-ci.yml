@@ -49,11 +49,10 @@ pylint-pytest:
     name: docker.uib.gmbh/opsi/opsi-server:4.3-stable
     entrypoint: [""]
   services:
-    - name: mysql:latest
+    - name: mysql:8.0
       command:
         - --max_connections=1000
-        - --mysql-native-password=ON
-        - --default-auth=mysql_native_password
+        - --default-authentication-plugin=mysql_native_password
       alias: mysql
     - name: redislabs/redistimeseries:latest
       alias: redis
