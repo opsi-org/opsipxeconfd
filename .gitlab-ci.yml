@@ -26,8 +26,7 @@ stages:
   echo "---------------------------------------"
   source /entrypoint.sh set_environment_vars  # to set hosts for redis/grafana
   poetry install
-  poetry run opsipxeconfd --log-file 6 --log-level-file 6 --log-level-stderr 6 setup
-  cat /var/log/opsi/opsipxeconfd/opsipxeconfd.log
+  poetry run opsipxeconfd setup
 
 .pytest: &pytest |
   poetry run opsipxeconfd start --log-level 6 &
