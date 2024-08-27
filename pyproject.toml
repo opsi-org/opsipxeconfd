@@ -34,7 +34,7 @@ python = ">=3.11,<3.12"
 python-opsi-common = ">=4.3.3,<4.4"
 inotify = "^0.2"
 configargparse = "^1.5"
-passlib = "^1.7"
+py-purecrypt = "^0.1"
 
 [tool.poetry.scripts]
 opsipxeconfd = "opsipxeconfd.__main__:main"
