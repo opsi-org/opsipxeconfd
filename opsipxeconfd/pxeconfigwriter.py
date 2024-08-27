@@ -20,7 +20,7 @@ from opsicommon.config.opsi import OpsiConfig
 from opsicommon.logging import get_logger, log_context
 from opsicommon.objects import ProductOnClient
 
-from opsipxeconfd.setup import encode_password
+from opsipxeconfd.setup import password_hash
 
 logger = get_logger()
 opsi_config = OpsiConfig()
@@ -145,7 +145,7 @@ class PXEConfigWriter(Thread):
 				for key, value in self.append.items():
 					if value:
 						if "bootimagerootpassword" in key.lower():
-							pwhash = encode_password(value).replace("$", r"\$")
+							pwhash = password_hash(value).replace("$", r"\$")
 							append_line_properties.append(f"pwh={pwhash}")
 						elif "pwh" in key.lower():
 							pwhash = value.replace("$", r"\$")

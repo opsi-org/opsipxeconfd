@@ -14,17 +14,13 @@ import os
 import subprocess
 from time import sleep
 
-import passlib.hash  # type: ignore[import]
-from opsicommon.client.opsiservice import (OpsiServiceAuthenticationError,
-                                           OpsiServiceError,
-                                           OpsiServiceVerificationError,
-                                           ServiceClient)
+from opsicommon.client.opsiservice import OpsiServiceAuthenticationError, OpsiServiceError, OpsiServiceVerificationError, ServiceClient
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.exceptions import OpsiServiceConnectionError
 from opsicommon.logging import get_logger, secret_filter
 from opsicommon.server.rights import set_rights
-from opsicommon.server.setup import \
-    setup_users_and_groups as po_setup_users_and_groups
+from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
+from purecrypt import Crypt, Method  # type: ignore[import]
 
 from opsipxeconfd import __version__
 
@@ -32,17 +28,22 @@ logger = get_logger()
 opsi_config = OpsiConfig()
 
 
-def encode_password(clearPassword: str) -> str:
+def password_hash(password: str) -> str:
 	"""
-	Encode a password using sha512_crypt.
+	Encode a password using SHA512 and return a hash string for use in /etc/shadow.
+	"""
+	# glibc uses 5000 rounds for SHA512 by default
+	# https://github.com/lattera/glibc/blob/master/crypt/sha512-crypt.c#L88
+	# When the rounds parameter is set to 5000, it may be omitted from the hash string.
 
-	"""
 	while True:
-		pwhash = passlib.hash.sha512_crypt.using(rounds=5000).hash(clearPassword)
-		if not pwhash or "." in pwhash:
-			print("Invalid hash, retrying")
-		else:
-			return pwhash
+		salt = Crypt.generate_salt(Method.SHA512)
+		salt = salt[:19]  # 16 bytes salt + 3 bytes $6$
+		pw_hash = Crypt.encrypt(password, salt)
+		if "." in pw_hash:
+			# Invalid hash
+			continue
+		return pw_hash
 
 
 def get_opsiconfd_config() -> dict[str, str]:
@@ -154,7 +155,7 @@ def patchMenuFile(config: dict) -> None:
 				if "bootimageRootPassword" in element:
 					# password could include equal signs
 					clearRootPassword = element.split("=", maxsplit=1)[1]
-					endcodedRootPassword = encode_password(clearRootPassword)
+					endcodedRootPassword = password_hash(clearRootPassword)
 					pwhEntry = f"pwh={endcodedRootPassword}"
 				if "pwh=" in element:
 					pwhEntry = element
