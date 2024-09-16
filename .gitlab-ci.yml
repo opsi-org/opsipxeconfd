@@ -94,7 +94,7 @@ build:linux-pyinstaller:
 build:arm64-pyinstaller:
   stage: build
   tags:
-    - arm64
+    - linux-arm64
   script:
     - poetry install
     - poetry run opsi-dev-cli -l info pyinstaller build
@@ -112,8 +112,10 @@ build:arm64-pyinstaller:
 publish:obs_ext:
   stage: publish
   script:
-    - opsi-dev-tool -l info --obs-update-package https://build.opensuse.org home:uibmz:opsi:4.3:development
-    - opsi-dev-cli -l 5 changelog from-git output
+    - opsi-dev-cli self upgrade --system
+    - opsi-dev-cli -l info packaging obs --help
+    - opsi-dev-cli -l info packaging obs update-package https://build.opensuse.org home:uibmz:opsi:4.3:development
+    - opsi-dev-cli -l info changelog from-git output
     - opsi-dev-cli release-service register-package-version opsipxeconfd SERVER_PACKAGE --changelog-file output/changelog.md
     - opsi-dev-cli release-service push-repository-state opsipxeconfd SERVER_PACKAGE SERVER_PACKAGE-4.3-development
   only:
