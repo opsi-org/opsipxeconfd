@@ -28,6 +28,17 @@ logger = get_logger()
 opsi_config = OpsiConfig()
 
 
+def running_in_docker() -> bool:
+	try:
+		with open("/proc/2/stat", encoding="utf-8", errors="replace") as file:
+			return "kthreadd" not in file.read()
+	except FileNotFoundError:
+		return True
+	except Exception:
+		pass
+	return False
+
+
 def password_hash(password: str) -> str:
 	"""
 	Encode a password using SHA512 and return a hash string for use in /etc/shadow.
@@ -238,6 +249,30 @@ def setup_files(log_file: str) -> None:
 	set_rights(log_dir)
 
 
+def setup_limits() -> None:
+	"""
+	Setup for limits.
+
+	This method sets up limits for the opsipxeconfd process.
+	"""
+	logger.notice("Setting up limits")
+	if running_in_docker():
+		logger.info("Running in docker, not setting limits")
+		return
+
+	min_value = 8192
+	for limit in ("max_user_instances", "max_user_watches"):
+		try:
+			with open(f"/proc/sys/fs/inotify/{limit}", "r", encoding="ascii") as file:
+				value = int(file.read().strip())
+				if value < min_value:
+					logger.info("Setting /proc/sys/fs/inotify/%s to %d", limit, min_value)
+					with open(f"/proc/sys/fs/inotify/{limit}", "w", encoding="ascii") as file:
+						file.write(str(min_value))
+		except OSError as err:
+			logger.warning("Failed to set %s: %s", limit, err)
+
+
 def setup(config: dict) -> None:
 	"""
 	Setup method for opsipxeconfd.
@@ -249,6 +284,7 @@ def setup(config: dict) -> None:
 	:type config: dict
 	"""
 	logger.notice("Running opsipxeconfd setup")
+	setup_limits()
 	po_setup_users_and_groups()
 	setup_files(config["logFile"])
 	patchMenuFile(config)
