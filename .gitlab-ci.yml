@@ -112,8 +112,10 @@ build:arm64-pyinstaller:
 publish:obs_ext:
   stage: publish
   script:
+    - which opsi-dev-cli
     - opsi-dev-cli --version
-    - opsi-dev-cli self upgrade
+    - opsi-dev-cli self upgrade --system
+    - which opsi-dev-cli
     - opsi-dev-cli --version
     - opsi-dev-cli -l info packaging obs --help
     - opsi-dev-cli -l info packaging obs update-package https://build.opensuse.org home:uibmz:opsi:4.3:development
