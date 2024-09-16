@@ -94,7 +94,7 @@ build:linux-pyinstaller:
 build:arm64-pyinstaller:
   stage: build
   tags:
-    - arm64
+    - linux-arm64
   script:
     - poetry install
     - poetry run opsi-dev-cli -l info pyinstaller build
