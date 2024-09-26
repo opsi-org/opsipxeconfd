@@ -231,10 +231,10 @@ def patchMenuFile(config: dict) -> None:
 
 						elif line.strip().startswith("set passwordhash"):
 							if pwhEntry:
-								line = f"set {pwhEntry}\n"
+								line = f"set passwordhash={endcodedRootPassword.replace("$", r"\$")}\n"
 						elif line.strip().startswith("set language"):
 							if langEntry:
-								line = f"set {langEntry}\n"
+								line = f"set language={langEntry.split("=")[1].strip(" \n\r")}\n"
 
 						newlines.append(line)
 
