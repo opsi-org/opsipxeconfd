@@ -232,11 +232,11 @@ def patchMenuFile(config: dict) -> None:
 						elif line.strip().startswith("set passwordhash"):
 							if pwhEntry:
 								passwordhash = pwhEntry.split("=", maxsplit=1)[1].replace("$", r"\$")
-								line = f"set passwordhash={passwordhash}\n"
+								line = f'set passwordhash="{passwordhash}"\n'
 						elif line.strip().startswith("set language"):
 							if langEntry:
 								language = langEntry.split("=")[1].strip(" \n\r")
-								line = f"set language={language}\n"
+								line = f'set language="{language}"\n'
 
 						newlines.append(line)
 
