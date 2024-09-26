@@ -482,12 +482,11 @@ def test_read_grub_settings_file(tmp_path: Path) -> None:
 	patchMenuFile(config)
 	grub_cfg = tmp_path / "grub-settings.cfg"
 	content = grub_cfg.read_text(encoding="utf-8")
-	for line in content:
-		if line.strip().startswith("linux"):
-			assert "timeout" in line
-			assert "graphics" in line
-			assert "pwh" in line
-			assert "lang" in line
+	print(content)
+	assert "set timeout" in content
+	assert "set graphics" in content
+	assert "set passwordhash" in content
+	assert "set language" in content
 
 
 def test_write_grub_settings_file(tmp_path: Path) -> None:
@@ -500,12 +499,11 @@ def test_write_grub_settings_file(tmp_path: Path) -> None:
 		patchMenuFile(config)
 		grub_cfg = tmp_path / "grub-settings.cfg"
 		content = grub_cfg.read_text(encoding="utf-8")
-		for line in content:
-			if line.strip().startswith("linux"):
-				assert "timeout" in line
-				assert "graphics" in line
-				assert r'set passwordhash="\$6\$salt\$123456"' in line
-				assert 'set language="us"' in line
+		print(content)
+		assert "timeout" in content
+		assert "graphics" in content
+		assert r'set passwordhash="\$6\$salt\$123456"' in content
+		assert 'set language="us"' in content
 
 
 ########### OTHER ################
