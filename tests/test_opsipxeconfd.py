@@ -473,6 +473,44 @@ def test_service_and_pwh_change_in_grub_menu(tmp_path: Path) -> None:
 					assert "lang=de" in line
 
 
+########### GRUB SETTINGS ################
+
+
+def test_read_grub_settings_file(tmp_path: Path) -> None:
+	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+	config = {"pxeDir": str(tmp_path)}
+	patchMenuFile(config)
+	grub_cfg = tmp_path / "grub-settings.cfg"
+	content = grub_cfg.read_text(encoding="utf-8")
+	for line in content:
+		if line.strip().startswith("linux"):
+			assert "timeout" in line
+			assert "graphics" in line
+			assert "pwh" in line
+			assert "lang" in line
+
+
+def test_write_grub_settings_file(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456", "lang=us"]
+
+	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {"pxeDir": str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / "grub-settings.cfg"
+		content = grub_cfg.read_text(encoding="utf-8")
+		for line in content:
+			if line.strip().startswith("linux"):
+				assert "timeout" in line
+				assert "graphics" in line
+				assert 'set passwordhash="\$6\$salt\$123456"' in line
+				assert 'set language="us"' in line
+
+
+########### OTHER ################
+
+
 def test_pid_file() -> None:
 	if os.path.exists(PID_FILE):
 		os.remove(PID_FILE)
@@ -498,20 +536,3 @@ def test_password_hash() -> None:
 		assert parts[0] == ""
 		assert parts[1] == "6"  # $6$ is SHA-512
 		assert len(parts[2]) == 16  # salt len 16
-
-
-########### GRUB SETTINGS ################
-
-
-def test_read_grub_settings_file(tmp_path: Path) -> None:
-	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
-	config = {"pxeDir": str(tmp_path)}
-	patchMenuFile(config)
-	grub_cfg = tmp_path / "grub-settings.cfg"
-	content = grub_cfg.read_text(encoding="utf-8")
-	for line in content:
-		if line.strip().startswith("linux"):
-			assert "timeout" in line
-			assert "graphics" in line
-			assert "pwh" in line
-			assert "lang" in line

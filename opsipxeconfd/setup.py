@@ -217,7 +217,9 @@ def patchMenuFile(config: dict) -> None:
 							#  We need everything after the first equal sign.
 							if not grubSettings:
 								if pwhEntry:
-									linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = pwhEntry.split("=", maxsplit=1)[1].strip(" \n\r")
+									linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = pwhEntry.split("=", maxsplit=1)[1].strip(
+										" \n\r"
+									)
 								if langEntry:
 									linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(" \n\r")
 							for key, value in linuxAppendDict.items():
@@ -226,6 +228,13 @@ def patchMenuFile(config: dict) -> None:
 							if not configserverUrl:
 								logger.error("configserver URL not found for %r", configserverUrl)
 							line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
+
+						elif line.strip().startswith("set passwordhash"):
+							if pwhEntry:
+								line = f"set {pwhEntry}\n"
+						elif line.strip().startswith("set language"):
+							if langEntry:
+								line = f"set {langEntry}\n"
 
 						newlines.append(line)
 
