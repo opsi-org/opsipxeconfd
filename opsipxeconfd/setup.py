@@ -179,6 +179,7 @@ def patchMenuFile(config: dict) -> None:
 			if os.path.exists(config["pxeDir"] + "/grub-menu.cfg"):
 				grubFiles.append("/grub-menu.cfg")
 			if os.path.exists(config["pxeDir"] + "/grub-settings.cfg"):
+				grubFiles.append("/grub-settings.cfg")
 				grubSettings = True
 			for grubFile in grubFiles:
 				print(f"Processing {grubFile}")
