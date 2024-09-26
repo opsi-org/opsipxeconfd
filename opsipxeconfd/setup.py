@@ -230,13 +230,21 @@ def patchMenuFile(config: dict) -> None:
 							line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
 
 						elif line.strip().startswith("set passwordhash"):
+							print("set passwordhash")
 							if pwhEntry:
+								print("pwhEntry found")
 								passwordhash = pwhEntry.split("=", maxsplit=1)[1].replace("$", r"\$")
+								print(passwordhash)
 								line = f'set passwordhash="{passwordhash}"\n'
+								print(line)
 						elif line.strip().startswith("set language"):
+							print("set language")
 							if langEntry:
+								print("langEntry found")
 								language = langEntry.split("=")[1].strip(" \n\r")
+								print(language)
 								line = f'set language="{language}"\n'
+								print(line)
 
 						newlines.append(line)
 
