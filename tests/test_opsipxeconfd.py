@@ -504,7 +504,7 @@ def test_write_grub_settings_file(tmp_path: Path) -> None:
 			if line.strip().startswith("linux"):
 				assert "timeout" in line
 				assert "graphics" in line
-				assert 'set passwordhash="\$6\$salt\$123456"' in line
+				assert r'set passwordhash="\$6\$salt\$123456"' in line
 				assert 'set language="us"' in line
 
 
