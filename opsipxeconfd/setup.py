@@ -181,6 +181,7 @@ def patchMenuFile(config: dict) -> None:
 			if os.path.exists(config["pxeDir"] + "/grub-settings.cfg"):
 				grubSettings = True
 			for grubFile in grubFiles:
+				print(f"Processing {grubFile}")
 				newlines = []
 				with open(config["pxeDir"] + grubFile, "r", encoding="utf-8") as readMenu:
 					for line in readMenu:
@@ -228,7 +229,6 @@ def patchMenuFile(config: dict) -> None:
 							if not configserverUrl:
 								logger.error("configserver URL not found for %r", configserverUrl)
 							line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
-
 						elif line.strip().startswith("set passwordhash"):
 							print("set passwordhash")
 							if pwhEntry:
