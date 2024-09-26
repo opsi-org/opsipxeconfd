@@ -388,6 +388,7 @@ def test_pwh_patch_new_grub_menu_file(tmp_path: Path) -> None:
 		patchMenuFile(config)
 		grub_cfg = tmp_path / "grub-menu.cfg"
 		content = grub_cfg.read_text(encoding="utf-8")
+		print(content)
 		for line in content:
 			if line.strip().startswith("linux"):
 				assert r"pwh=\$6\$salt\$123456" in line
@@ -495,7 +496,6 @@ def test_write_grub_settings_file(tmp_path: Path) -> None:
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
 		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 		config = {"pxeDir": str(tmp_path)}
-		print(f"config: {config}")
 		patchMenuFile(config)
 		grub_cfg = tmp_path / "grub-settings.cfg"
 		content = grub_cfg.read_text(encoding="utf-8")
