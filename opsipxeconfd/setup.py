@@ -181,8 +181,6 @@ def patchMenuFile(config: dict) -> None:
 				grubFiles.append("/grub-settings.cfg")
 			for grubFile in grubFiles:
 				newlines = []
-				if pwhEntry:
-					print(f"pwhEntry in file {grubFile} is {pwhEntry}")
 				with open(config["pxeDir"] + grubFile, "r", encoding="utf-8") as readMenu:
 					for line in readMenu:
 						if line.strip().startswith("linux"):
@@ -217,7 +215,6 @@ def patchMenuFile(config: dict) -> None:
 							# pwh=$6$rounds=656000$zDsMybVfAeoOFaG8$wJiX2zPHClXnDWIPfAP6f5xOfCEJnZOQ8uInHUKVAaiYIxtIGaNdGAsoBY6ZG6MSCrgPLPKXsEuIIlbpv8YzN/
 							#  We need everything after the first equal sign.
 							if pwhEntry:
-								print(f"pwhEntry in file {grubFile} is {pwhEntry}")
 								linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = pwhEntry.split("=", maxsplit=1)[1].strip(" \n\r")
 							if langEntry:
 								linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(" \n\r")
@@ -229,20 +226,18 @@ def patchMenuFile(config: dict) -> None:
 							line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
 						elif line.strip().startswith("set passwordhash"):
 							if pwhEntry:
-								print("pwhEntry found")
-								print(pwhEntry)
 								passwordhash = pwhEntry.replace(r"\\$", r"\$").split("=", maxsplit=1)[1].strip(" \n\r")
-								print(f"HASH is {passwordhash}")
 								line = f'set passwordhash="{passwordhash}"\n'
-								print(line)
+							if not pwhEntry:
+								passwordhash = ""
+								line = f'set passwordhash="{passwordhash}"\n'
 						elif line.strip().startswith("set language"):
 							if langEntry:
-								print("langEntry found")
 								language = langEntry.split("=")[1].strip(" \n\r")
 								line = f'set language="{language}"\n'
-
-						if pwhEntry:
-							print("")
+							if not langEntry:
+								language = "en"
+								line = f'set language="{language}"\n'
 						newlines.append(line)
 
 				with open(config["pxeDir"] + grubFile, "w", encoding="utf-8") as writeMenu:
