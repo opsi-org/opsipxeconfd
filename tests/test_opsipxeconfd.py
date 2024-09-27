@@ -159,16 +159,17 @@ def test_pwh_patch_menu_file(tmp_path: Path) -> None:
 		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456"]
 
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
-		config = {"pxeDir": str(tmp_path)}
-		patchMenuFile(config)
-		grub_cfg = tmp_path / "grub.cfg"
-		with open(grub_cfg, "r", encoding="utf-8") as content:
-			for line in content:
-				if line.strip().startswith("linux"):
-					assert r"pwh=\$6\$salt\$123456" in line
-					assert "https://service.uib.gmbh:4447/rpc" in line
-					assert "lang=de" not in line
+		with mock.patch("opsipxeconfd.setup.grubSettings", False):
+			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+			config = {"pxeDir": str(tmp_path)}
+			patchMenuFile(config)
+			grub_cfg = tmp_path / "grub.cfg"
+			with open(grub_cfg, "r", encoding="utf-8") as content:
+				for line in content:
+					if line.strip().startswith("linux"):
+						assert r"pwh=\$6\$salt\$123456" in line
+						assert "https://service.uib.gmbh:4447/rpc" in line
+						assert "lang=de" not in line
 
 
 def test_lang_patch_menu_file(tmp_path: Path) -> None:
