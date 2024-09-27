@@ -158,11 +158,8 @@ def test_pwh_patch_menu_file(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456"]
 
-	def mockGrubSettings() -> bool:
-		return False
-
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		with mock.patch("opsipxeconfd.setup.grubSettings", mockGrubSettings):
+		with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 			config = {"pxeDir": str(tmp_path)}
 			patchMenuFile(config)
@@ -179,11 +176,8 @@ def test_lang_patch_menu_file(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return "https://service.uib.gmbh:4447/rpc", ["lang=de"]
 
-	def mockGrubSettings() -> bool:
-		return False
-
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		with mock.patch("opsipxeconfd.setup.grubSettings", mockGrubSettings):
+		with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 			config = {"pxeDir": str(tmp_path)}
 			patchMenuFile(config)
@@ -200,11 +194,8 @@ def test_pwh_patch_menu_removal(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456", "lang=us"]
 
-	def mockGrubSettings() -> bool:
-		return False
-
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		with mock.patch("opsipxeconfd.setup.grubSettings", mockGrubSettings):
+		with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 			config = {"pxeDir": str(tmp_path)}
 			patchMenuFile(config)
@@ -233,11 +224,8 @@ def test_service_and_pwh_change(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456", "lang=us"]
 
-	def mockGrubSettings() -> bool:
-		return False
-
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		with mock.patch("opsipxeconfd.setup.grubSettings", mockGrubSettings):
+		with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 			config = {"pxeDir": str(tmp_path)}
 			patchMenuFile(config)
@@ -266,10 +254,7 @@ def test_service_and_pwh_change(tmp_path: Path) -> None:
 
 
 def test_service_patch_new_grub_file(tmp_path: Path) -> None:
-	def mockGrubSettings() -> bool:
-		return False
-
-	with mock.patch("opsipxeconfd.setup.grubSettings", mockGrubSettings):
+	with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 		config = {"pxeDir": str(tmp_path)}
 		patchMenuFile(config)
@@ -286,11 +271,8 @@ def test_pwh_patch_new_grub_file(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456"]
 
-	def mockGrubSettings() -> bool:
-		return False
-
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		with mock.patch("opsipxeconfd.setup.grubSettings", mockGrubSettings):
+		with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 			config = {"pxeDir": str(tmp_path)}
 			patchMenuFile(config)
@@ -307,11 +289,8 @@ def test_lang_patch_new_grub_file(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return "https://service.uib.gmbh:4447/rpc", ["lang=de"]
 
-	def mockGrubSettings() -> bool:
-		return False
-
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		with mock.patch("opsipxeconfd.setup.grubSettings", mockGrubSettings):
+		with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 			config = {"pxeDir": str(tmp_path)}
 			patchMenuFile(config)
@@ -328,11 +307,8 @@ def test_pwh_patch_new_grub_removal_in_grub_cfg(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456", "lang=us"]
 
-	def mockGrubSettings() -> bool:
-		return False
-
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		with mock.patch("opsipxeconfd.setup.grubSettings", mockGrubSettings):
+		with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 			config = {"pxeDir": str(tmp_path)}
 			patchMenuFile(config)
@@ -361,11 +337,8 @@ def test_service_and_pwh_change_in_grub_cfg(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
 		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456", "lang=us"]
 
-	def mockGrubSettings() -> bool:
-		return False
-
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		with mock.patch("opsipxeconfd.setup.grubSettings", mockGrubSettings):
+		with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 			config = {"pxeDir": str(tmp_path)}
 			patchMenuFile(config)
