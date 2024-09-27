@@ -391,17 +391,18 @@ def test_pwh_patch_new_grub_menu_file(tmp_path: Path) -> None:
 		print("before end")
 		patchMenuFile(config)
 		grub_cfg = tmp_path / "grub-menu.cfg"
-		content = grub_cfg.read_text(encoding="utf-8")
-		print("after patchmenufile")
-		for line in content:
-			print(line)
-			print(line.strip())
-			if line.strip().startswith("linux"):
+		with open(grub_cfg, "r", encoding="utf-8") as content:
+			# content = grub_cfg.read_text(encoding="utf-8")
+			print("after patchmenufile")
+			for line in content:
+				print(line)
 				print(line.strip())
-				# assert r"pwh=\$6\$salt\$123456" in line
-				assert r"pwh=\$6\$salt\$123457" in line
-				assert "https://service.uib.gmbh:4447/rpc" in line
-				assert "lang=de" not in line
+				if line.strip().startswith("linux"):
+					print(line.strip())
+					# assert r"pwh=\$6\$salt\$123456" in line
+					assert r"pwh=\$6\$salt\$123457" in line
+					assert "https://service.uib.gmbh:4447/rpc" in line
+					assert "lang=de" not in line
 
 
 def test_lang_patch_new_grub_menu_file(tmp_path: Path) -> None:
