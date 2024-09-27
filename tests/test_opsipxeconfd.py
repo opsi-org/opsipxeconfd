@@ -121,23 +121,24 @@ def test_grub_pxe_config_writer() -> None:
 		"lang": "de",
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
-	with open(pcw._get_pxe_config_content(pxe_config_template), "r", encoding="utf-8") as content:  # pylint: disable=protected-access
-		# set timeout=0
-		# menuentry 'Start netboot installation' {
-		# set gfxpayload=keep
-		# linux (pxe)/linux/install-x64 initrd=miniroot-x64 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
-		#   hn=test dn=uib.gmbh product service pwh=$6$salt$password
-		# initrd (pxe)/linux/miniroot-x64
-		# }
-		for line in content:
-			if line.strip().startswith("linux"):
-				assert "install-x64" in line
-				assert "hn=test" in line
-				assert "dn=uib.gmbh" in line
-				assert "product" in line
-				assert "service=https://server.uib.gmbh:4447/rpc" in line
-				assert r"pwh=\$6\$salt\$password" in line
-				assert "lang=de" in line
+	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
+	# set timeout=0
+	# menuentry 'Start netboot installation' {
+	# set gfxpayload=keep
+	# linux (pxe)/linux/install-x64 initrd=miniroot-x64 video=vesa:ywrap,mtrr vga=791 quiet splash --no-log console=tty1 console=ttyS0
+	#   hn=test dn=uib.gmbh product service pwh=$6$salt$password
+	# initrd (pxe)/linux/miniroot-x64
+	# }
+	for line in content:
+		print(f"pcwcontentline: {line}")
+		if line.strip().startswith("linux"):
+			assert "install-x64" in line
+			assert "hn=test" in line
+			assert "dn=uib.gmbh" in line
+			assert "product" in line
+			assert "service=https://server.uib.gmbh:4447/rpc" in line
+			assert r"pwh=\$6\$salt\$password" in line
+			assert "lang=de" in line
 
 
 ########### OLD GRUB CFG ################
