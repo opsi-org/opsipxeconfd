@@ -175,11 +175,10 @@ def patchMenuFile(config: dict) -> None:
 				if "lang=" in element:
 					langEntry = element
 			grubFiles = ["/grub.cfg"]
-			if os.path.exists(config["pxeDir"] + "/grub-menu.cfg"):
-				grubFiles.append("/grub-menu.cfg")
 			if os.path.exists(config["pxeDir"] + "/grub-settings.cfg"):
 				grubFiles.append("/grub-settings.cfg")
-				grubFiles.remove("/grub-menu.cfg")
+			elif os.path.exists(config["pxeDir"] + "/grub-menu.cfg"):
+				grubFiles.append("/grub-menu.cfg")
 			for grubFile in grubFiles:
 				logger.notice(f"Processing {grubFile}")
 				newlines = []
