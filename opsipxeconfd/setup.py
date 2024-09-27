@@ -179,6 +179,7 @@ def patchMenuFile(config: dict) -> None:
 				grubFiles.append("/grub-menu.cfg")
 			if os.path.exists(config["pxeDir"] + "/grub-settings.cfg"):
 				grubFiles.append("/grub-settings.cfg")
+				grubFiles.remove("/grub-menu.cfg")
 			for grubFile in grubFiles:
 				newlines = []
 				with open(config["pxeDir"] + grubFile, "r", encoding="utf-8") as readMenu:
