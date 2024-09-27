@@ -394,7 +394,7 @@ def test_pwh_patch_new_grub_menu_file(tmp_path: Path) -> None:
 		for line in content:
 			if line.strip().startswith("linux"):
 				# assert r"pwh=\$6\$salt\$123456" in line
-				assert r"pwh=\$6\$salt\$123456" not in line
+				assert r"pwh=\$6\$salt\$123457" in line
 				assert "https://service.uib.gmbh:4447/rpc" in line
 				assert "lang=de" not in line
 
