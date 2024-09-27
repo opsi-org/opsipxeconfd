@@ -121,7 +121,7 @@ def test_grub_pxe_config_writer() -> None:
 		"lang": "de",
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
-	pcwContent = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
+	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
 	# set timeout=0
 	# menuentry 'Start netboot installation' {
 	# set gfxpayload=keep
@@ -129,17 +129,13 @@ def test_grub_pxe_config_writer() -> None:
 	#   hn=test dn=uib.gmbh product service pwh=$6$salt$password
 	# initrd (pxe)/linux/miniroot-x64
 	# }
-	with open(pcwContent, "r", encoding="utf-8") as content:
-		for line in content:
-			print(f"pcwcontentline: {line}")
-			if line.strip().startswith("linux"):
-				assert "install-x64" in line
-				assert "hn=test" in line
-				assert "dn=uib.gmbh" in line
-				assert "product" in line
-				assert "service=https://server.uib.gmbh:4447/rpc" in line
-				assert r"pwh=\$6\$salt\$password" in line
-				assert "lang=de" in line
+	assert "install-x64" in content
+	assert "hn=test" in content
+	assert "dn=uib.gmbh" in content
+	assert "product" in content
+	assert "service=https://server.uib.gmbh:4447/rpc" in content
+	assert r"pwh=\$6\$salt\$password" in content
+	assert "lang=de" in content
 
 
 ########### GRUB CFG ################
