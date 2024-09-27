@@ -533,6 +533,32 @@ def test_change_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 			assert 'set language="de"' in content
 
 
+def test_remove_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456", "lang=us"]
+
+	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
+		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+		config = {"pxeDir": str(tmp_path)}
+		patchMenuFile(config)
+		grub_cfg = tmp_path / "grub-settings.cfg"
+		content = grub_cfg.read_text(encoding="utf-8")
+		assert "timeout" in content
+		assert "graphics" in content
+		assert r'set passwordhash="\$6\$salt\$123456"' in content
+		assert 'set language="us"' in content
+
+		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
+			return "https://service.uib.gmbh:4447/rpc", [""]
+
+		with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockRemovePwhFromGrubCfg):
+			patchMenuFile(config)
+			content = grub_cfg.read_text(encoding="utf-8")
+			assert r'set passwordhash="\$6\$salt\$123456"' not in content
+			assert 'set language="us"' not in content
+			assert 'set language="en"' in content
+
+
 ########### OTHER ################
 
 
