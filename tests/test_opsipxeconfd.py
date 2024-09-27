@@ -386,13 +386,17 @@ def test_pwh_patch_new_grub_menu_file(tmp_path: Path) -> None:
 		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 		config = {"pxeDir": str(tmp_path)}
 		before = (tmp_path / "grub-menu.cfg").read_text(encoding="utf-8")
+		print("before")
 		print(before)
+		print("before end")
 		patchMenuFile(config)
 		grub_cfg = tmp_path / "grub-menu.cfg"
 		content = grub_cfg.read_text(encoding="utf-8")
+		print("after patchmenufile")
 		print(content)
 		for line in content:
 			if line.strip().startswith("linux"):
+				print(line.strip())
 				# assert r"pwh=\$6\$salt\$123456" in line
 				assert r"pwh=\$6\$salt\$123457" in line
 				assert "https://service.uib.gmbh:4447/rpc" in line
