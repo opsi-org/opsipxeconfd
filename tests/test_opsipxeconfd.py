@@ -534,6 +534,7 @@ def test_change_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 		with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService2):
 			patchMenuFile(config)
 			content = grub_cfg.read_text(encoding="utf-8")
+			print(content)
 			assert r'set passwordhash="\$6\$salt\$123456"' not in content
 			assert r'set passwordhash="\$6\$tlas\$654321"' in content
 			assert 'set language="us"' not in content
@@ -563,6 +564,7 @@ def test_remove_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 			content = grub_cfg.read_text(encoding="utf-8")
 			print(content)
 			assert r'set passwordhash="\$6\$salt\$123456"' not in content
+			assert 'set passwordhash=""' in content
 			assert 'set language="us"' not in content
 			assert 'set language="en"'
 
