@@ -159,7 +159,7 @@ def test_pwh_patch_menu_file(tmp_path: Path) -> None:
 		return "https://service.uib.gmbh:4447/rpc", ["pwh=$6$salt$123456"]
 
 	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
-		with mock.patch("opsipxeconfd.setup.grubSettings", lambda: False):
+		with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
 			shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 			config = {"pxeDir": str(tmp_path)}
 			patchMenuFile(config)
