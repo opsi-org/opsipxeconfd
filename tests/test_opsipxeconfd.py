@@ -350,11 +350,11 @@ def test_service_and_pwh_change_in_grub_cfg(tmp_path: Path) -> None:
 				for line in content:
 					if line.strip().startswith("linux"):
 						assert "pwh=$6$salt$123456" not in line
-						assert r"pwh=\$6\$tlas\$654321" not in line
+						assert r"pwh=\$6\$tlas\$654321" in line
 						assert "https://service.uib.gmbh:4447/rpc" not in line
-						assert "https://opsiserver.uib.gmbh:4447/rpc" not in line
+						assert "https://opsiserver.uib.gmbh:4447/rpc" in line
 						assert "lang=us" not in line
-						assert "lang=de" not in line
+						assert "lang=de" in line
 
 
 ########### GRUB MENU ################
@@ -368,7 +368,7 @@ def test_service_patch_new_grub_menu_file(tmp_path: Path) -> None:
 	with open(grub_cfg, "r", encoding="utf-8") as content:
 		for line in content:
 			if line.strip().startswith("linux"):
-				assert "service" not in line
+				assert "service" in line
 				assert "pwh" not in line
 				assert "lang" not in line
 
