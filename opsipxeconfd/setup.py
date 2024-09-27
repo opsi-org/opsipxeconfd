@@ -215,7 +215,9 @@ def patchMenuFile(config: dict) -> None:
 							# pwh=$6$rounds=656000$zDsMybVfAeoOFaG8$wJiX2zPHClXnDWIPfAP6f5xOfCEJnZOQ8uInHUKVAaiYIxtIGaNdGAsoBY6ZG6MSCrgPLPKXsEuIIlbpv8YzN/
 							#  We need everything after the first equal sign.
 							if pwhEntry:
-								linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = pwhEntry.split("=", maxsplit=1)[1].strip(" \n\r")
+								linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = (
+									pwhEntry.replace(r"\\$", r"\$").split("=", maxsplit=1)[1].strip(" \n\r")
+								)
 							if langEntry:
 								linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(" \n\r")
 							for key, value in linuxAppendDict.items():
