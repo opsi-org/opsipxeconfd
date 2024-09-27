@@ -231,7 +231,7 @@ def patchMenuFile(config: dict) -> None:
 							if pwhEntry:
 								print("pwhEntry found")
 								print(pwhEntry)
-								passwordhash = pwhEntry.split("=", maxsplit=1)[1].strip(" \n\r")
+								passwordhash = pwhEntry.replace(r"\\$", r"\$").split("=", maxsplit=1)[1].strip(" \n\r")
 								print(f"HASH is {passwordhash}")
 								line = f'set passwordhash="{passwordhash}"\n'
 								print(line)
