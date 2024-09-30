@@ -396,7 +396,6 @@ def test_pwh_patch_new_grub_menu_file(tmp_path: Path) -> None:
 			patchMenuFile(config)
 			grub_cfg = tmp_path / "grub-menu.cfg"
 			with open(grub_cfg, "r", encoding="utf-8") as content:
-				# content = grub_cfg.read_text(encoding="utf-8")
 				for line in content:
 					if line.strip().startswith("linux"):
 						assert r"pwh=\$6\$salt\$123456" in line
