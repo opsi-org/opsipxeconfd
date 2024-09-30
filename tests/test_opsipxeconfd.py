@@ -513,6 +513,14 @@ def test_write_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 		assert r'set passwordhash="\$6\$salt\$123456"' in content
 		assert 'set language="us"' in content
 
+		grub_menu = tmp_path / "grub-menu.cfg"
+		with open(grub_menu, "r", encoding="utf-8") as content_menu:
+			for line in content_menu:
+				if line.strip().startswith("linux"):
+					assert r"pwh=\$6\$salt\$123456" not in line
+					assert "https://service.uib.gmbh:4447/rpc" in line
+					assert "lang=us" not in line
+
 
 def test_change_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 	def mockGetConfigFromService() -> tuple[str, list[str]]:
@@ -566,11 +574,19 @@ def test_remove_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 		config = {"pxeDir": str(tmp_path)}
 		patchMenuFile(config)
 		grub_cfg = tmp_path / "grub-settings.cfg"
+		grub_menu = tmp_path / "grub-menu.cfg"
 		content = grub_cfg.read_text(encoding="utf-8")
 		assert "timeout" in content
 		assert "graphics" in content
 		assert r'set passwordhash="\$6\$salt\$123456"' in content
 		assert 'set language="us"' in content
+
+		with open(grub_menu, "r", encoding="utf-8") as content_menu:
+			for line in content_menu:
+				if line.strip().startswith("linux"):
+					assert r"pwh=\$6\$salt\$123456" not in line
+					assert "https://service.uib.gmbh:4447/rpc" in line
+					assert "lang=us" not in line
 
 		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
 			return "https://service.uib.gmbh:4447/rpc", [""]
@@ -581,7 +597,15 @@ def test_remove_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 			assert r'set passwordhash="\$6\$salt\$123456"' not in content
 			assert 'set passwordhash=""' in content
 			assert 'set language="us"' not in content
-			assert 'set language="en"'
+			assert 'set language="en"' not in content
+			assert 'set language=""' in content
+
+			with open(grub_menu, "r", encoding="utf-8") as content_menu:
+				for line in content_menu:
+					if line.strip().startswith("linux"):
+						assert r"pwh=\$6\$salt\$123456" not in line
+						assert "https://service.uib.gmbh:4447/rpc" in line
+						assert "lang=" not in line
 
 
 ########### OTHER ################

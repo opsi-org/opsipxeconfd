@@ -242,8 +242,7 @@ def patchMenuFile(config: dict) -> None:
 								language = langEntry.split("=")[1].strip(" \n\r")
 								line = f'set language="{language}"\n'
 							if not langEntry:
-								language = "en"
-								line = f'set language="{language}"\n'
+								line = f'set language=""\n'
 						newlines.append(line)
 
 				with open(config["pxeDir"] + grubFile, "w", encoding="utf-8") as writeMenu:
