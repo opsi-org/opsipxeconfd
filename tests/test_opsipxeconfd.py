@@ -381,6 +381,8 @@ def test_service_patch_new_grub_menu_file(tmp_path: Path) -> None:
 					assert "service=" in line
 					assert "pwh=" not in line
 					assert "lang=" not in line
+					assert "${pwh}" not in line
+					assert "${lang}" not in line
 
 
 def test_pwh_patch_new_grub_menu_file(tmp_path: Path) -> None:
@@ -400,6 +402,8 @@ def test_pwh_patch_new_grub_menu_file(tmp_path: Path) -> None:
 						assert r"pwh=\$6\$salt\$123456" in line
 						assert "https://service.uib.gmbh:4447/rpc" in line
 						assert "lang=de" not in line
+						assert "${pwh}" not in line
+						assert "${lang}" not in line
 
 
 def test_lang_patch_new_grub_menu_file(tmp_path: Path) -> None:
@@ -418,6 +422,8 @@ def test_lang_patch_new_grub_menu_file(tmp_path: Path) -> None:
 						assert "lang=de" in line
 						assert "https://service.uib.gmbh:4447/rpc" in line
 						assert "pwh=" not in line
+						assert "${pwh}" not in line
+						assert "${lang}" not in line
 
 
 def test_pwh_patch_new_grub_removal_in_grub_menu(tmp_path: Path) -> None:
@@ -436,6 +442,8 @@ def test_pwh_patch_new_grub_removal_in_grub_menu(tmp_path: Path) -> None:
 						assert r"pwh=\$6\$salt\$123456" in line
 						assert "https://service.uib.gmbh:4447/rpc" in line
 						assert "lang=us" in line
+						assert "${pwh}" not in line
+						assert "${lang}" not in line
 
 			def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
 				return "https://service.uib.gmbh:4447/rpc", [""]
@@ -448,6 +456,8 @@ def test_pwh_patch_new_grub_removal_in_grub_menu(tmp_path: Path) -> None:
 							assert r"pwh=\$6\$salt\$123456" not in line
 							assert "https://service.uib.gmbh:4447/rpc" in line
 							assert "lang=us" not in line
+							assert "${pwh}" not in line
+							assert "${lang}" not in line
 
 
 def test_service_and_pwh_change_in_grub_menu(tmp_path: Path) -> None:
@@ -466,6 +476,8 @@ def test_service_and_pwh_change_in_grub_menu(tmp_path: Path) -> None:
 						assert r"pwh=\$6\$salt\$123456" in line
 						assert "https://service.uib.gmbh:4447/rpc" in line
 						assert "lang=us" in line
+						assert "${pwh}" not in line
+						assert "${lang}" not in line
 
 			def mockGetConfigFromService2() -> tuple[str, list[str]]:
 				return "https://opsiserver.uib.gmbh:4447/rpc", ["pwh=$6$tlas$654321", "lang=de"]
@@ -481,6 +493,8 @@ def test_service_and_pwh_change_in_grub_menu(tmp_path: Path) -> None:
 							assert "https://opsiserver.uib.gmbh:4447/rpc" in line
 							assert "lang=us" not in line
 							assert "lang=de" in line
+							assert "${pwh}" not in line
+							assert "${lang}" not in line
 
 
 ########### GRUB SETTINGS ################
@@ -543,6 +557,8 @@ def test_change_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 					assert r"pwh=\$6\$salt\$123456" not in line
 					assert "https://service.uib.gmbh:4447/rpc" in line
 					assert "lang=us" not in line
+					assert "${pwh}" in line
+					assert "${lang}" in line
 
 		def mockGetConfigFromService2() -> tuple[str, list[str]]:
 			return "https://opsiserver.uib.gmbh:4447/rpc", ["pwh=$6$tlas$654321", "lang=de"]
@@ -563,6 +579,8 @@ def test_change_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 						assert "https://opsiserver.uib.gmbh:4447/rpc" in line
 						assert "lang=us" not in line
 						assert "lang=de" not in line
+						assert "${pwh}" in line
+						assert "${lang}" in line
 
 
 def test_remove_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
@@ -587,6 +605,8 @@ def test_remove_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 					assert r"pwh=\$6\$salt\$123456" not in line
 					assert "https://service.uib.gmbh:4447/rpc" in line
 					assert "lang=us" not in line
+					assert "${pwh}" in line
+					assert "${lang}" in line
 
 		def mockRemovePwhFromGrubCfg() -> tuple[str, list[str]]:
 			return "https://service.uib.gmbh:4447/rpc", [""]
@@ -606,6 +626,8 @@ def test_remove_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
 						assert r"pwh=\$6\$salt\$123456" not in line
 						assert "https://service.uib.gmbh:4447/rpc" in line
 						assert "lang=" not in line
+						assert "${pwh}" in line
+						assert "${lang}" in line
 
 
 ########### OTHER ################
