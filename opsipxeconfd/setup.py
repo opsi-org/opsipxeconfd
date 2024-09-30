@@ -235,8 +235,7 @@ def patchMenuFile(config: dict) -> None:
 								passwordhash = pwhEntry.replace(r"\\$", r"\$").split("=", maxsplit=1)[1].strip(" \n\r")
 								line = f'set passwordhash="{passwordhash}"\n'
 							if not pwhEntry:
-								passwordhash = ""
-								line = f'set passwordhash="{passwordhash}"\n'
+								line = 'set passwordhash=""\n'
 						elif line.strip().startswith("set language"):
 							if langEntry:
 								language = langEntry.split("=")[1].strip(" \n\r")
