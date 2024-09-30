@@ -230,11 +230,11 @@ def patchMenuFile(config: dict) -> None:
 								linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = (
 									pwhEntry.replace(r"\\$", r"\$").split("=", maxsplit=1)[1].strip(" \n\r")
 								)
-							if pwhEntry and grubSettings(config):
+							if grubSettings(config):
 								linuxNewlinesDict["${pwh}"] = None
 							if langEntry and not grubSettings(config):
 								linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(" \n\r")
-							if langEntry and grubSettings(config):
+							if grubSettings(config):
 								linuxNewlinesDict["${lang}"] = None
 							for key, value in linuxAppendDict.items():
 								if key not in linuxDefaultDict:
