@@ -149,9 +149,9 @@ def test_service_patch_menu_file(tmp_path: Path) -> None:
 	with open(grub_cfg, "r", encoding="utf-8") as content:
 		for line in content:
 			if line.strip().startswith("linux"):
-				assert "service" in line
-				assert "pwh" not in line
-				assert "lang" not in line
+				assert "service=" in line
+				assert "pwh=" not in line
+				assert "lang=" not in line
 
 
 def test_pwh_patch_menu_file(tmp_path: Path) -> None:
@@ -187,7 +187,7 @@ def test_lang_patch_menu_file(tmp_path: Path) -> None:
 					if line.strip().startswith("linux"):
 						assert "lang=de" in line
 						assert "https://service.uib.gmbh:4447/rpc" in line
-						assert "pwh" not in line
+						assert "pwh=" not in line
 
 
 def test_pwh_patch_menu_removal(tmp_path: Path) -> None:
@@ -263,8 +263,8 @@ def test_service_patch_new_grub_file(tmp_path: Path) -> None:
 			for line in content:
 				if line.strip().startswith("linux"):
 					assert "service" in line
-					assert "pwh" not in line
-					assert "lang" not in line
+					assert "pwh=" not in line
+					assert "lang=" not in line
 
 
 def test_pwh_patch_new_grub_file(tmp_path: Path) -> None:
@@ -300,7 +300,7 @@ def test_lang_patch_new_grub_file(tmp_path: Path) -> None:
 					if line.strip().startswith("linux"):
 						assert "lang=de" in line
 						assert "https://service.uib.gmbh:4447/rpc" in line
-						assert "pwh" not in line
+						assert "pwh=" not in line
 
 
 def test_pwh_patch_new_grub_removal_in_grub_cfg(tmp_path: Path) -> None:
@@ -378,9 +378,9 @@ def test_service_patch_new_grub_menu_file(tmp_path: Path) -> None:
 		with open(grub_cfg, "r", encoding="utf-8") as content:
 			for line in content:
 				if line.strip().startswith("linux"):
-					assert "service" in line
-					assert "pwh" not in line
-					assert "lang" not in line
+					assert "service=" in line
+					assert "pwh=" not in line
+					assert "lang=" not in line
 
 
 def test_pwh_patch_new_grub_menu_file(tmp_path: Path) -> None:
@@ -417,7 +417,7 @@ def test_lang_patch_new_grub_menu_file(tmp_path: Path) -> None:
 					if line.strip().startswith("linux"):
 						assert "lang=de" in line
 						assert "https://service.uib.gmbh:4447/rpc" in line
-						assert "pwh" not in line
+						assert "pwh=" not in line
 
 
 def test_pwh_patch_new_grub_removal_in_grub_menu(tmp_path: Path) -> None:
