@@ -195,6 +195,7 @@ def patchMenuFile(config: dict) -> None:
 										linuxDefaultDict[element.split("=")[0].strip(" \n\r")] = element.split("=")[1].strip(" \n\r")
 									else:
 										linuxDefaultDict[element.strip(" \n\r")] = None
+							print("linuxDefaultDict")
 							for keys, values in linuxDefaultDict.items():
 								print(keys, values)
 							if "pwh" in linuxDefaultDict:
@@ -207,6 +208,7 @@ def patchMenuFile(config: dict) -> None:
 								linuxDefaultDict.pop("${pwh}")
 							if "${lang}" in linuxDefaultDict:
 								linuxDefaultDict.pop("${lang}")
+							print("linuxDefaultDict after pop")
 							for key, value in linuxDefaultDict.items():
 								print(key, value)
 							linuxNewlinesDict = linuxDefaultDict.copy()
@@ -215,6 +217,7 @@ def patchMenuFile(config: dict) -> None:
 									linuxAppendDict[element.split("=")[0].strip(" \n\r")] = element.split("=")[1].strip(" \n\r")
 								else:
 									linuxAppendDict[element.strip(" \n\r")] = None
+							print("linuxAppendDict")
 							for keys, values in linuxAppendDict.items():
 								print(keys, values)
 							if "pwh" in linuxAppendDict:
@@ -227,6 +230,7 @@ def patchMenuFile(config: dict) -> None:
 								linuxAppendDict.pop("${pwh}")
 							if "${lang}" in linuxAppendDict:
 								linuxAppendDict.pop("${lang}")
+							print("linuxAppendDict after pop")
 							for key, value in linuxAppendDict.items():
 								print(key, value)
 							if configserverUrl:
@@ -239,10 +243,12 @@ def patchMenuFile(config: dict) -> None:
 									pwhEntry.replace(r"\\$", r"\$").split("=", maxsplit=1)[1].strip(" \n\r")
 								)
 							if grubSettings(config):
+								print("grubSettings found adding ${pwh}")
 								linuxNewlinesDict["${pwh}"] = None
 							if langEntry and not grubSettings(config):
 								linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(" \n\r")
 							if grubSettings(config):
+								print("grubSettings found adding ${lang}")
 								linuxNewlinesDict["${lang}"] = None
 							for key, value in linuxAppendDict.items():
 								if key not in linuxDefaultDict:
@@ -250,7 +256,8 @@ def patchMenuFile(config: dict) -> None:
 							if not configserverUrl:
 								logger.error("configserver URL not found for %r", configserverUrl)
 							line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
-							print(line)
+							print(f"LINE: {line}")
+							print("linuxNewlinesDict")
 							for key, value in linuxNewlinesDict.items():
 								print(key, value)
 						elif line.strip().startswith("set passwordhash"):
