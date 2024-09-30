@@ -492,10 +492,10 @@ def test_read_grub_settings_file(tmp_path: Path) -> None:
 	patchMenuFile(config)
 	grub_cfg = tmp_path / "grub-settings.cfg"
 	content = grub_cfg.read_text(encoding="utf-8")
-	assert "set timeout" in content
-	assert "set graphics" in content
-	assert "set passwordhash" in content
-	assert "set language" in content
+	assert "set timeout=5" in content
+	assert 'set graphicsmode="true"' in content
+	assert 'set passwordhash=""' in content
+	assert 'set language=""' in content
 
 
 def test_write_hash_and_lang_in_grub_settings_file(tmp_path: Path) -> None:
