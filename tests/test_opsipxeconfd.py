@@ -372,9 +372,9 @@ def test_service_and_pwh_change_in_grub_cfg(tmp_path: Path) -> None:
 def test_service_patch_new_grub_menu_file(tmp_path: Path) -> None:
 	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 	config = {"pxeDir": str(tmp_path)}
-	patchMenuFile(config)
-	grub_cfg = tmp_path / "grub-menu.cfg"
 	with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
+		patchMenuFile(config)
+		grub_cfg = tmp_path / "grub-menu.cfg"
 		with open(grub_cfg, "r", encoding="utf-8") as content:
 			for line in content:
 				if line.strip().startswith("linux"):
