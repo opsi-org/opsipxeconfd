@@ -34,7 +34,7 @@ stages:
   echo "---------------------------------------"
   echo "Run tests"
   echo "---------------------------------------"
-  poetry run pytest --tb=short -o junit_family=xunit2 --junitxml=testreport.xml --cov-append --cov opsipxeconfd --cov-report term --cov-report xml -v tests
+  poetry run pytest -s --tb=short -o junit_family=xunit2 --junitxml=testreport.xml --cov-append --cov opsipxeconfd --cov-report term --cov-report xml -v tests
 
 .pylint: &pylint |
   echo "---------------------------------------"
