@@ -1,10 +1,6 @@
 pyinstaller-poetry:
   one_file: no
   strip: yes
-  extra_args:
-    # Do not use contents-directory for now
-    - "--contents-directory"
-    - "."
   scripts:
     - script: run-opsipxeconfd
       binaries:
@@ -18,6 +14,8 @@ pyinstaller-poetry:
     find dist/opsipxeconfd -iname "*.h" -delete
     find dist/opsipxeconfd -iname "*.so" -exec chmod -x "{}" \;
     find dist/opsipxeconfd -iname "*.so.*" -exec chmod -x "{}" \;
+  packages:
+    - opsipxeconfd
 
 package:
   name: opsipxeconfd
@@ -49,8 +47,8 @@ package:
     echo "exec ./opsipxeconfd \"\$@\"" >> ${DST}/rootfs/usr/bin/opsipxeconfd
     #cp ${SRC}/dist/opsipxeconfd/opsipxeconfd ${DST}/rootfs/usr/bin
     chmod 755 ${DST}/rootfs/usr/bin/opsipxeconfd
-    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
-    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
+    cp -a ${SRC}/_internal/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
+    cp -a ${SRC}/_internal/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
 
   postinst_script: |
     # remove obsolete files

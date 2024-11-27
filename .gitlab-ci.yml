@@ -1,23 +1,24 @@
-image: docker.uib.gmbh/opsi/dev/pybuilder:uib-python-3.11
+image: docker.uib.gmbh/opsi/dev/pybuilder:deb9-py3.13
 
 stages:
   - test
   - build
   - publish
 
+
 .prepare_tests: &prepare_tests |
   bash /entrypoint.sh &
   apt update
   apt --yes install --no-install-recommends curl build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev
-  wget https://www.python.org/ftp/python/3.11.1/Python-3.11.1.tgz
-  tar -xvf Python-3.11.1.tgz
-  cd Python-3.11.1
+  wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tgz
+  tar -xvf Python-3.13.0.tgz
+  cd Python-3.13.0
   ./configure > /dev/null
   make -j 2 build_all > /dev/null
   make EXTRATESTOPTS=--list-tests altinstall
   cd ..
-  python3.11 -m pip install certifi
-  curl -sSL https://install.python-poetry.org | SSL_CERT_FILE=$(python3.11 -c "import certifi;print(certifi.where())") python3.11 -
+  python3.13 -m pip install certifi
+  curl -sSL https://install.python-poetry.org | SSL_CERT_FILE=$(python3.13 -c "import certifi;print(certifi.where())") python3.13 -
   ln -s /root/.local/bin/poetry /usr/local/bin/poetry
   echo "---------------------------------------"
   echo "Wait for opsiconfd"
@@ -34,7 +35,7 @@ stages:
   echo "---------------------------------------"
   echo "Run tests"
   echo "---------------------------------------"
-  poetry run pytest --tb=short -o junit_family=xunit2 --junitxml=testreport.xml --cov-append --cov opsipxeconfd --cov-report term --cov-report xml -v tests
+  poetry run pytest -s --tb=short -o junit_family=xunit2 --junitxml=testreport.xml --cov-append --cov opsipxeconfd --cov-report term --cov-report xml -v tests
 
 .pylint: &pylint |
   echo "---------------------------------------"
@@ -74,6 +75,7 @@ pylint-pytest:
     - *pylint
     - *pytest
 
+
 build:linux-pyinstaller:
   stage: build
   script:
@@ -97,7 +99,7 @@ build:arm64-pyinstaller:
     - linux-arm64
   script:
     - poetry install
-    - poetry run opsi-dev-cli -l info pyinstaller build
+    - poetry run opsi-dev-cli pyinstaller build
     - mv dist/opsipxeconfd ./opsipxeconfd-arm64
     # Check if binary is working
     - ./opsipxeconfd-arm64/opsipxeconfd --version
@@ -114,9 +116,9 @@ publish:obs_ext:
   script:
     - opsi-dev-cli self upgrade --system
     - opsi-dev-cli -l info packaging obs --help
-    - opsi-dev-cli -l info packaging obs update-package https://build.opensuse.org home:uibmz:opsi:4.3:development
+    - opsi-dev-cli -l info packaging obs update-package https://build.opensuse.org home:uibmz:opsi:4.4:development
     - opsi-dev-cli -l info changelog from-git output
     - opsi-dev-cli release-service register-package-version opsipxeconfd SERVER_PACKAGE --changelog-file output/changelog.md
-    - opsi-dev-cli release-service push-repository-state opsipxeconfd SERVER_PACKAGE SERVER_PACKAGE-4.3-development
+    - opsi-dev-cli release-service push-repository-state opsipxeconfd SERVER_PACKAGE SERVER_PACKAGE-4.4-development
   only:
     - tags
