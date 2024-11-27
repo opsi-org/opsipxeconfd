@@ -47,8 +47,8 @@ package:
     echo "exec ./opsipxeconfd \"\$@\"" >> ${DST}/rootfs/usr/bin/opsipxeconfd
     #cp ${SRC}/dist/opsipxeconfd/opsipxeconfd ${DST}/rootfs/usr/bin
     chmod 755 ${DST}/rootfs/usr/bin/opsipxeconfd
-    cp -a ${SRC}/_internal/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
-    cp -a ${SRC}/_internal/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
+    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
+    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
 
   postinst_script: |
     # remove obsolete files
