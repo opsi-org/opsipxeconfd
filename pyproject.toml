@@ -19,6 +19,7 @@ priority = "primary"
 [[tool.poetry.source]]
 name = "PyPI"
 priority = "supplemental"
+
 [[tool.poetry.packages]]
 include = "opsipxeconfd"
 
