@@ -4,7 +4,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "opsipxeconfd"
-version = "4.3.5.0"
+version = "4.4.0.0"
 description = "opsi pxe configuration service"
 homepage = "https://www.opsi.org"
 license = "AGPL-3.0"
@@ -19,6 +19,8 @@ priority = "primary"
 [[tool.poetry.source]]
 name = "PyPI"
 priority = "supplemental"
+[[tool.poetry.packages]]
+include = "opsipxeconfd"
 
 [tool.ruff]
 line-length = 140
@@ -30,8 +32,8 @@ disallow_incomplete_defs = true
 follow_imports = "silent"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.12"
-python-opsi-common = ">=4.3.3,<4.4"
+python = ">=3.13,<3.14"
+python-opsi-common = ">=4.4,<4.5"
 inotify = "^0.2"
 configargparse = "^1.5"
 py-purecrypt = "^0.1"
@@ -43,8 +45,8 @@ opsipxeconfd = "opsipxeconfd.__main__:main"
 indent-style = "tab"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.3"
+ruff = "^0.8"
 pytest = "^8.1"
-pytest-cov = "^5.0"
+pytest-cov = "^6.0"
 pyinstaller = "^6.2"
 mypy = "^1.7"
