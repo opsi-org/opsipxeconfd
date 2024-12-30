@@ -77,6 +77,7 @@ pylint-pytest:
 build:linux-pyinstaller:
   stage: build
   script:
+    - opsi-dev-cli self upgrade --system
     - poetry install
     - poetry run opsi-dev-cli -l info pyinstaller build
     - mv opsipxeconfd opsipxeconfd.src
@@ -96,6 +97,7 @@ build:arm64-pyinstaller:
   tags:
     - linux-arm64
   script:
+    - opsi-dev-cli self upgrade --system
     - poetry install
     - poetry run opsi-dev-cli -l info pyinstaller build
     - mv dist/opsipxeconfd ./opsipxeconfd-arm64
