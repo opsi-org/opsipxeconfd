@@ -1,10 +1,6 @@
-pyinstaller-poetry:
+pyinstaller:
   one_file: no
   strip: yes
-  extra_args:
-    # Do not use contents-directory for now
-    - "--contents-directory"
-    - "."
   scripts:
     - script: opsipxeconfd/__main__.py
       binaries:
@@ -32,6 +28,7 @@ package:
     mkdir -p ${DST}/rootfs/usr/lib
     mkdir -p ${DST}/rootfs/var/log/opsi/opsipxeconfd
     mkdir -p ${DST}/systemd_units
+
     if [ -d ${pyi_src}/opsipxeconfd ]; then
       cp -a ${pyi_src}/opsipxeconfd ${DST}/rootfs/usr/lib/
     fi;
@@ -44,11 +41,12 @@ package:
       cp -a ${pyi_src}/opsipxeconfd-arm64 ${DST}/rootfs-arm64/usr/lib/opsipxeconfd
     fi;
     cp -a ${pyi_src}/opsipxeconfd ${DST}/rootfs/usr/lib/
+
     echo "#!/bin/sh"                    > ${DST}/rootfs/usr/bin/opsipxeconfd
     echo "cd /usr/lib/opsipxeconfd"    >> ${DST}/rootfs/usr/bin/opsipxeconfd
     echo "exec ./opsipxeconfd \"\$@\"" >> ${DST}/rootfs/usr/bin/opsipxeconfd
-    #cp ${SRC}/dist/opsipxeconfd/opsipxeconfd ${DST}/rootfs/usr/bin
     chmod 755 ${DST}/rootfs/usr/bin/opsipxeconfd
+
     cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
     cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
 

@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "poetry>=0.12",]
+requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry]
@@ -8,9 +8,10 @@ version = "4.3.7.0"
 description = "opsi pxe configuration service"
 homepage = "https://www.opsi.org"
 license = "AGPL-3.0"
-maintainers = [ "uib GmbH <info@uib.de>",]
-authors = [ "uib GmbH <info@uib.de>",]
-include = [ "run-opsipxeconfd", "opsipxeconfd_data/**/*",]
+maintainers = ["uib GmbH <info@uib.de>"]
+authors = ["uib GmbH <info@uib.de>"]
+include = ["opsipxeconfd", "opsipxeconfd_data/**/*"]
+
 [[tool.poetry.source]]
 name = "uibpypi"
 url = "https://pypi.uib.gmbh/simple"
