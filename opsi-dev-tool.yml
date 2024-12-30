@@ -6,7 +6,7 @@ pyinstaller-poetry:
     - "--contents-directory"
     - "."
   scripts:
-    - script: run-opsipxeconfd
+    - script: opsipxeconfd/__main__.py
       binaries:
         - opsipxeconfd
   data_files:

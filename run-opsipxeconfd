@@ -1,5 +1,0 @@
-#!/usr/bin/python3
-
-from opsipxeconfd.__main__ import main
-
-main()
