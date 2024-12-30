@@ -11,13 +11,13 @@ import os
 import shutil
 import time
 from pathlib import Path
-from socket import getfqdn
 from unittest import mock
 
 from opsicommon.types import forceHostId
 
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter  # type: ignore[import]
-from opsipxeconfd.setup import password_hash, patchMenuFile  # type: ignore[import]
+from opsipxeconfd.setup import password_hash  # type: ignore[import]
+from opsipxeconfd.setup import patchMenuFile
 from opsipxeconfd.util import pid_file  # type: ignore[import]
 
 default_opts = argparse.Namespace(
@@ -43,7 +43,7 @@ PID_FILE = "tests/test_data/pidfile.pid"
 
 
 def test_pxe_config_writer(tmp_path: Path) -> None:
-	host_id = forceHostId(getfqdn())
+	host_id = forceHostId("client1.opsi.test")
 	hostname, domain = host_id.split(".", 1)
 	pxe_config_template = os.path.join(TEST_DATA, PXE_TEMPLATE_FILE)
 	pxefiles = [tmp_path / "01-00-11-22-33-44-55", tmp_path / "11112222-3333-4444-5555-666677778888"]
@@ -80,7 +80,7 @@ def test_pxe_config_writer(tmp_path: Path) -> None:
 	)
 	pcw.start()
 	time.sleep(3)
-	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
+	content = pcw._get_pxe_config_content()  # pylint: disable=protected-access
 	# opsi-install-x64
 	# label opsi-install-x64
 	# kernel install-x64
@@ -98,6 +98,10 @@ def test_pxe_config_writer(tmp_path: Path) -> None:
 		assert "nomodeset" in content
 		assert "nomsi" in content
 		assert "lang=de" in content
+		assert "lang=en" not in content
+		assert "test_hostname=client1" in content
+		assert "test_domain=opsi.test" in content
+		assert "test_fqdn=client1.opsi.test" in content
 	assert callback_pcw is pcw
 	pcw.stop()
 	pcw.join(5)
@@ -109,7 +113,7 @@ GRUB_PXE_TEMPLATE_FILE = "install-grub-x64"
 
 
 def test_grub_pxe_config_writer() -> None:
-	host_id = forceHostId(getfqdn())
+	host_id = forceHostId("client1.opsi.test")
 	pxe_config_template = os.path.join(TEST_DATA, GRUB_PXE_TEMPLATE_FILE)
 	append = {
 		"pckey": "123",
@@ -121,7 +125,7 @@ def test_grub_pxe_config_writer() -> None:
 		"lang": "de",
 	}
 	pcw = PXEConfigWriter(pxe_config_template, host_id, None, append, {}, CONFFILE, True, True)  # type: ignore[arg-type]
-	content = pcw._get_pxe_config_content(pxe_config_template)  # pylint: disable=protected-access
+	content = pcw._get_pxe_config_content()  # pylint: disable=protected-access
 	# set timeout=0
 	# menuentry 'Start netboot installation' {
 	# set gfxpayload=keep
@@ -130,12 +134,16 @@ def test_grub_pxe_config_writer() -> None:
 	# initrd (pxe)/linux/miniroot-x64
 	# }
 	assert "install-x64" in content
-	assert "hn=test" in content
-	assert "dn=uib.gmbh" in content
+	assert "hn=client1" in content
+	assert "dn=opsi.test" in content
 	assert "product" in content
 	assert "service=https://server.uib.gmbh:4447/rpc" in content
 	assert r"pwh=\$6\$salt\$password" in content
 	assert "lang=de" in content
+	assert "lang=en" not in content
+	assert "test_hostname=client1" in content
+	assert "test_domain=opsi.test" in content
+	assert "test_fqdn=client1.opsi.test" in content
 
 
 ########### GRUB CFG ################
@@ -655,5 +663,25 @@ def test_password_hash() -> None:
 		parts = pw_hash.split("$")
 		assert len(parts) == 4
 		assert parts[0] == ""
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
 		assert parts[1] == "6"  # $6$ is SHA-512
 		assert len(parts[2]) == 16  # salt len 16

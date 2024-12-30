@@ -100,20 +100,20 @@ class PXEConfigWriter(Thread):
 		self.template: dict[str, list[str]] = {"pxelinux": []}
 
 		# Set pxe config content
-		self.content = self._get_pxe_config_content(self.template_file)
+		self.content = self._get_pxe_config_content()
 
 		try:
 			del self.append["pckey"]
 		except KeyError:
 			pass  # Key may be non-existing
 
-	def _get_pxe_config_content(self, template_file: str) -> str:
+	def _get_pxe_config_content(self) -> str:
 		"""
 		Gets PXEConfig string.
 
 		This method extracts information about the PXEConfig from the
 		template file, parses it using information from the
-		productPropertyStates and assemples the data as a string.
+		productPropertyStates and assembles the data as a string.
 
 		:param template_file: Path of the PXE template file.
 		:type template_file: str
@@ -123,27 +123,29 @@ class PXEConfigWriter(Thread):
 
 		:raises Exception: In case uefi module is not licensed.
 		"""
-		logger.debug("Reading template '%s'", template_file)
-		with open(template_file, "r", encoding="utf-8") as file:
+		logger.debug("Reading template '%s'", self.template_file)
+		with open(self.template_file, "r", encoding="utf-8") as file:
 			template_lines = file.readlines()
 
 		content = ""
 		append_line_properties = []
+		hostname, domain = self.host_id.split(".", 1)
 		for line in template_lines:
 			line = line.rstrip()
-
+			line = line.replace("%fqdn%", self.host_id).replace("%hostname%", hostname).replace("%domain%", domain)
 			for property_id, value in self.product_property_states.items():
 				logger.trace("Property: '%s': value: '%s'", property_id, value)
 				line = line.replace(f"%{property_id}%", value)
 
-			if line.lstrip().startswith(("append", "linux")):
-				if line.lstrip().startswith("append"):
-					append_line_properties = "".join(line.split('="')[1:])[:-1].split()
+			stripped_line = line.lstrip()
+			if stripped_line.startswith(("append", "linux")):
+				if stripped_line.startswith("append="):
+					append_line_properties = stripped_line.split("append=", 1)[1].strip('"').split()
 				else:
-					append_line_properties = line.lstrip().split()[1:]
-
+					append_line_properties = stripped_line.split()[1:]
 				for key, value in self.append.items():
 					if value:
+						append_line_properties = [x for x in append_line_properties if not x.startswith(f"{key}=")]
 						if "bootimagerootpassword" in key.lower():
 							pwhash = password_hash(value).replace("$", r"\$")
 							append_line_properties.append(f"pwh={pwhash}")
@@ -155,7 +157,7 @@ class PXEConfigWriter(Thread):
 					else:
 						append_line_properties.append(str(key))
 
-				if line.lstrip().startswith("append"):
+				if stripped_line.startswith("append"):
 					content = f'{content}append="{" ".join(append_line_properties)}"\n'
 				else:
 					content = f'{content}linux {" ".join(append_line_properties)}\n'
@@ -194,8 +196,11 @@ class PXEConfigWriter(Thread):
 			logger.debug("Creating config file %r", pxefile)
 			with open(pxefile, "w", encoding="utf-8") as file:
 				file.write(self.content)
-			shutil.chown(pxefile, -1, opsi_config.get("groups", "admingroup"))
-			os.chmod(pxefile, 0o644)
+			try:
+				shutil.chown(pxefile, -1, opsi_config.get("groups", "admingroup"))
+				os.chmod(pxefile, 0o644)
+			except Exception as err:
+				logger.error("Failed to set permissions on %r: %s", pxefile, err)
 
 			logger.debug("Watching config file %r for read with inotify", pxefile)
 
