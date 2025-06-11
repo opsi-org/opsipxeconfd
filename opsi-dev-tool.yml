@@ -1,3 +1,12 @@
+project:
+  licenses:
+    - license: AGPL-3.0-only
+      header: |
+        opsipxeconfd is part of the device management solution opsi http://www.opsi.org
+        Copyright (c) 2013-{year} uib GmbH <info@uib.de>
+        All rights reserved.
+        License: {license}
+
 pyinstaller:
   one_file: no
   strip: yes

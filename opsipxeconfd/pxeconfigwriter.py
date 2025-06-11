@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-
-# opsipxeconfd is part of the desktop management solution opsi http://www.opsi.org
-# Copyright (c) 2013-2021 uib GmbH <info@uib.de>
+# opsipxeconfd is part of the device management solution opsi http://www.opsi.org
+# Copyright (c) 2013-2025 uib GmbH <info@uib.de>
 # All rights reserved.
-# License: AGPL-3.0
+# License: AGPL-3.0-only
 
 """
 pxeconfigwriter
