@@ -5,81 +5,26 @@ stages:
   - build
   - publish
 
-.prepare_tests: &prepare_tests |
-  bash /entrypoint.sh &
-  apt update
-  apt --yes install --no-install-recommends curl build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev
-  wget https://www.python.org/ftp/python/3.11.1/Python-3.11.1.tgz
-  tar -xvf Python-3.11.1.tgz
-  cd Python-3.11.1
-  ./configure > /dev/null
-  make -j 2 build_all > /dev/null
-  make EXTRATESTOPTS=--list-tests altinstall
-  cd ..
-  python3.11 -m pip install certifi
-  curl -sSL https://install.python-poetry.org | SSL_CERT_FILE=$(python3.11 -c "import certifi;print(certifi.where())") python3.11 -
-  ln -s /root/.local/bin/poetry /usr/local/bin/poetry
-  echo "---------------------------------------"
-  echo "Wait for opsiconfd"
-  while ! nc -v -z -w3 localhost 4447 > /dev/null 2>&1; do sleep 1; done
-  echo "opsiconfd is up"
-  echo "---------------------------------------"
-  source /entrypoint.sh set_environment_vars  # to set hosts for redis/grafana
-  poetry install
-  poetry run opsipxeconfd setup
-
-.pytest: &pytest |
-  poetry run opsipxeconfd start --log-level 6 &
-  sleep 10
-  echo "---------------------------------------"
-  echo "Run tests"
-  echo "---------------------------------------"
-  poetry run pytest -s --tb=short -o junit_family=xunit2 --junitxml=testreport.xml --cov-append --cov opsipxeconfd --cov-report term --cov-report xml -v tests
-
-.pylint: &pylint |
-  echo "---------------------------------------"
-  echo "Run linters"
-  echo "---------------------------------------"
-  poetry run ruff check opsipxeconfd tests
-  poetry run mypy opsipxeconfd tests
-
-pylint-pytest:
-  image:
-    name: docker.uib.gmbh/opsi/opsi-server:4.3-stable
-    entrypoint: [""]
-  services:
-    - name: mysql:8.0
-      command:
-        - --max_connections=1000
-        - --default-authentication-plugin=mysql_native_password
-      alias: mysql
-    - name: redislabs/redistimeseries:latest
-      alias: redis
-  variables:
-    REDIS_HOST: redis
-    OPSI_ADMIN_PASSWORD: vhahd8usaz # also hardcoded in tests/utils.py
-    OPSI_HOST_ROLE: configserver
-    OPSI_HOST_ID: "opsi-server.uib.gmbh" # "test.uib.gmbh"
-    OPSI_HOST_KEY: "550b759aedd834f2c41bf3d843779099"
-    OPSI_TFTPBOOT: "false"
-    MYSQL_HOST: mysql
-    MYSQL_ROOT_PASSWORD: "opsi"
-    MYSQL_DATABASE: "opsi"
-    MYSQL_USER: "opsi"
-    MYSQL_PASSWORD: "opsi"
-    #OPSICONFD_RESTORE_BACKUP_URL: "http://binaryindex.uib.gmbh/development/testbackup/all/all/testbackup_all_all_1.1.tar.gz"
+lint-and-pytest:
   stage: test
   script:
-    - *prepare_tests
-    - *pylint
-    - *pytest
+    - export UV_PYTHON="3.13"
+    - export UV_PYTHON_PREFERENCE="only-managed"
+    - uv self update
+    - uv sync --frozen
+    - uv run ruff check opsipxeconfd tests
+    - uv run mypy opsipxeconfd tests
+    - uv run pytest --tb=short -x -o junit_family=xunit2 --junitxml=testreport.xml --cov-config .coveragerc --cov opsipxeconfd --cov-report term --cov-report xml -v tests
 
 build:linux-pyinstaller:
   stage: build
   script:
+    - export UV_PYTHON="3.13"
+    - export UV_PYTHON_PREFERENCE="only-managed"
+    - uv self update
+    - uv sync --frozen
     - opsi-dev-cli self upgrade --system
-    - poetry install
-    - poetry run opsi-dev-cli -l info pyinstaller build
+    - uv run opsi-dev-cli -l info pyinstaller build
     - mv opsipxeconfd opsipxeconfd.src
     - mv dist/opsipxeconfd ./opsipxeconfd-amd64
     # Check if binary is working
@@ -97,9 +42,12 @@ build:arm64-pyinstaller:
   tags:
     - linux-arm64
   script:
+    - export UV_PYTHON="3.13"
+    - export UV_PYTHON_PREFERENCE="only-managed"
+    - uv self update
+    - uv sync --frozen
     - opsi-dev-cli self upgrade --system
-    - poetry install
-    - poetry run opsi-dev-cli -l info pyinstaller build
+    - uv run opsi-dev-cli -l info pyinstaller build
     - mv dist/opsipxeconfd ./opsipxeconfd-arm64
     # Check if binary is working
     - ./opsipxeconfd-arm64/opsipxeconfd --version

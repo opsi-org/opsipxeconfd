@@ -9,15 +9,19 @@ This file is part of opsi - https://www.opsi.org
 import argparse
 import os
 import shutil
+import sys
 import time
 from pathlib import Path
 from unittest import mock
 
 from opsicommon.types import forceHostId
 
+from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit  # type: ignore[import]
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter  # type: ignore[import]
-from opsipxeconfd.setup import password_hash  # type: ignore[import]
-from opsipxeconfd.setup import patchMenuFile
+from opsipxeconfd.setup import (
+	password_hash,  # type: ignore[import]
+	patchMenuFile,
+)
 from opsipxeconfd.util import pid_file  # type: ignore[import]
 
 default_opts = argparse.Namespace(
@@ -40,6 +44,17 @@ TEST_DATA = "tests/test_data/"
 PXE_TEMPLATE_FILE = "install-x64"
 CONFFILE = "/etc/opsi/opsipxeconfd.conf"
 PID_FILE = "tests/test_data/pidfile.pid"
+
+
+def test_process_config(tmp_path: Path) -> None:
+	conf_file = tmp_path / "opsipxeconfd.conf"
+	conf_file.write_text("pxe config template = /path\nmax control connections = 50\nuse mac address = false\n")
+	with mock.patch.object(sys, "argv", ["opsipxeconfd", "-c", str(conf_file), "setup"]):
+		init = OpsipxeconfdInit()
+		init.process_config()
+		assert init.config["pxeConfTemplate"] == "/path"
+		assert init.config["maxConnections"] == 50
+		assert init.config["useMacAddress"] is False
 
 
 def test_pxe_config_writer(tmp_path: Path) -> None:
@@ -102,6 +117,7 @@ def test_pxe_config_writer(tmp_path: Path) -> None:
 		assert "test_hostname=client1" in content
 		assert "test_domain=opsi.test" in content
 		assert "test_fqdn=client1.opsi.test" in content
+	time.sleep(2)  # wait for callback to finish
 	assert callback_pcw is pcw
 	pcw.stop()
 	pcw.join(5)
@@ -152,14 +168,19 @@ def test_grub_pxe_config_writer() -> None:
 def test_service_patch_menu_file(tmp_path: Path) -> None:
 	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 	config = {"pxeDir": str(tmp_path)}
-	patchMenuFile(config)
-	grub_cfg = tmp_path / "grub.cfg"
-	with open(grub_cfg, "r", encoding="utf-8") as content:
-		for line in content:
-			if line.strip().startswith("linux"):
-				assert "service=" in line
-				assert "pwh=" not in line
-				assert "lang=" not in line
+
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return "https://service.uib.gmbh:4447/rpc", []
+
+	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
+		patchMenuFile(config)
+		grub_cfg = tmp_path / "grub.cfg"
+		with open(grub_cfg, "r", encoding="utf-8") as content:
+			for line in content:
+				if line.strip().startswith("linux"):
+					assert "service=" in line
+					assert "pwh=" not in line
+					assert "lang=" not in line
 
 
 def test_pwh_patch_menu_file(tmp_path: Path) -> None:
@@ -262,7 +283,13 @@ def test_service_and_pwh_change(tmp_path: Path) -> None:
 
 
 def test_service_patch_new_grub_file(tmp_path: Path) -> None:
-	with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return "https://service.uib.gmbh:4447/rpc", []
+
+	with (
+		mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService),
+		mock.patch("opsipxeconfd.setup.grubSettings", return_value=False),
+	):
 		shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 		config = {"pxeDir": str(tmp_path)}
 		patchMenuFile(config)
@@ -380,7 +407,14 @@ def test_service_and_pwh_change_in_grub_cfg(tmp_path: Path) -> None:
 def test_service_patch_new_grub_menu_file(tmp_path: Path) -> None:
 	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 	config = {"pxeDir": str(tmp_path)}
-	with mock.patch("opsipxeconfd.setup.grubSettings", return_value=False):
+
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return "https://service.uib.gmbh:4447/rpc", []
+
+	with (
+		mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService),
+		mock.patch("opsipxeconfd.setup.grubSettings", return_value=False),
+	):
 		patchMenuFile(config)
 		grub_cfg = tmp_path / "grub-menu.cfg"
 		with open(grub_cfg, "r", encoding="utf-8") as content:
@@ -510,7 +544,13 @@ def test_service_and_pwh_change_in_grub_menu(tmp_path: Path) -> None:
 def test_read_grub_settings_file(tmp_path: Path) -> None:
 	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
 	config = {"pxeDir": str(tmp_path)}
-	patchMenuFile(config)
+
+	def mockGetConfigFromService() -> tuple[str, list[str]]:
+		return "https://service.uib.gmbh:4447/rpc", []
+
+	with mock.patch("opsipxeconfd.setup.getConfigsFromService", mockGetConfigFromService):
+		patchMenuFile(config)
+
 	grub_cfg = tmp_path / "grub-settings.cfg"
 	content = grub_cfg.read_text(encoding="utf-8")
 	assert "set timeout=5" in content
@@ -663,6 +703,28 @@ def test_password_hash() -> None:
 		parts = pw_hash.split("$")
 		assert len(parts) == 4
 		assert parts[0] == ""
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
 		assert parts[1] == "6"  # $6$ is SHA-512
 		assert len(parts[2]) == 16  # salt len 16
 		assert parts[1] == "6"  # $6$ is SHA-512

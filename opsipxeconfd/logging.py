@@ -8,13 +8,7 @@ This file is part of opsi - https://www.opsi.org
 
 from typing import Dict
 
-from opsicommon.logging import (
-	DEFAULT_COLORED_FORMAT,
-	DEFAULT_FORMAT,
-	LOG_NONE,
-	handle_log_exception,
-	logging_config,
-)
+from opsicommon.logging import DEFAULT_COLORED_FORMAT, DEFAULT_FORMAT, LOG_NONE, handle_log_exception, logging_config
 
 
 def init_logging(config: Dict) -> None:

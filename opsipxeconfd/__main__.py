@@ -7,6 +7,7 @@ This file is part of opsi - https://www.opsi.org
 See LICENSES/README.md for more Information
 """
 
+import os
 import sys
 import warnings
 
@@ -17,7 +18,11 @@ if getattr(sys, "frozen", False):
 	warnings.simplefilter("ignore", ResourceWarning)
 	warnings.simplefilter("ignore", DeprecationWarning)
 
-from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit
+package_base = os.path.dirname(__file__)
+if package_base in sys.path:
+	sys.path.remove(package_base)
+
+from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit  # noqa: E402
 
 
 def main() -> None:

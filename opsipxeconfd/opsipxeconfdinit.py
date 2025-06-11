@@ -22,26 +22,16 @@ from time import sleep
 from types import FrameType
 from typing import Any, Generator
 
-from configargparse import (  # type: ignore[import]
-	ArgParser,
-	ConfigFileParser,
-	ConfigFileParserException,
-)
+from configargparse import ArgParser, ConfigFileParser, ConfigFileParserException  # type: ignore[import]
 from opsicommon import __version__ as python_opsi_common_version
-from opsicommon.logging import (
-	DEFAULT_FORMAT,
-	LOG_WARNING,
-	get_logger,
-	log_context,
-	set_filter_from_string,
-)
+from opsicommon.logging import DEFAULT_FORMAT, LOG_WARNING, get_logger, log_context, set_filter_from_string
 from opsicommon.types import forceInt, forceUnicode, forceUnicodeList
 
-from . import __version__
-from .logging import init_logging
-from .opsipxeconfd import Opsipxeconfd, opsi_config
-from .setup import setup
-from .util import pid_file
+from opsipxeconfd import __version__
+from opsipxeconfd.logging import init_logging
+from opsipxeconfd.opsipxeconfd import Opsipxeconfd, opsi_config
+from opsipxeconfd.setup import setup
+from opsipxeconfd.util import pid_file
 
 DEFAULT_CONFIG_FILE = "/etc/opsi/opsipxeconfd.conf"
 ERROR_MARKER = "(ERROR)"
@@ -130,6 +120,8 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 				items["backend-config-dir"] = value
 			elif option == "dispatch config file":
 				items["dispatch-config-file"] = value
+			elif option == "use mac address":
+				items["use-mac-address"] = value
 			else:
 				raise ConfigFileParserException(f"Unexpected option in line {i} in {getattr(stream, 'name', 'stream')}: {option}")
 		return items
@@ -151,8 +143,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 	)
 	parser.add("--version", "-v", help="Show version information and exit.", action="store_true")
 	parser.add("--no-fork", "-F", dest="nofork", help="Do not fork to background.", action="store_true")
-	if parse_config_file:
-		parser.add("-c", "--conffile", required=False, is_config_file=True, default=DEFAULT_CONFIG_FILE, help="Path to config file.")
+	parser.add("-c", "--conffile", required=False, is_config_file=True, default=DEFAULT_CONFIG_FILE, help="Path to config file.")
 	parser.add(
 		"--log-level",
 		"--loglevel",
@@ -272,6 +263,14 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		help="Number of maximum simultaneous pxe config writer threads.",
 	)
 	parser.add(
+		"--use-mac-address",
+		dest="useMacAddress",
+		env_var="OPSIPXECONFD_USE_MAC_ADDRESS",
+		default=False,
+		action="store_true",
+		help="Use mac address based pxe config files?",
+	)
+	parser.add(
 		"command",
 		nargs="?",
 		choices=("start", "stop", "status", "update", "setup"),
@@ -331,19 +330,8 @@ class OpsipxeconfdInit:
 		:param opts: Parsed command line arguments as Namespace.
 		:type opts: Namespace.
 		"""
-		# First parse to handle --help and --version
-		parse_args(parse_config_file=False)
-		self.update_config_file()
-		self.config = vars(parse_args())
-
-		opsi_config._upgrade_config = True
-
-		self.config["port"] = "/var/run/opsipxeconfd/opsipxeconfd.socket"
-		self.config["depotId"] = opsi_config.get("host", "id")
-		self.config["daemon"] = True
-		if self.config["nofork"] and self.config["command"] == "start":
-			self.config["daemon"] = False
-
+		self.config: dict[str, Any] = {}
+		self.process_config()
 		logger.setLevel(LOG_WARNING)
 		logger.debug("OpsiPXEConfdInit")
 		# Set umask
@@ -387,6 +375,20 @@ class OpsipxeconfdInit:
 				con = ServerConnection(self.config["port"], timeout=5.0)
 				result = con.send_command(" ".join(forceUnicodeList(command)))
 				print(result)
+
+	def process_config(self) -> None:
+		# First parse to handle --help and --version
+		parse_args(parse_config_file=False)
+		self.update_config_file()
+		self.config = vars(parse_args())
+
+		opsi_config._upgrade_config = True
+
+		self.config["port"] = "/var/run/opsipxeconfd/opsipxeconfd.socket"
+		self.config["depotId"] = opsi_config.get("host", "id")
+		self.config["daemon"] = True
+		if self.config["nofork"] and self.config["command"] == "start":
+			self.config["daemon"] = False
 
 	def signal_handler(self, signo: int, frame: FrameType | None) -> None:
 		"""
@@ -512,6 +514,27 @@ class OpsipxeconfdInit:
 		else:
 			os.open("/dev/null", os.O_RDWR)
 
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
 		# Duplicate standard input to standard output and standard error.
 		os.dup2(0, 1)
 		os.dup2(0, 2)

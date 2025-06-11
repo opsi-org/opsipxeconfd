@@ -23,11 +23,10 @@ from opsicommon.logging import get_logger, log_context, secret_filter
 from opsicommon.objects import Host, NetbootProduct, ProductOnClient
 from opsicommon.types import forceHostId, forceStringList
 
+from opsipxeconfd.logging import init_logging
+from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
 from opsipxeconfd.setup import get_service_connection
-
-from .logging import init_logging
-from .pxeconfigwriter import PXEConfigWriter
-from .util import ClientConnection, StartupTask
+from opsipxeconfd.util import ClientConnection, StartupTask
 
 ELILO_X86 = "x86"
 ELILO_X64 = "x64"
@@ -436,7 +435,10 @@ class Opsipxeconfd(Thread):
 			pxe_config_template = self._get_pxe_config_template(product_on_client, product)
 			logger.debug("Using pxe config template '%s'", pxe_config_template)
 
-			pxefiles = [os.path.join(self.config["pxeDir"], f) for f in self._get_pxe_config_file_names(host)]
+			pxefiles = [
+				os.path.join(self.config["pxeDir"], f)
+				for f in self._get_pxe_config_file_names(host, use_mac_address=self.config["useMacAddress"])
+			]
 			stop_pxe_config_writers: set[PXEConfigWriter] = set()
 			for pcw in self._pxe_config_writers:
 				for pxefile in pxefiles:
@@ -569,14 +571,18 @@ class Opsipxeconfd(Thread):
 		return pxe_config_template
 
 	@staticmethod
-	def _get_pxe_config_file_names(host: Host) -> list[str]:
+	def _get_pxe_config_file_names(host: Host, use_mac_address: bool = True) -> list[str]:
 		file_names = []
 		if host.systemUUID:
 			logger.debug("Got system UUID '%s' for host '%s'", host.systemUUID, host.id)
 			file_names.append(host.systemUUID)
 		if host.hardwareAddress:
 			logger.debug("Got hardware address '%s' for host '%s'", host.hardwareAddress, host.id)
-			file_names.append(f"01-{host.hardwareAddress.replace(':', '-')}")
+			filename = f"01-{host.hardwareAddress.replace(':', '-')}"
+			if use_mac_address:
+				file_names.append(filename)
+			else:
+				logger.debug("Not adding config file '%s' for host '%s' because use_mac_address is false", filename, host.id)
 		if not file_names:
 			raise RuntimeError(f"Neither system UUID nor hardware address known for host '{host.id}'")
 		return file_names

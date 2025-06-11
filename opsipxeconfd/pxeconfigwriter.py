@@ -160,7 +160,7 @@ class PXEConfigWriter(Thread):
 				if stripped_line.startswith("append"):
 					content = f'{content}append="{" ".join(append_line_properties)}"\n'
 				else:
-					content = f'{content}linux {" ".join(append_line_properties)}\n'
+					content = f"{content}linux {' '.join(append_line_properties)}\n"
 			else:
 				content = f"{content}{line}\n"
 
