@@ -582,7 +582,9 @@ class Opsipxeconfd(Thread):
 			else:
 				logger.debug("Not adding config file '%s' for host '%s' because use_mac_address is false", filename, host.id)
 		if not file_names:
-			raise RuntimeError(f"Neither system UUID nor hardware address known for host '{host.id}'")
+			if use_mac_address:
+				raise RuntimeError(f"Neither system UUID nor hardware address known for host '{host.id}'")
+			raise RuntimeError(f"System UUID not known for host '{host.id}'")
 		return file_names
 
 	def _get_config_service_address(self, host_id: str) -> str:
