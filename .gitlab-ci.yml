@@ -10,7 +10,7 @@ lint-and-pytest:
   script:
     - export UV_PYTHON="3.13"
     - export UV_PYTHON_PREFERENCE="only-managed"
-    - uv self update
+    - opsi-dev-cli self upgrade
     - uv sync --frozen
     - uv run ruff check opsipxeconfd tests
     - uv run mypy opsipxeconfd tests
@@ -23,7 +23,7 @@ build:linux-pyinstaller:
     - export UV_PYTHON_PREFERENCE="only-managed"
     - uv self update
     - uv sync --frozen
-    - opsi-dev-cli self upgrade --system
+    - opsi-dev-cli self upgrade
     - uv run opsi-dev-cli -l info pyinstaller build
     - mv opsipxeconfd opsipxeconfd.src
     - mv dist/opsipxeconfd ./opsipxeconfd-amd64
@@ -46,7 +46,7 @@ build:arm64-pyinstaller:
     - export UV_PYTHON_PREFERENCE="only-managed"
     - uv self update
     - uv sync --frozen
-    - opsi-dev-cli self upgrade --system
+    - opsi-dev-cli self upgrade
     - uv run opsi-dev-cli -l info pyinstaller build
     - mv dist/opsipxeconfd ./opsipxeconfd-arm64
     # Check if binary is working
@@ -62,7 +62,7 @@ build:arm64-pyinstaller:
 publish:obs_ext:
   stage: publish
   script:
-    - opsi-dev-cli self upgrade --system
+    - opsi-dev-cli self upgrade
     - opsi-dev-cli -l info packaging obs --help
     - opsi-dev-cli -l info packaging obs update-package https://build.opensuse.org home:uibmz:opsi:4.3:development
     - opsi-dev-cli -l info changelog from-git output
