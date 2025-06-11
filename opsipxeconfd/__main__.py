@@ -17,10 +17,10 @@ if getattr(sys, "frozen", False):
 	# Disable warnings if frozen
 	warnings.simplefilter("ignore", ResourceWarning)
 	warnings.simplefilter("ignore", DeprecationWarning)
-
-package_base = os.path.dirname(__file__)
-if package_base in sys.path:
-	sys.path.remove(package_base)
+else:
+	package_base = os.path.dirname(__file__)
+	if package_base in sys.path:
+		sys.path.remove(package_base)
 
 from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit  # noqa: E402
 
@@ -35,6 +35,9 @@ def main() -> None:
 		OpsipxeconfdInit()
 	except SystemExit:
 		pass
+	except KeyboardInterrupt:
+		print("Interrupted", file=sys.stderr)
+		sys.exit(1)
 	except Exception as err:
 		logger.error(err, exc_info=True)
 		print(f"ERROR: {err}", file=sys.stderr)
