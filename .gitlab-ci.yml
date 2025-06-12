@@ -7,6 +7,8 @@ stages:
 
 lint-and-pytest:
   stage: test
+  tags:
+    - docker-x64
   script:
     - export UV_PYTHON="3.13"
     - export UV_PYTHON_PREFERENCE="only-managed"
@@ -16,8 +18,10 @@ lint-and-pytest:
     - uv run mypy opsipxeconfd tests
     - uv run pytest --tb=short -x -o junit_family=xunit2 --junitxml=testreport.xml --cov-config .coveragerc --cov opsipxeconfd --cov-report term --cov-report xml -v tests
 
-build:linux-pyinstaller:
+build:linux-x64:
   stage: build
+  tags:
+    - docker-x64
   script:
     - export UV_PYTHON="3.13"
     - export UV_PYTHON_PREFERENCE="only-managed"
@@ -37,10 +41,10 @@ build:linux-pyinstaller:
       - opsipxeconfd-amd64
     expire_in: 2 day
 
-build:arm64-pyinstaller:
+build:linux-arm64:
   stage: build
   tags:
-    - linux-arm64
+    - docker-arm64
   script:
     - export UV_PYTHON="3.13"
     - export UV_PYTHON_PREFERENCE="only-managed"
@@ -60,6 +64,8 @@ build:arm64-pyinstaller:
     expire_in: 2 day
 
 publish:obs_ext:
+  tags:
+    - docker-x64
   stage: publish
   script:
     - opsi-dev-cli self upgrade
