@@ -20,7 +20,8 @@ from time import sleep
 from types import FrameType
 from typing import Any, Generator
 
-from configargparse import ArgParser, ConfigFileParser, ConfigFileParserException  # type: ignore[import]
+from configargparse import ArgParser  # type: ignore[import]
+from configargparse import ConfigFileParser, ConfigFileParserException
 from opsicommon import __version__ as python_opsi_common_version
 from opsicommon.logging import DEFAULT_FORMAT, LOG_WARNING, get_logger, log_context, set_filter_from_string
 from opsicommon.types import forceInt, forceUnicode, forceUnicodeList
@@ -78,7 +79,7 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 		return ""
 
 	def parse(self, stream: StringIO) -> dict[str, Any]:
-		items = OrderedDict()
+		items = OrderedDict({"use-mac-address": "true"})
 		for i, line in enumerate(stream):
 			line = line.strip()
 			if not line or line.startswith(("#", ";", "/")):
