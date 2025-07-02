@@ -471,8 +471,8 @@ class Opsipxeconfd(Thread):
 			if self.config["useOneTimePassword"]:
 				# Use one time password
 				otp = secrets.token_hex(16)
-				host.setOneTimePassword(otp)
-				self.service.host_updateObjects([host])  # type: ignore[attr-defined]
+				# Only send needed attributes to prevent a loop
+				self.service.host_updateObjects([OpsiClient(id=host.id, oneTimePassword=otp)])  # type: ignore[attr-defined]
 				append["otp"] = otp
 				logger.debug("Using one time password for host %r", host_id)
 			else:
