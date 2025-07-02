@@ -175,7 +175,7 @@ def test_pxe_config_oneTimePassword(tmp_path: Path) -> None:
 	depot_id = "depot1.opsi.test"
 
 	class MockServiceClient:
-		updated_host: OpsiClient | None = None
+		updated_host: Host | None = None
 
 		def host_getObjects(self, attributes: list[str] | None = None, **filter: Any) -> list[Host]:
 			if filter.get("id") == client_id:
@@ -260,7 +260,7 @@ def test_pxe_config_oneTimePassword(tmp_path: Path) -> None:
 			}
 		).update_boot_configuration(client_id)
 		time.sleep(2)
-		assert mock_service_client.updated_host
+		assert isinstance(mock_service_client.updated_host, OpsiClient)
 
 		data = (tmp_path / system_uuid).read_text(encoding="utf-8")
 		print(data)
@@ -813,4 +813,7 @@ def test_password_hash() -> None:
 		assert parts[0] == ""
 		assert parts[1] == "6"  # $6$ is SHA-512
 		assert len(parts[2]) == 16  # salt len 16
-		
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
+		assert parts[1] == "6"  # $6$ is SHA-512
+		assert len(parts[2]) == 16  # salt len 16
