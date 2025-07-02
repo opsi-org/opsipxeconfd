@@ -813,7 +813,3 @@ def test_password_hash() -> None:
 		assert parts[0] == ""
 		assert parts[1] == "6"  # $6$ is SHA-512
 		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
