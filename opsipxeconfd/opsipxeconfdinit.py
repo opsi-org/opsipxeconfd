@@ -79,7 +79,7 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 		return ""
 
 	def parse(self, stream: StringIO) -> dict[str, Any]:
-		items = OrderedDict({"use-mac-address": "true", "use-one-time-password": "true"})
+		items = OrderedDict({"use-mac-address": "true", "use-one-time-password": "false"})
 		for i, line in enumerate(stream):
 			line = line.strip()
 			if not line or line.startswith(("#", ";", "/")):
@@ -523,6 +523,12 @@ class OpsipxeconfdInit:
 		else:
 			os.open("/dev/null", os.O_RDWR)
 
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
+		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
 		# Duplicate standard input to standard output and standard error.
 		os.dup2(0, 1)
 		os.dup2(0, 2)
