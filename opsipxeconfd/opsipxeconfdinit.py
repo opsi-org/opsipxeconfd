@@ -79,7 +79,7 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 		return ""
 
 	def parse(self, stream: StringIO) -> dict[str, Any]:
-		items = OrderedDict({"use-mac-address": "true"})
+		items = OrderedDict({"use-mac-address": "true", "use-one-time-password": "true"})
 		for i, line in enumerate(stream):
 			line = line.strip()
 			if not line or line.startswith(("#", ";", "/")):
@@ -121,6 +121,8 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 				items["dispatch-config-file"] = value
 			elif option == "use mac address":
 				items["use-mac-address"] = value
+			elif option == "use one time password":
+				items["use-one-time-password"] = value
 			else:
 				raise ConfigFileParserException(f"Unexpected option in line {i} in {getattr(stream, 'name', 'stream')}: {option}")
 		return items
@@ -267,7 +269,15 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		env_var="OPSIPXECONFD_USE_MAC_ADDRESS",
 		default=False,
 		action="store_true",
-		help="Use mac address based pxe config files?",
+		help="Use MAC address based pxe config files?",
+	)
+	parser.add(
+		"--use-one-time-password",
+		dest="useOneTimePassword",
+		env_var="OPSIPXECONFD_USE_ONE_TIME_PASSWORD",
+		default=False,
+		action="store_true",
+		help="Use one time password for authentication?",
 	)
 	parser.add(
 		"command",
@@ -513,27 +523,6 @@ class OpsipxeconfdInit:
 		else:
 			os.open("/dev/null", os.O_RDWR)
 
-		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
-		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
-		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
-		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
-		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
-		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
-		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
 		# Duplicate standard input to standard output and standard error.
 		os.dup2(0, 1)
 		os.dup2(0, 2)

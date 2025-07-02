@@ -9,16 +9,18 @@ opsipxeconfd
 
 import grp
 import os
+import secrets
 from pathlib import Path
-from socket import AF_UNIX, SOCK_STREAM, socket
+from socket import AF_UNIX, SOCK_STREAM
 from socket import error as socket_error
+from socket import socket
 from threading import Lock, Thread
 from time import asctime, localtime, time
 from typing import Any
 
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.logging import get_logger, log_context, secret_filter
-from opsicommon.objects import Host, NetbootProduct, ProductOnClient
+from opsicommon.objects import Host, NetbootProduct, OpsiClient, ProductOnClient
 from opsicommon.types import forceHostId, forceStringList
 
 from opsipxeconfd.logging import init_logging
@@ -393,9 +395,13 @@ class Opsipxeconfd(Thread):
 			self._remove_current_config_writers(host_id)
 
 			try:
-				host = self.service.host_getObjects(id=host_id)[0]  # type: ignore[attr-defined]
+				host: OpsiClient = self.service.host_getObjects(id=host_id)[0]  # type: ignore[attr-defined]
 			except IndexError:
 				logger.info("Host %r not found", host_id)
+				return "Boot configuration updated"
+
+			if host.getType() != "OpsiClient":
+				logger.error("Host %r is not an OpsiClient, but %s", host_id, host.getType())
 				return "Boot configuration updated"
 
 			try:
@@ -455,14 +461,24 @@ class Opsipxeconfd(Thread):
 
 			# Append arguments
 			append = {
-				"pckey": host.getOpsiHostKey(),
 				"hn": host_id.split(".")[0],
 				"dn": ".".join(host_id.split(".")[1:]),
+				"host_id": host_id,
 				"product": product.id,
 				"macaddress": host.getHardwareAddress(),
 				"service": service_address,
 			}
-			if append["pckey"]:
+			if self.config["useOneTimePassword"]:
+				# Use one time password
+				otp = secrets.token_hex(16)
+				host.setOneTimePassword(otp)
+				self.service.host_updateObjects([host])  # type: ignore[attr-defined]
+				append["otp"] = otp
+				logger.debug("Using one time password for host %r", host_id)
+			else:
+				# Use opsi host key
+				logger.debug("Using opsi host key for host %r", host_id)
+				append["pckey"] = host.getOpsiHostKey()
 				secret_filter.add_secrets(append["pckey"])
 
 			append.update(self._get_additional_bootimage_parameters(host_id))

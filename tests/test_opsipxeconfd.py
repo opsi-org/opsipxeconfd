@@ -12,20 +12,22 @@ This file is part of opsi - https://www.opsi.org
 
 import argparse
 import os
+import re
 import shutil
 import sys
 import time
 from pathlib import Path
+from typing import Any
 from unittest import mock
 
+from opsicommon.objects import Host, NetbootProduct, OpsiClient, Product, ProductOnClient, ProductOnDepot
 from opsicommon.types import forceHostId
 
+from opsipxeconfd.opsipxeconfd import Opsipxeconfd  # type: ignore[import]
 from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit  # type: ignore[import]
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter  # type: ignore[import]
-from opsipxeconfd.setup import (
-	password_hash,  # type: ignore[import]
-	patchMenuFile,
-)
+from opsipxeconfd.setup import password_hash  # type: ignore[import]
+from opsipxeconfd.setup import patchMenuFile
 from opsipxeconfd.util import pid_file  # type: ignore[import]
 
 default_opts = argparse.Namespace(
@@ -164,6 +166,108 @@ def test_grub_pxe_config_writer() -> None:
 	assert "test_hostname=client1" in content
 	assert "test_domain=opsi.test" in content
 	assert "test_fqdn=client1.opsi.test" in content
+
+
+def test_pxe_config_oneTimePassword(tmp_path: Path) -> None:
+	shutil.copytree(TEST_DATA, str(tmp_path), dirs_exist_ok=True)
+	client_id = "client1.opsi.test"
+	system_uuid = "11112222-3333-4444-5555-666677778888"
+	depot_id = "depot1.opsi.test"
+
+	class MockServiceClient:
+		updated_host: OpsiClient | None = None
+
+		def host_getObjects(self, attributes: list[str] | None = None, **filter: Any) -> list[Host]:
+			if filter.get("id") == client_id:
+				return [
+					OpsiClient(
+						id=client_id,
+						systemUUID=system_uuid,
+					)
+				]
+
+			return []
+
+		def host_updateObjects(self, objects: list[Host]) -> None:
+			self.updated_host = objects[0]
+
+		def productOnClient_getObjects(self, attributes: list[str] | None = None, **filter: Any) -> list[ProductOnClient]:
+			return [
+				ProductOnClient(
+					productId="hwinvent",
+					productType="NetbootProduct",
+					clientId=client_id,
+					actionRequest="setup",
+				)
+			]
+
+		def productOnClient_updateObjects(self, objects: list[ProductOnClient]) -> None:
+			pass
+
+		def productOnDepot_getObjects(self, attributes: list[str] | None = None, **filter: Any) -> list[ProductOnDepot]:
+			return [
+				ProductOnDepot(
+					productId="hwinvent",
+					productType="NetbootProduct",
+					productVersion="4.3.0",
+					packageVersion="1",
+					depotId=depot_id,
+				)
+			]
+
+		def product_getObjects(self, attributes: list[str] | None = None, **filter: Any) -> list[Product]:
+			return [
+				NetbootProduct(
+					id="hwinvent",
+					productVersion="4.3.0",
+					packageVersion="1",
+				)
+			]
+
+		def productPropertyState_getValues(
+			self,
+			product_ids: list[str] | str | None = None,
+			property_ids: list[str] | str | None = None,
+			object_ids: list[str] | str | None = None,
+			with_defaults: bool = True,
+		) -> dict[str, dict[str, dict[str, list[Any]]]]:
+			return {client_id: {}}
+
+		def configState_getValues(
+			self,
+			config_ids: list[str] | str | None = None,
+			object_ids: list[str] | str | None = None,
+			with_defaults: bool = True,
+		) -> dict[str, dict[str, list[Any]]]:
+			return {
+				client_id: {
+					"clientconfig.configserver.url": ["https://service.uib.gmbh:4447/rpc"],
+					"clientconfig.oneTimePassword": [password_hash("123456")],
+				}
+			}
+
+	mock_service_client = MockServiceClient()
+
+	pxe_config_template = os.path.join(tmp_path, PXE_TEMPLATE_FILE)
+	with mock.patch("opsipxeconfd.opsipxeconfd.get_service_connection", return_value=mock_service_client):
+		Opsipxeconfd(
+			{
+				"useOneTimePassword": True,
+				"pxeDir": str(tmp_path),
+				"pxeConfTemplate": pxe_config_template,
+				"depotId": depot_id,
+				"useMacAddress": False,
+			}
+		).update_boot_configuration(client_id)
+		time.sleep(2)
+		assert mock_service_client.updated_host
+
+		data = (tmp_path / system_uuid).read_text(encoding="utf-8")
+		print(data)
+		match = re.search("^append.* otp=([a-z0-9]+)", data, re.MULTILINE)
+		assert match
+		otp = match.group(1)
+		assert otp == mock_service_client.updated_host.oneTimePassword
 
 
 ########### GRUB CFG ################
@@ -709,45 +813,4 @@ def test_password_hash() -> None:
 		assert parts[0] == ""
 		assert parts[1] == "6"  # $6$ is SHA-512
 		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
+		

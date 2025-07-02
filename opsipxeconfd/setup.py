@@ -117,29 +117,28 @@ def get_service_connection() -> ServiceClient:
 
 
 def getConfigsFromService() -> tuple[str, list[str]]:
-	service: ServiceClient = get_service_connection()
-	configserverId: str | None = ""
 	try:
-		configs = service.jsonrpc("host_getObjects", params=[[], {"type": "OpsiConfigserver"}])[0]
-		configserverId = configs.id or None
-		logger.notice(f"Configserver id {configserverId}")
-		configs = service.jsonrpc(
-			"configState_getValues", {"config_ids": ["clientconfig.configserver.url"], "object_ids": [configserverId]}
-		)
-		configserverUrl = (configs.get(configserverId, {}).get("clientconfig.configserver.url") or [None])[0]
-		if not configserverUrl:
-			raise RuntimeError(f"Failed to get config server address for {configserverUrl!r}")
-		if not configserverUrl.endswith("/rpc"):
-			configserverUrl += "/rpc"
-
-		appendConfigs = service.jsonrpc("config_getObjects", params=[[], {"id": "opsi-linux-bootimage.append"}])[0]
-		return configserverUrl, appendConfigs.defaultValues
-
+		service = get_service_connection()
 	except OpsiServiceConnectionError:
-		pass
-	finally:
-		service.disconnect()
-	return "", []
+		return "", []
+
+	try:
+		configserver_id = service.jsonrpc("host_getIdents", params=["str", {"type": "OpsiConfigserver"}])[0]
+	except OpsiServiceError as err:
+		logger.error("Failed to get Configserver ID: %s", err)
+		return "", []
+
+	logger.notice(f"Configserver ID: {configserver_id!r}")
+	configs = service.jsonrpc(
+		"configState_getValues",
+		{"config_ids": ["clientconfig.configserver.url", "opsi-linux-bootimage.append"], "object_ids": [configserver_id]},
+	).get(configserver_id, {})
+	service_url = (configs.get("clientconfig.configserver.url") or [None])[0]
+	if not service_url:
+		logger.error("Failed to get service URL")
+		return "", []
+
+	return service_url, configs.get("opsi-linux-bootimage.append") or []
 
 
 def grubSettings(config: dict) -> bool:
