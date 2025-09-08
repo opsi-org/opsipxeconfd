@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 import time
 from contextlib import closing, contextmanager
+from pathlib import Path
 from shlex import split as shlex_split
 from socket import socket
 from threading import Thread
@@ -30,7 +31,7 @@ logger = get_logger()
 
 
 @contextmanager
-def pid_file(pid_file_path: str) -> Generator[None, None, None]:
+def pid_file(pid_file_path: str | Path) -> Generator[None, None, None]:
 	"""
 	Maintain temporary PID file.
 
@@ -42,20 +43,22 @@ def pid_file(pid_file_path: str) -> Generator[None, None, None]:
 	"""
 	ensure_not_already_running("opsipxeconfd")
 
-	logger.info("Creating pid file %r", pid_file_path)
-	with open(pid_file_path, "w", encoding="utf-8") as file:
-		file.write(str(os.getpid()))
+	if not isinstance(pid_file_path, Path):
+		pid_file_path = Path(pid_file_path)
+
+	logger.info("Creating pid file '%s'", pid_file_path)
+	pid_file_path.write_text(str(os.getpid()), encoding="utf-8")
 
 	try:
 		yield
 	finally:
-		if os.path.exists(pid_file_path):
+		if pid_file_path.exists():
 			try:
-				logger.debug("Removing pid file %r...", pid_file_path)
-				os.unlink(pid_file_path)
-				logger.info("Removed pid file %r", pid_file_path)
+				logger.debug("Removing pid file '%s'", pid_file_path)
+				pid_file_path.unlink()
+				logger.info("Removed pid file '%s'", pid_file_path)
 			except Exception as err:
-				logger.error("Failed to remove pid file %r: %s", pid_file_path, err)
+				logger.error("Failed to remove pid file '%s': %s", pid_file_path, err)
 
 
 class StartupTask(Thread):
