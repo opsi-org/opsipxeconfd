@@ -7,6 +7,35 @@ project:
         All rights reserved.
         License: {license}
 
+pull-binaries:
+  - name: opsi-shim
+    version: 15.8
+    architecture: all
+    extract: true
+    destination: binaries
+    server-type: binaryindex
+
+  - name: opsi-grub
+    version: 2.12-59.1
+    architecture: x86
+    extract: true
+    destination: binaries
+    server-type: binaryindex
+
+  - name: opsi-grub
+    version: 2.12-59.1
+    architecture: x64
+    extract: true
+    destination: binaries
+    server-type: binaryindex
+
+  - name: opsi-grub
+    version: 2.12-59.1
+    architecture: arm64
+    extract: true
+    destination: binaries
+    server-type: binaryindex
+
 pyinstaller:
   one_file: no
   strip: yes
@@ -27,8 +56,9 @@ pyinstaller:
 package:
   name: opsipxeconfd
   type: binary
+  conflicts:
+    - opsi-linux-bootimage (<< 20250908)
   systemd: yes
-  debpendencies: []
   source_script: |
     pyi_src="${SRC}"
     if [ -e "${SRC}/dist/opsipxeconfd/opsipxeconfd" ]; then pyi_src="${SRC}/dist"; fi
@@ -58,6 +88,32 @@ package:
 
     cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
     cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
+
+    # TODO: /var/lib/tftpboot on SUSE
+    mkdir -p ${DST}/tftpboot/opsi/loader
+    mkdir -p ${DST}/tftpboot/opsi/opsi-linux-bootimage/loader
+
+    cp ${SRC}/binaries/grub.x64/grub.x64.efi             ${DST}/tftpboot/opsi/loader/grub.x64.efi
+    cp ${SRC}/binaries/grub.x64/grub-debug.x64.efi       ${DST}/tftpboot/opsi/loader/grub-debug.x64.efi
+    cp ${SRC}/binaries/grub.arm64/grub.arm64.efi         ${DST}/tftpboot/opsi/loader/grub.arm64.efi
+    cp ${SRC}/binaries/grub.arm64/grub-debug.arm64.efi   ${DST}/tftpboot/opsi/loader/grub-debug.arm64.efi
+    cp ${SRC}/binaries/grub.x86/grub-pxe.x86.bios        ${DST}/tftpboot/opsi/loader/grub.x86.bios
+    cp ${SRC}/binaries/grub.x86/grub-pxe-debug.x86.bios  ${DST}/tftpboot/opsi/loader/grub-debug.x86.bios
+
+    cp ${SRC}/binaries/opsi-shim/shimx64.efi.signed      ${DST}/tftpboot/opsi/loader/grub-shim.x64.efi
+
+    # Create links for DHCP boot file names
+    # Currently we do not support Secure Boot for ARM64 (shim not available)
+    cd ${DST}/tftpboot/opsi/loader
+    ln -sf grub-shim.x64.efi  opsi-netboot.x64.efi
+    ln -sf grub.arm64.efi     opsi-netboot.arm64.efi
+    ln -sf grub.x86.bios      opsi-netboot.x86.bios
+
+    # Create links for backward compatibility (old DHCP boot file names)
+    cd ${DST}/tftpboot/opsi/opsi-linux-bootimage/loader
+    ln -s ../../loader/grub-shim.x64.efi  shimx64.efi.signed
+    ln -s ../../loader/grub-shim.x64.efi  opsi-netboot.efi
+    ln -s ../../loader/grub.x86.bios      opsi-netboot.bios
 
   postinst_script: |
     # remove obsolete files
