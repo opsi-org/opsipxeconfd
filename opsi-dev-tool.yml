@@ -111,7 +111,7 @@ package:
     # Create links for backward compatibility (old DHCP boot file names)
     cd ${DST}/rootfs/tftpboot/opsi/opsi-linux-bootimage/loader
     ln -s ../../loader/grub-shim.x64.efi  shimx64.efi.signed
-    ln -s ../../loader/grub-shim.x64.efi  opsi-netboot.efi
+    ln -s ../../loader/grub.x64.efi       opsi-netboot.efi
     ln -s ../../loader/grub.x86.bios      opsi-netboot.bios
 
   postinst_script: |
