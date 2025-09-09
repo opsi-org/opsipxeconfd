@@ -16,21 +16,21 @@ pull-binaries:
     server-type: binaryindex
 
   - name: opsi-grub
-    version: 2.12-59.1
+    version: 2.12-59.1-nc
     architecture: x86
     extract: true
     destination: binaries
     server-type: binaryindex
 
   - name: opsi-grub
-    version: 2.12-59.1
+    version: 2.12-59.1-nc
     architecture: x64
     extract: true
     destination: binaries
     server-type: binaryindex
 
   - name: opsi-grub
-    version: 2.12-59.1
+    version: 2.12-59.1-nc
     architecture: arm64
     extract: true
     destination: binaries
