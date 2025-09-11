@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import binascii
+import hashlib
 import os
 import time
 from contextlib import closing, contextmanager
@@ -59,23 +61,38 @@ def pid_file(pid_file_path: str | Path) -> Generator[None, None, None]:
 				logger.error("Failed to remove pid file '%s': %s", pid_file_path, err)
 
 
-def password_hash(password: str, method: Literal["md5", "sha512"] = "sha512") -> str:
+def password_hash(
+	password: str, method: Literal["md5", "sha512", "pbkdf2-sha512"] = "sha512", format: Literal["shadow", "grub"] = "shadow"
+) -> str:
 	"""
 	Encode a password using the specified method and return a hash string for use in /etc/shadow.
 	"""
-	for _ in range(50):
-		meth = Method.MD5 if method == "md5" else Method.SHA512
-		crypt = Crypt.for_method(meth)
-		salt = crypt.generate_salt(meth)
-		if meth == Method.SHA512:
-			salt = salt[:19]  # Limit salt length to 16 chars for SHA-512
-		pw_hash = crypt.encrypt(password, salt)
-		if "." in pw_hash:
-			# Invalid hash
-			continue
-		return pw_hash
+	if format == "grub":
+		if method != "pbkdf2-sha512":
+			raise ValueError("For grub format only 'pbkdf2-sha512' method is supported")
+		iterations = 10000
+		salt = os.urandom(16)
+		hash_bytes = hashlib.pbkdf2_hmac("sha512", password.encode("utf-8"), salt, iterations)
+		return f"grub.pbkdf2.sha512.{iterations}.{binascii.hexlify(salt).decode().upper()}.{binascii.hexlify(hash_bytes).decode().upper()}"
 
-	raise RuntimeError("Failed to generate password hash")
+	elif format == "shadow":
+		if method not in ("md5", "sha512"):
+			raise ValueError("For shadow format only 'md5' and 'sha512' methods are supported")
+		for _ in range(50):
+			meth = Method.MD5 if method == "md5" else Method.SHA512
+			crypt = Crypt.for_method(meth)
+			salt = crypt.generate_salt(meth)
+			if meth == Method.SHA512:
+				salt = salt[:19]  # Limit salt length to 16 chars for SHA-512
+			pw_hash = crypt.encrypt(password, salt)
+			if "." in pw_hash:
+				# Invalid hash
+				continue
+			return pw_hash
+
+		raise RuntimeError("Failed to generate password hash")
+
+	raise ValueError("Format must be either 'shadow' or 'grub'")
 
 
 class StartupTask(Thread):
@@ -266,4 +283,5 @@ class ClientConnection(Thread):
 			raise ValueError(f"Command '{cmd}' not supported")
 		except Exception as err:
 			logger.error("Processing command '%s' failed: %s", cmd, err)
+			return f"{ERROR_MARKER}: {err}"
 			return f"{ERROR_MARKER}: {err}"

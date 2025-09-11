@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 from opsipxeconfd.util import password_hash, pid_file
 
 
@@ -25,7 +27,7 @@ def test_password_hash() -> None:
 
 	for password in ("password1234", "üw9Ä%$3kföd&3ä3k!"):
 		for _method in ("md5", "sha512"):
-			pw_hash2 = password_hash(password, method=_method)
+			pw_hash2 = password_hash(password, method=_method, format="shadow")
 			assert "." not in pw_hash2
 			assert pw_hash != pw_hash2
 			parts = pw_hash2.split("$")
@@ -37,3 +39,18 @@ def test_password_hash() -> None:
 			else:
 				assert parts[1] == "6"
 				assert len(parts[2]) == 16
+
+	pw_hash = password_hash("password1234", method="pbkdf2-sha512", format="grub")
+	assert len(pw_hash) == 186
+	assert pw_hash.startswith("grub.pbkdf2.sha512.10000.")
+
+	with pytest.raises(ValueError):
+		password_hash("password1234", method="unknown", format="shadow")  # type: ignore[arg-type]
+
+	with pytest.raises(ValueError):
+		password_hash("password1234", method="sha512", format="unknown")  # type: ignore[arg-type]
+
+	with pytest.raises(ValueError):
+		password_hash("password1234", method="sha512", format="grub")
+	with pytest.raises(ValueError):
+		password_hash("password1234", method="sha512", format="grub")

@@ -21,7 +21,7 @@ from opsipxeconfd import DEFAULT_PRODUCT_GRUB_CFG, GRUB_CFG_TEMPLATE, LEGACY_PXE
 from opsipxeconfd.service import get_service_connection
 from opsipxeconfd.util import password_hash
 
-PASSWORD_HASH_RE = re.compile(r"^\$([a-z0-9]){1,2}\$(.+)\$(.+)$")
+SHADOW_HASH_RE = re.compile(r"^\$([a-z0-9]){1,2}\$(.+)\$(.+)$")
 
 logger = get_logger()
 
@@ -105,19 +105,28 @@ class TemplateContextConfigState:
 			return False
 		return bool(self.value)
 
-	def password_hash(self, method: Literal["md5", "sha512"] = "sha512") -> str | None:
+	def password_hash(
+		self, method: Literal["md5", "sha512", "pbkdf2-sha512"] = "sha512", format: Literal["shadow", "grub"] = "shadow"
+	) -> str | None:
 		value = self.value
 		if not value or isinstance(value, bool):
 			return None
 		value = str(value)
-		match = PASSWORD_HASH_RE.match(value)
-		if match:
-			if match.group(1) == str(Method.MD5) and method == "md5":
+
+		if format == "grub":
+			if value.startswith("grub."):
+				# Already hashed
 				return value
-			if match.group(1) == str(Method.SHA512) and method == "sha512":
-				return value
-			raise ValueError(f"Password is already hashed with method {match.group(1)}, but {method} is requested")
-		return password_hash(value, method=method)
+		elif format == "shadow":
+			match = SHADOW_HASH_RE.match(value)
+			if match:
+				if match.group(1) == str(Method.MD5.value) and method == "md5":
+					return value
+				if match.group(1) == str(Method.SHA512.value) and method == "sha512":
+					return value
+				raise ValueError(f"Password is already hashed with method {match.group(1)}, but {method} is requested")
+
+		return password_hash(password=value, method=method, format=format)
 
 
 class TemplateContextProductPropertyState(TemplateContextConfigState):

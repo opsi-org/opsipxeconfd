@@ -40,17 +40,36 @@ def test_TemplateContextConfigStates() -> None:
 def test_TemplateContextConfigState_password_hash() -> None:
 	state = TemplateContextConfigState(id="netboot.grub.password", values=["secret"], _is_password=True)
 
-	pw_hash_md5 = state.password_hash("md5")
+	pw_hash_md5 = state.password_hash("md5", "shadow")
 	assert pw_hash_md5
 	assert pw_hash_md5.startswith("$1$")  # MD5
 
-	pw_hash_sha512 = state.password_hash("sha512")
+	# Already hashed, keep as is
+	state.values = [pw_hash_md5]
+	assert pw_hash_md5 == state.password_hash("md5", "shadow")
+
+	state.values = ["secret"]
+	pw_hash_sha512 = state.password_hash("sha512", "shadow")
 	assert pw_hash_sha512
 	assert pw_hash_sha512.startswith("$6$")  # SHA-512
 
+	# Already hashed, keep as is
+	state.values = [pw_hash_sha512]
+	assert pw_hash_sha512 == state.password_hash("sha512", "shadow")
+
+	# Different method requested
 	state.values = [pw_hash_md5]
 	with pytest.raises(ValueError, match="Password is already hashed with method 1, but sha512 is requested"):
-		state.password_hash("sha512")
+		state.password_hash("sha512", "shadow")
+
+	state.values = ["secret"]
+	pw_hash_grub_pbkdf2_sha512 = state.password_hash("pbkdf2-sha512", "grub")
+	assert pw_hash_grub_pbkdf2_sha512
+	assert pw_hash_grub_pbkdf2_sha512.startswith("grub.pbkdf2.sha512.")
+
+	# Already hashed, keep as is
+	state.values = [pw_hash_grub_pbkdf2_sha512]
+	assert pw_hash_grub_pbkdf2_sha512 == state.password_hash("pbkdf2-sha512", "grub")
 
 
 def test_TemplateContext_linux_cmdline() -> None:
