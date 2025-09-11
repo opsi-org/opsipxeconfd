@@ -1,9 +1,9 @@
-# Some temp files we do not want to carry with us
 *.swp
 *~
 *.egg-info
+.coverage
 __pycache__
 /.venv
 /build
 /dist
-
+/binaries

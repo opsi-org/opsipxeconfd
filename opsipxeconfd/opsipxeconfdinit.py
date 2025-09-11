@@ -3,10 +3,6 @@
 # All rights reserved.
 # License: AGPL-3.0-only
 
-"""
-opsipxeconfd - init
-"""
-
 import os
 import sys
 import threading
@@ -20,21 +16,16 @@ from time import sleep
 from types import FrameType
 from typing import Any, Generator
 
-from configargparse import ArgParser  # type: ignore[import]
-from configargparse import ConfigFileParser, ConfigFileParserException
+from configargparse import ArgParser, ConfigFileParser, ConfigFileParserException  # type: ignore[import]
 from opsicommon import __version__ as python_opsi_common_version
-from opsicommon.logging import DEFAULT_FORMAT, LOG_WARNING, get_logger, log_context, set_filter_from_string
+from opsicommon.logging import LOG_WARNING, get_logger, log_context, set_filter_from_string
 from opsicommon.types import forceInt, forceUnicode, forceUnicodeList
 
-from opsipxeconfd import __version__
-from opsipxeconfd.logging import init_logging
-from opsipxeconfd.opsipxeconfd import Opsipxeconfd, opsi_config
+from opsipxeconfd import CONFIG_FILE, ERROR_MARKER, PID_FILE, __version__
+from opsipxeconfd._logging import init_logging
+from opsipxeconfd.opsipxeconfd import Opsipxeconfd
 from opsipxeconfd.setup import setup
 from opsipxeconfd.util import pid_file
-
-DEFAULT_CONFIG_FILE = "/etc/opsi/opsipxeconfd.conf"
-ERROR_MARKER = "(ERROR)"
-
 
 logger = get_logger()
 
@@ -79,7 +70,7 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 		return ""
 
 	def parse(self, stream: StringIO) -> dict[str, Any]:
-		items = OrderedDict({"use-mac-address": "true", "use-one-time-password": "false"})
+		items = OrderedDict()
 		for i, line in enumerate(stream):
 			line = line.strip()
 			if not line or line.startswith(("#", ";", "/")):
@@ -102,27 +93,10 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 				items["max-log-size"] = value
 			elif option == "backup count log":
 				items["keep-rotated-logs"] = value
-			elif option == "log file":
-				items["log-file"] = value
-			elif option == "log format":
-				# Ignore
-				pass
-			elif option == "pxe config dir":
-				items["pxe-dir"] = value
-			elif option == "pxe config template":
-				items["pxe-conf-template"] = value
 			elif option == "max pxe config writers":
 				items["max-pxe-config-writers"] = value
 			elif option == "max control connections":
 				items["max-connections"] = value
-			elif option == "backend config dir":
-				items["backend-config-dir"] = value
-			elif option == "dispatch config file":
-				items["dispatch-config-file"] = value
-			elif option == "use mac address":
-				items["use-mac-address"] = value
-			elif option == "use one time password":
-				items["use-one-time-password"] = value
 			else:
 				raise ConfigFileParserException(f"Unexpected option in line {i} in {getattr(stream, 'name', 'stream')}: {option}")
 		return items
@@ -144,7 +118,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 	)
 	parser.add("--version", "-v", help="Show version information and exit.", action="store_true")
 	parser.add("--no-fork", "-F", dest="nofork", help="Do not fork to background.", action="store_true")
-	parser.add("-c", "--conffile", required=False, is_config_file=True, default=DEFAULT_CONFIG_FILE, help="Path to config file.")
+	parser.add("-c", "--conffile", required=False, is_config_file=True, default=CONFIG_FILE, help="Path to config file.")
 	parser.add(
 		"--log-level",
 		"--loglevel",
@@ -157,13 +131,6 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		help="Set the general log level."
 		+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 		+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets",
-	)
-	parser.add(
-		"--log-file",
-		env_var="OPSIPXECONFD_LOG_FILE",
-		default="/var/log/opsi/opsipxeconfd/opsipxeconfd.log",
-		dest="logFile",
-		help="Log file to use.",
 	)
 	parser.add(
 		"--max-log-size",
@@ -213,41 +180,6 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		help="Filter log records contexts (<ctx-name-1>=<val1>[,val2][;ctx-name-2=val3])",
 	)
 	parser.add(
-		"--backend-config-dir",
-		dest="backendConfigDir",
-		env_var="OPSIPXECONFD_BACKEND_CONFIG_DIR",
-		default="/etc/opsi/backends",
-		help="Location of the backend config dir.",
-	)
-	parser.add(
-		"--dispatch-config-file",
-		dest="dispatchConfigFile",
-		env_var="OPSIPXECONFD_DISPATCH_CONFIG_FILE",
-		default="/etc/opsi/backendManager/dispatch.conf",
-		help="Location of the backend dispatcher config file.",
-	)
-	parser.add(
-		"--pid-file",
-		dest="pidFile",
-		env_var="OPSIPXECONFD_PID_FILE",
-		default="/var/run/opsipxeconfd/opsipxeconfd.pid",
-		help="Location of the pid file.",
-	)
-	parser.add(
-		"--pxe-dir",
-		dest="pxeDir",
-		env_var="OPSIPXECONFD_PXE_DIR",
-		default="/tftpboot/opsi/opsi-linux-bootimage/cfg",
-		help="Location of the pxe directory.",
-	)
-	parser.add(
-		"--pxe-conf-template",
-		dest="pxeConfTemplate",
-		env_var="OPSIPXECONFD_PXE_CONF_TEMPLATE",
-		default="/tftpboot/opsi/opsi-linux-bootimage/cfg/install-grub-x64",
-		help="Location of the pxe/uefi/grub config template.",
-	)
-	parser.add(
 		"--max-connections",
 		env_var="OPSIPXECONFD_MAX_CONNECTIONS",
 		type=int,
@@ -262,22 +194,6 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		default=100,
 		dest="maxPxeConfigWriters",
 		help="Number of maximum simultaneous pxe config writer threads.",
-	)
-	parser.add(
-		"--use-mac-address",
-		dest="useMacAddress",
-		env_var="OPSIPXECONFD_USE_MAC_ADDRESS",
-		default=False,
-		action="store_true",
-		help="Use MAC address based pxe config files?",
-	)
-	parser.add(
-		"--use-one-time-password",
-		dest="useOneTimePassword",
-		env_var="OPSIPXECONFD_USE_ONE_TIME_PASSWORD",
-		default=False,
-		action="store_true",
-		help="Use one time password for authentication?",
 	)
 	parser.add(
 		"command",
@@ -366,7 +282,7 @@ class OpsipxeconfdInit:
 				self.daemonize()
 
 			with log_context({"instance": "Opsipxeconfd start"}):
-				with pid_file(self.config["pidFile"]):
+				with pid_file(PID_FILE):
 					setup(self.config)
 					self._opsipxeconfd = Opsipxeconfd(self.config)
 					self._opsipxeconfd.start()
@@ -388,13 +304,9 @@ class OpsipxeconfdInit:
 	def process_config(self) -> None:
 		# First parse to handle --help and --version
 		parse_args(parse_config_file=False)
-		self.update_config_file()
 		self.config = vars(parse_args())
 
-		opsi_config._upgrade_config = True
-
 		self.config["port"] = "/var/run/opsipxeconfd/opsipxeconfd.socket"
-		self.config["depotId"] = opsi_config.get("host", "id")
 		self.config["daemon"] = True
 		if self.config["nofork"] and self.config["command"] == "start":
 			self.config["daemon"] = False
@@ -432,56 +344,6 @@ class OpsipxeconfdInit:
 
 		for thread in threading.enumerate():
 			logger.debug("Running thread after signal: %s", thread)
-
-	def update_config_file(self) -> None:
-		"""
-		Updates Opsipxeconfd config file.
-
-		This method modifies the data written in the configFile to conform to
-		the standard logging format.
-		"""
-		config_file = DEFAULT_CONFIG_FILE
-		if not os.path.exists(config_file):
-			return
-
-		default_tftp_root = tftp_root = "/tftpboot"
-		if not os.path.exists(tftp_root) and os.path.exists("/var/lib/tftpboot"):
-			tftp_root = "/var/lib/tftpboot"
-
-		lines = []
-		changed = False
-		with open(config_file, encoding="utf-8") as file:
-			for line in file.readlines():
-				cur_line = line
-
-				if line.startswith("uefi netboot config template"):
-					line = f"#{line}"
-				elif line.startswith("pxe config dir"):
-					line = line.replace("/linux/pxelinux.cfg", "/opsi/opsi-linux-bootimage/cfg")
-					line = line.replace("/opsi/pxelinux.cfg", "/opsi/opsi-linux-bootimage/cfg")
-					line = line.replace(f" {default_tftp_root}/opsi", f" {tftp_root}/opsi")
-				elif line.startswith("pxe config template"):
-					line = line.replace("/linux/pxelinux.cfg/install", "/opsi/opsi-linux-bootimage/cfg/install-grub-x64")
-					line = line.replace("/opsi/pxelinux.cfg/install", "/opsi/opsi-linux-bootimage/cfg/install-grub-x64")
-					line = line.replace(f" {default_tftp_root}/opsi", f" {tftp_root}/opsi")
-				elif line.startswith("log format"):
-					line = line.replace("[%l] [%D] %M (%F|%N)", DEFAULT_FORMAT)
-					line = line.replace("%D", "%(asctime)s")
-					line = line.replace("%T", "%(thread)d")
-					line = line.replace("%l", "%(opsilevel)d")
-					line = line.replace("%L", "%(levelname)s")
-					line = line.replace("%M", "%(message)s")
-					line = line.replace("%F", "%(filename)s")
-					line = line.replace("%N", "%(lineno)s")
-
-				lines.append(line)
-				if not changed and line != cur_line:
-					changed = True
-
-		if changed:
-			logger.notice("Updating config file: %s", config_file)
-			with open(config_file, "w", encoding="utf-8") as file:
-				file.writelines(lines)
 
 	def daemonize(self) -> None:
 		"""

@@ -3,34 +3,33 @@
 # All rights reserved.
 # License: AGPL-3.0-only
 
-"""
-opsipxeconfd - util
-"""
-
 from __future__ import annotations
 
 import os
 import time
 from contextlib import closing, contextmanager
+from pathlib import Path
 from shlex import split as shlex_split
 from socket import socket
 from threading import Thread
-from typing import TYPE_CHECKING, Callable, Generator
+from typing import TYPE_CHECKING, Callable, Generator, Literal
 
 from opsicommon.logging import get_logger
 from opsicommon.system import ensure_not_already_running
 from opsicommon.types import forceHostId, forceString
+from purecrypt import Crypt, Method  # type: ignore[import]
+
+from opsipxeconfd import ERROR_MARKER, get_depot_id
 
 if TYPE_CHECKING:
 	from opsipxeconfd.opsipxeconfd import Opsipxeconfd
 
-ERROR_MARKER = "(ERROR)"
 
 logger = get_logger()
 
 
 @contextmanager
-def pid_file(pid_file_path: str) -> Generator[None, None, None]:
+def pid_file(pid_file_path: str | Path) -> Generator[None, None, None]:
 	"""
 	Maintain temporary PID file.
 
@@ -42,20 +41,41 @@ def pid_file(pid_file_path: str) -> Generator[None, None, None]:
 	"""
 	ensure_not_already_running("opsipxeconfd")
 
-	logger.info("Creating pid file %r", pid_file_path)
-	with open(pid_file_path, "w", encoding="utf-8") as file:
-		file.write(str(os.getpid()))
+	if not isinstance(pid_file_path, Path):
+		pid_file_path = Path(pid_file_path)
+
+	logger.info("Creating pid file '%s'", pid_file_path)
+	pid_file_path.write_text(str(os.getpid()), encoding="utf-8")
 
 	try:
 		yield
 	finally:
-		if os.path.exists(pid_file_path):
+		if pid_file_path.exists():
 			try:
-				logger.debug("Removing pid file %r...", pid_file_path)
-				os.unlink(pid_file_path)
-				logger.info("Removed pid file %r", pid_file_path)
+				logger.debug("Removing pid file '%s'", pid_file_path)
+				pid_file_path.unlink()
+				logger.info("Removed pid file '%s'", pid_file_path)
 			except Exception as err:
-				logger.error("Failed to remove pid file %r: %s", pid_file_path, err)
+				logger.error("Failed to remove pid file '%s': %s", pid_file_path, err)
+
+
+def password_hash(password: str, method: Literal["md5", "sha512"] = "sha512") -> str:
+	"""
+	Encode a password using the specified method and return a hash string for use in /etc/shadow.
+	"""
+	for _ in range(50):
+		meth = Method.MD5 if method == "md5" else Method.SHA512
+		crypt = Crypt.for_method(meth)
+		salt = crypt.generate_salt(meth)
+		if meth == Method.SHA512:
+			salt = salt[:19]  # Limit salt length to 16 chars for SHA-512
+		pw_hash = crypt.encrypt(password, salt)
+		if "." in pw_hash:
+			# Invalid hash
+			continue
+		return pw_hash
+
+	raise RuntimeError("Failed to generate password hash")
 
 
 class StartupTask(Thread):
@@ -95,7 +115,7 @@ class StartupTask(Thread):
 				client_to_depot["clientId"]
 				for client_to_depot in self._opsipxeconfd.service.jsonrpc(
 					"configState_getClientToDepotserver",
-					{"depotIds": [str(self._opsipxeconfd.config["depotId"])]},
+					{"depotIds": [get_depot_id()]},
 				)
 			]
 

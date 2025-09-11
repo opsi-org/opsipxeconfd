@@ -3,16 +3,11 @@
 # All rights reserved.
 # License: AGPL-3.0-only
 
-"""
-:copyright: uib GmbH <info@uib.de>
-This file is part of opsi - https://www.opsi.org
-
-:license: GNU Affero General Public License version 3
-"""
-
 from typing import Dict
 
 from opsicommon.logging import DEFAULT_COLORED_FORMAT, DEFAULT_FORMAT, LOG_NONE, handle_log_exception, logging_config
+
+from opsipxeconfd import LOG_FILE
 
 
 def init_logging(config: Dict) -> None:
@@ -35,7 +30,7 @@ def init_logging(config: Dict) -> None:
 		logging_config(
 			stderr_format=DEFAULT_COLORED_FORMAT,
 			stderr_level=stderr_level,
-			log_file=config["logFile"],
+			log_file=LOG_FILE,
 			file_format=DEFAULT_FORMAT,
 			file_level=file_level,
 			file_rotate_max_bytes=config.get("maxLogSize", 0) * 1000 * 1000,

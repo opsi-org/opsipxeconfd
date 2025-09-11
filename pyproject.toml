@@ -1,6 +1,6 @@
 [project]
 name = "opsipxeconfd"
-version = "4.3.9.2"
+version = "4.3.10.2"
 description = "opsi pxe configuration service"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -10,6 +10,7 @@ dependencies = [
 	"inotify>=0.2",
 	"configargparse>=1.5",
 	"py-purecrypt>=0.1",
+	"jinja2>=3.1.6",
 ]
 
 [[project.authors]]
