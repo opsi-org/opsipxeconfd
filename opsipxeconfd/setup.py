@@ -93,3 +93,4 @@ def setup(config: dict) -> None:
 	setup_limits()
 	po_setup_users_and_groups()
 	setup_files()
+	setup_grub_cfg()

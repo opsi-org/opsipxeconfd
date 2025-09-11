@@ -16,7 +16,11 @@ from time import sleep
 from types import FrameType
 from typing import Any, Generator
 
-from configargparse import ArgParser, ConfigFileParser, ConfigFileParserException  # type: ignore[import]
+from configargparse import (
+	ArgParser,  # type: ignore[import]
+	ConfigFileParser,
+	ConfigFileParserException,
+)
 from opsicommon import __version__ as python_opsi_common_version
 from opsicommon.logging import LOG_WARNING, get_logger, log_context, set_filter_from_string
 from opsicommon.types import forceInt, forceUnicode, forceUnicodeList
@@ -281,7 +285,7 @@ class OpsipxeconfdInit:
 			if self.config["daemon"]:
 				self.daemonize()
 
-			with log_context({"instance": "Opsipxeconfd start"}):
+			with log_context({"instance": "opsipxeconfd start"}):
 				with pid_file(PID_FILE):
 					setup(self.config)
 					self._opsipxeconfd = Opsipxeconfd(self.config)
@@ -295,7 +299,7 @@ class OpsipxeconfdInit:
 						sys.exit(1)
 					sys.exit(0)
 		else:
-			with log_context({"instance": " ".join(["Opsipxeconfd", self.config["command"]])}):
+			with log_context({"instance": " ".join(["opsipxeconfd", self.config["command"]])}):
 				command = assemble_command(self.config)
 				con = ServerConnection(self.config["port"], timeout=5.0)
 				result = con.send_command(" ".join(forceUnicodeList(command)))

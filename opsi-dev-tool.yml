@@ -66,6 +66,7 @@ package:
     mkdir -p ${DST}/rootfs/tftpboot/opsi/opsi-linux-bootimage/loader
     mkdir -p ${DST}/rootfs/usr/bin
     mkdir -p ${DST}/rootfs/usr/lib
+    mkdir -p ${DST}/rootfs/usr/share/opsipxeconfd
     mkdir -p ${DST}/rootfs/var/log/opsi/opsipxeconfd
 
     mkdir -p ${DST}/systemd_units
@@ -85,8 +86,9 @@ package:
       cp -a "${arch_src}" "${arch_dst}/usr/lib/opsipxeconfd"
     done
 
-    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
-    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
+    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.service  ${DST}/systemd_units/
+    cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.conf     ${DST}/rootfs/etc/opsi/
+    cp -a ${SRC}/opsipxeconfd_data/grub.cfg              ${DST}/rootfs/usr/share/opsipxeconfd/
 
     cp ${SRC}/binaries/grub.x64/grub.x64.efi             ${DST}/rootfs/tftpboot/opsi/loader/grub.x64.efi
     cp ${SRC}/binaries/grub.x64/grub-debug.x64.efi       ${DST}/rootfs/tftpboot/opsi/loader/grub-debug.x64.efi
