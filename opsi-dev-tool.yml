@@ -10,7 +10,7 @@ project:
 pull-binaries:
   - name: opsi-shim
     version: 15.8
-    system: all
+    os: all
     architecture: x64
     extract: true
     destination: binaries
