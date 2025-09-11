@@ -61,8 +61,6 @@ package:
     - opsi-linux-bootimage (<< 20250908)
   systemd: yes
   source_script: |
-    pyi_src="${SRC}"
-    if [ -e "${SRC}/dist/opsipxeconfd/opsipxeconfd" ]; then pyi_src="${SRC}/dist"; fi
     mkdir -p ${DST}/rootfs/etc/opsi
     mkdir -p ${DST}/rootfs/tftpboot/opsi/loader
     mkdir -p ${DST}/rootfs/tftpboot/opsi/opsi-linux-bootimage/loader
@@ -72,19 +70,20 @@ package:
 
     mkdir -p ${DST}/systemd_units
 
-    if [ -d ${pyi_src}/opsipxeconfd-amd64 ]; then
-      mkdir -p ${DST}/rootfs-amd64/usr/lib
-      cp -a ${pyi_src}/opsipxeconfd-amd64 ${DST}/rootfs-amd64/usr/lib/opsipxeconfd
-    fi;
-    if [ -d ${pyi_src}/opsipxeconfd-arm64 ]; then
-      mkdir -p ${DST}/rootfs-arm64/usr/lib
-      cp -a ${pyi_src}/opsipxeconfd-arm64 ${DST}/rootfs-arm64/usr/lib/opsipxeconfd
-    fi;
-
-    echo "#!/bin/sh"                    > ${DST}/rootfs/usr/bin/opsipxeconfd
-    echo "cd /usr/lib/opsipxeconfd"    >> ${DST}/rootfs/usr/bin/opsipxeconfd
-    echo "exec ./opsipxeconfd \"\$@\"" >> ${DST}/rootfs/usr/bin/opsipxeconfd
+    echo "#!/bin/sh"                                        > ${DST}/rootfs/usr/bin/opsipxeconfd
+    echo "exec /usr/lib/opsipxeconfd/opsipxeconfd \"\$@\"" >> ${DST}/rootfs/usr/bin/opsipxeconfd
     chmod 755 ${DST}/rootfs/usr/bin/opsipxeconfd
+
+    for arch in amd64 arm64; do
+      arch_src="${SRC}/opsipxeconfd-${arch}"
+      if [ ! -d "$arch_src" ]; then
+        echo "Skipping $arch. No directory $arch_src found."
+        continue
+      fi
+      arch_dst="${DST}/rootfs-${arch}"
+      mkdir -p "${arch_dst}/usr/lib"
+      cp -a "${arch_src}" "${arch_dst}/usr/lib/opsipxeconfd"
+    done
 
     cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.service ${DST}/systemd_units/
     cp -a ${SRC}/opsipxeconfd_data/opsipxeconfd.conf ${DST}/rootfs/etc/opsi/
