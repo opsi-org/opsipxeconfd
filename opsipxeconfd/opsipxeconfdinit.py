@@ -16,11 +16,9 @@ from time import sleep
 from types import FrameType
 from typing import Any, Generator
 
-from configargparse import (
-	ArgParser,  # type: ignore[import]
-	ConfigFileParser,
-	ConfigFileParserException,
-)
+from configargparse import ArgParser  # type: ignore[import]
+from configargparse import ConfigFileParser  # type: ignore[import]
+from configargparse import ConfigFileParserException  # type: ignore[import]
 from opsicommon import __version__ as python_opsi_common_version
 from opsicommon.logging import LOG_WARNING, get_logger, log_context, set_filter_from_string
 from opsicommon.types import forceInt, forceUnicode, forceUnicodeList
