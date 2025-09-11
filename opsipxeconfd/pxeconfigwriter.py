@@ -77,7 +77,7 @@ class PXEConfigWriter(Thread):
 		This method creates a regular file and append the PXE boot configuration through
 		to it. At the end the hooked callback is executed.
 		"""
-		logger.notice("Creating config %r and waiting for access", self.pxefiles)
+		logger.notice("Creating config %r and waiting for access", [str(f) for f in self.pxefiles])
 
 		inotify = Inotify()
 
@@ -93,7 +93,7 @@ class PXEConfigWriter(Thread):
 			pxefile.write_text(grub_cfg, encoding="utf-8")
 			try:
 				shutil.chown(pxefile, -1, opsi_config.get("groups", "admingroup"))
-				pxefile.chmod(0o640)
+				pxefile.chmod(0o644)
 			except Exception as err:
 				logger.error("Failed to set permissions on '%s': %s", pxefile, err)
 

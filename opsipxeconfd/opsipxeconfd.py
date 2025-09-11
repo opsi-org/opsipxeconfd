@@ -449,7 +449,7 @@ class Opsipxeconfd(Thread):
 
 			pxe_config_writer: PXEConfigWriter | None = None
 			try:
-				logger.info("Creating thread for pxeconfig %d", len(self._pxe_config_writers) + 1)
+				logger.info("Creating thread for pxeconfig (total threads: %d)", len(self._pxe_config_writers) + 1)
 				pxe_config_writer = PXEConfigWriter(
 					context=context,
 					pxefiles=pxefiles,
