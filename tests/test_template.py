@@ -284,9 +284,3 @@ def test_product_grub_cfg(tmp_path: Path) -> None:
 			else:
 				# Two template files modified, so two cache misses
 				assert read_text_called == 2
-
-
-def test_render_grub_cfg_product_templates(tmp_path: Path) -> None:
-	#  kernel desinfect/vmlinuz.64
-	#  append nfsroot=%nfs_server%:%nfs_directory% netboot=nfs ro BOOT_IMAGE=/casper/vmlinuz boot=casper initrd=desinfect/initrd64.lz debian-installer/language=de console-setup/layoutcode=de file=/cdrom/preseed/ubuntu.seed
-	pass

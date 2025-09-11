@@ -9,14 +9,13 @@ import shutil
 import time
 from pathlib import Path
 from threading import Event, Thread
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
 from inotify.adapters import Inotify  # type: ignore[import]
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.logging import get_logger, log_context
 
-if TYPE_CHECKING:
-	from opsipxeconfd.template import TemplateContext
+from opsipxeconfd.template import TemplateContext, render_grub_cfg
 
 logger = get_logger()
 opsi_config = OpsiConfig()
@@ -81,8 +80,8 @@ class PXEConfigWriter(Thread):
 
 		inotify = Inotify()
 
-		assert self.context.product
-		grub_cfg = self.context.product.grub_cfg()
+		grub_cfg = render_grub_cfg(self.context)
+
 		for pxefile in self.pxefiles:
 			if pxefile.exists():
 				logger.debug("Removing old config file '%s'", pxefile)
