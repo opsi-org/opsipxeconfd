@@ -10,7 +10,8 @@ project:
 pull-binaries:
   - name: opsi-shim
     version: 15.8
-    architecture: all
+    system: all
+    architecture: x64
     extract: true
     destination: binaries
     server-type: binaryindex

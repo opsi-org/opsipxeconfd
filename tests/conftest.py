@@ -13,6 +13,8 @@ from unittest.mock import patch
 
 import pytest
 
+from opsipxeconfd.template import template_cache
+
 
 @pytest.fixture(autouse=True)
 def set_tmp_path(tmp_path: Path) -> Generator[None, None, None]:
@@ -34,3 +36,10 @@ def set_tmp_path(tmp_path: Path) -> Generator[None, None, None]:
 		patch("opsipxeconfd.opsipxeconfdinit.OpsipxeconfdInit.daemonize", lambda self: None),
 	):
 		yield
+
+
+@pytest.fixture(autouse=True)
+def clear_cache() -> Generator[None, None, None]:
+	# Clear template cache before each test
+	template_cache.clear()
+	yield

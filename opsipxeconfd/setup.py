@@ -3,27 +3,19 @@
 # All rights reserved.
 # License: AGPL-3.0-only
 
-"""
-opsipxeconfd - setup
-"""
+from pathlib import Path
 
-import json
-import os
-import subprocess
-from time import sleep
-
-from opsicommon.client.opsiservice import OpsiServiceAuthenticationError, OpsiServiceError, OpsiServiceVerificationError, ServiceClient
-from opsicommon.config.opsi import OpsiConfig
-from opsicommon.exceptions import OpsiServiceConnectionError
-from opsicommon.logging import get_logger, secret_filter
+from opsicommon.logging import get_logger
+from opsicommon.objects import OpsiDepotserver
 from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
-from purecrypt import Crypt, Method  # type: ignore[import]
 
-from opsipxeconfd import __version__
+from opsipxeconfd import GRUB_CFG, get_depot_id
+from opsipxeconfd._logging import LOG_FILE
+from opsipxeconfd.service import get_service_connection
+from opsipxeconfd.template import get_template_context, render_grub_cfg
 
 logger = get_logger()
-opsi_config = OpsiConfig()
 
 
 def running_in_docker() -> bool:
@@ -37,243 +29,10 @@ def running_in_docker() -> bool:
 	return False
 
 
-def password_hash(password: str) -> str:
-	"""
-	Encode a password using SHA512 and return a hash string for use in /etc/shadow.
-	"""
-	# glibc uses 5000 rounds for SHA512 by default
-	# https://github.com/lattera/glibc/blob/master/crypt/sha512-crypt.c#L88
-	# When the rounds parameter is set to 5000, it may be omitted from the hash string.
-
-	while True:
-		salt = Crypt.generate_salt(Method.SHA512)
-		salt = salt[:19]  # 16 bytes salt + 3 bytes $6$
-		pw_hash = Crypt.encrypt(password, salt)
-		if "." in pw_hash:
-			# Invalid hash
-			continue
-		return pw_hash
-
-
-def get_opsiconfd_config() -> dict[str, str]:
-	config = {"ssl_server_key": "", "ssl_server_cert": "", "ssl_server_key_passphrase": ""}
-	try:
-		proc = subprocess.run(["opsiconfd", "get-config"], shell=False, check=True, capture_output=True, text=True, encoding="utf-8")
-		for attr, value in json.loads(proc.stdout).items():
-			if attr in config.keys() and value is not None:
-				config[attr] = value
-				if attr == "ssl_server_key_passphrase":
-					secret_filter.add_secrets(value)
-	except Exception as err:
-		logger.debug("Failed to get opsiconfd config %s", err)
-	return config
-
-
-def get_service_connection() -> ServiceClient:
-	client_cert_file = None
-	client_key_file = None
-	client_key_password = None
-	cfg = get_opsiconfd_config()
-	logger.debug("opsiconfd config: %r", cfg)
-	if (
-		cfg["ssl_server_key"]
-		and os.path.exists(cfg["ssl_server_key"])
-		and cfg["ssl_server_cert"]
-		and os.path.exists(cfg["ssl_server_cert"])
-	):
-		client_cert_file = cfg["ssl_server_cert"]
-		client_key_file = cfg["ssl_server_key"]
-		client_key_password = cfg["ssl_server_key_passphrase"]
-
-	service = ServiceClient(
-		address=opsi_config.get("service", "url"),
-		username=opsi_config.get("host", "id"),
-		password=opsi_config.get("host", "key"),
-		user_agent=f"opsipxeconfd {__version__}",
-		ca_cert_file="/etc/opsi/ssl/opsi-ca-cert.pem",
-		client_cert_file=client_cert_file,
-		client_key_file=client_key_file,
-		client_key_password=client_key_password,
-		jsonrpc_create_objects=True,
-		jsonrpc_create_methods=True,
-	)
-	max_attempts = 6
-	for attempt in range(1, max_attempts + 1):
-		try:
-			logger.notice("Connecting to opsi service at %r (attempt %d)", service.base_url, attempt)
-			service.connect()
-			break
-		except (OpsiServiceAuthenticationError, OpsiServiceVerificationError):
-			raise
-		except OpsiServiceError as err:
-			message = f"Failed to connect to opsi service at {service.base_url!r}: {err}"
-			if attempt == max_attempts:
-				raise RuntimeError(message) from err
-
-			message = f"{message}, retry in 5 seconds."
-			logger.warning(message)
-			sleep(5)
-	return service
-
-
-def getConfigsFromService() -> tuple[str, list[str]]:
-	try:
-		service = get_service_connection()
-	except OpsiServiceConnectionError:
-		return "", []
-
-	try:
-		configserver_id = service.jsonrpc("host_getIdents", params=["str", {"type": "OpsiConfigserver"}])[0]
-	except OpsiServiceError as err:
-		logger.error("Failed to get Configserver ID: %s", err)
-		return "", []
-
-	logger.notice(f"Configserver ID: {configserver_id!r}")
-	configs = service.jsonrpc(
-		"configState_getValues",
-		{"config_ids": ["clientconfig.configserver.url", "opsi-linux-bootimage.append"], "object_ids": [configserver_id]},
-	).get(configserver_id, {})
-	service_url = (configs.get("clientconfig.configserver.url") or [None])[0]
-	if not service_url:
-		logger.error("Failed to get service URL")
-		return "", []
-
-	return service_url, configs.get("opsi-linux-bootimage.append") or []
-
-
-def grubSettings(config: dict) -> bool:
-	return os.path.exists(config["pxeDir"] + "/grub-settings.cfg")
-
-
-def patchMenuFile(config: dict) -> None:
-	"""
-	Patch the address to the `configServer` and a password hash into `menufile`.
-
-	To find out where to patch we look for lines that starts with the
-	given `searchString` (excluding preceding whitespace).
-
-	"""
-
-	configserverUrl, defaultAppendParams = getConfigsFromService()
-
-	if defaultAppendParams or configserverUrl:
-		linuxDefaultDict: dict[str, str | None] = {}
-		linuxAppendDict: dict[str, str | None] = {}
-		linuxNewlinesDict: dict[str, str | None] = {}
-		try:
-			pwhEntry = ""
-			langEntry = ""
-			for element in defaultAppendParams:
-				if "bootimageRootPassword" in element:
-					# password could include equal signs
-					clearRootPassword = element.split("=", maxsplit=1)[1]
-					endcodedRootPassword = password_hash(clearRootPassword)
-					pwhEntry = f"pwh={endcodedRootPassword}"
-				if "pwh=" in element:
-					pwhEntry = element
-				if pwhEntry:
-					pwhEntry = pwhEntry.replace("$", r"\$")
-				if "lang=" in element:
-					langEntry = element
-			grubFiles = ["/grub.cfg"]
-			if grubSettings(config):
-				grubFiles.append("/grub-settings.cfg")
-			if os.path.exists(config["pxeDir"] + "/grub-menu.cfg"):
-				grubFiles.append("/grub-menu.cfg")
-			for grubFile in grubFiles:
-				newlines = []
-				with open(config["pxeDir"] + grubFile, "r", encoding="utf-8") as readMenu:
-					for line in readMenu:
-						if line.strip().startswith("linux"):
-							linuxAppendDict.clear()
-							if not linuxDefaultDict:
-								for element in line.split(" "):
-									if "=" in element:
-										linuxDefaultDict[element.split("=")[0].strip(" \n\r")] = element.split("=")[1].strip(" \n\r")
-									else:
-										linuxDefaultDict[element.strip(" \n\r")] = None
-							if "pwh" in linuxDefaultDict:
-								linuxDefaultDict.pop("pwh")
-							if "service" in linuxDefaultDict:
-								linuxDefaultDict.pop("service")
-							if "lang" in linuxDefaultDict:
-								linuxDefaultDict.pop("lang")
-							if "${pwh}" in linuxDefaultDict:
-								linuxDefaultDict.pop("${pwh}")
-							if "${lang}" in linuxDefaultDict:
-								linuxDefaultDict.pop("${lang}")
-							linuxNewlinesDict = linuxDefaultDict.copy()
-							for element in line.split(" "):
-								if "=" in element:
-									linuxAppendDict[element.split("=")[0].strip(" \n\r")] = element.split("=")[1].strip(" \n\r")
-								else:
-									linuxAppendDict[element.strip(" \n\r")] = None
-							if "pwh" in linuxAppendDict:
-								linuxAppendDict.pop("pwh")
-							if "service" in linuxAppendDict:
-								linuxAppendDict.pop("service")
-							if "lang" in linuxAppendDict:
-								linuxAppendDict.pop("lang")
-							if "${pwh}" in linuxAppendDict:
-								linuxAppendDict.pop("${pwh}")
-							if "${lang}" in linuxAppendDict:
-								linuxAppendDict.pop("${lang}")
-							if configserverUrl:
-								linuxNewlinesDict["service"] = configserverUrl
-							# possible pwh entry generated by passlib.hash.sha512_crypt.using(rounds=5000).hash(clearPassword):
-							# pwh=$6$rounds=656000$zDsMybVfAeoOFaG8$wJiX2zPHClXnDWIPfAP6f5xOfCEJnZOQ8uInHUKVAaiYIxtIGaNdGAsoBY6ZG6MSCrgPLPKXsEuIIlbpv8YzN/
-							#  We need everything after the first equal sign.
-							if pwhEntry and not grubSettings(config):
-								linuxNewlinesDict[pwhEntry.split("=")[0].strip(" \n\r")] = (
-									pwhEntry.replace(r"\\$", r"\$").split("=", maxsplit=1)[1].strip(" \n\r")
-								)
-							if grubSettings(config):
-								linuxNewlinesDict["${pwh}"] = None
-							if langEntry and not grubSettings(config):
-								linuxNewlinesDict["lang"] = langEntry.split("=")[1].strip(" \n\r")
-							if grubSettings(config):
-								linuxNewlinesDict["${lang}"] = None
-							for key, value in linuxAppendDict.items():
-								if key not in linuxDefaultDict:
-									linuxNewlinesDict[key] = value
-							if not configserverUrl:
-								logger.error("configserver URL not found for %r", configserverUrl)
-							line = " ".join(k if v is None else f"{k}={v}" for k, v in linuxNewlinesDict.items()) + "\n"
-						elif line.strip().startswith("set passwordhash"):
-							if pwhEntry:
-								passwordhash = pwhEntry.replace(r"\\$", r"\$").split("=", maxsplit=1)[1].strip(" \n\r")
-								line = f'set passwordhash="{passwordhash}"\n'
-							if not pwhEntry:
-								line = 'set passwordhash=""\n'
-						elif line.strip().startswith("set language"):
-							if langEntry:
-								language = langEntry.split("=")[1].strip(" \n\r")
-								line = f'set language="{language}"\n'
-							if not langEntry:
-								line = 'set language=""\n'
-						newlines.append(line)
-
-				with open(config["pxeDir"] + grubFile, "w", encoding="utf-8") as writeMenu:
-					writeMenu.writelines(newlines)
-
-		except FileNotFoundError:
-			logger.error("%r/grub.cfg not found", config["pxeDir"])
-
-
-def setup_files(log_file: str) -> None:
-	"""
-	Setup for log file.
-
-	This method creates a log file (and directories in its path if necessary).
-	Afterwards permissions are set.
-
-	:param log_file: Name and path of the logfile to set up.
-	:type log_file: str
-	"""
+def setup_files() -> None:
 	logger.info("Setup files and permissions")
-	log_dir = os.path.dirname(log_file)
-	if not os.path.isdir(log_dir):
-		os.makedirs(log_dir)
+	log_dir = Path(LOG_FILE).parent
+	log_dir.mkdir(parents=True, exist_ok=True)
 	set_rights(log_dir)
 
 
@@ -301,6 +60,21 @@ def setup_limits() -> None:
 			logger.warning("Failed to set %s: %s", limit, err)
 
 
+def setup_grub_cfg() -> None:
+	depot_id = get_depot_id()
+	service = get_service_connection()
+	try:
+		depot: OpsiDepotserver = service.host_getObjects(id=depot_id)[0]  # type: ignore[attr-defined]
+	except IndexError:
+		raise RuntimeError(f"Depot {depot_id!r} not found") from None
+
+	context = get_template_context(host=depot)
+	data = render_grub_cfg(context)
+	grub_cfg = Path(GRUB_CFG)
+	grub_cfg.write_text(data, encoding="utf-8")
+	set_rights(grub_cfg)
+
+
 def setup(config: dict) -> None:
 	"""
 	Setup method for opsipxeconfd.
@@ -314,5 +88,4 @@ def setup(config: dict) -> None:
 	logger.notice("Running opsipxeconfd setup")
 	setup_limits()
 	po_setup_users_and_groups()
-	setup_files(config["logFile"])
-	patchMenuFile(config)
+	setup_files()

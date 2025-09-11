@@ -3,22 +3,20 @@
 # All rights reserved.
 # License: AGPL-3.0-only
 
-"""
-pxeconfigwriter
-"""
+from __future__ import annotations
 
-import os
 import shutil
 import time
+from pathlib import Path
 from threading import Event, Thread
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from inotify.adapters import Inotify  # type: ignore[import]
 from opsicommon.config.opsi import OpsiConfig
 from opsicommon.logging import get_logger, log_context
-from opsicommon.objects import ProductOnClient
 
-from opsipxeconfd.setup import password_hash
+if TYPE_CHECKING:
+	from opsipxeconfd.template import TemplateContext
 
 logger = get_logger()
 opsi_config = OpsiConfig()
@@ -33,136 +31,33 @@ class PXEConfigWriter(Thread):
 
 	def __init__(
 		self,
-		template_file: str,
-		host_id: str,
-		product_on_client: ProductOnClient,
-		append: dict,
-		product_property_states: dict,
-		pxefiles: list[str],
-		secure_boot_module: bool,
-		uefi_module: bool,
+		context: TemplateContext,
+		pxefiles: list[Path],
 		callback: Callable | None = None,
 	) -> None:
-		"""
-		PXEConfigWriter constructor.
-
-		This constructor initializes a new PXEConfigWriter thread.
-		Template- and PXE-file paths as well as, hostID, products and their states
-		are stored.
-
-		:param template_file: Path of the PXE template file.
-		:type template_file: str
-		:param host_id: fqdn of client.
-		:type host_id:str
-		:param product_on_client: ProductOnClient.
-		:type product_on_client: ProductOnClient
-		:param append: dictionary of additional Information (pckey).
-		:type append: dict
-		:param productPropertyStates: Data to be collected by _getPXEConfigContent.
-		:type productPropertyStates: dict
-		:param pxefiles: Path of the PXEfiles.
-		:type pxefile: list[str]
-		:param callback: Optional Callback (executed after running PXEConfigWriter).
-		:type callback: Callable
-		:param backendinfo: dictionary with information about the backend.
-		                This data is parsed for uifi module license at init.
-		:type backendinfo: dict
-		"""
 		Thread.__init__(self)
 		self.daemon = True
-		self.template_file = template_file
-		self.append = append
-		self.product_property_states = product_property_states
-		self.host_id = host_id
-		self.product_on_client = product_on_client
+		self.context = context
 		self.pxefiles = pxefiles
-		self._secure_boot_module = bool(secure_boot_module)
-		self._uefi_module = bool(uefi_module)
 		self._callback = callback
-		self.start_time = time.time()
 		self._running = False
 		self._should_stop = False
+		self.start_time = time.time()
 		self.stopped_event = Event()
 
-		logger.info(
-			"PXEConfigWriter initializing: template_file '%s', pxefiles %s, host_id '%s', append %s",
-			self.template_file,
-			self.pxefiles,
-			self.host_id,
-			self.append,
-		)
+		logger.info("PXEConfigWriter initializing: host_id %r, pxefiles %r", self.host_id, [str(p) for p in self.pxefiles])
 
-		if not os.path.exists(self.template_file):
-			raise FileNotFoundError(f"Template file '{self.template_file}' not found")
+		if not self.context.product:
+			raise ValueError("PXEConfigWriter needs a product in context")
 
-		self.template: dict[str, list[str]] = {"pxelinux": []}
+	@property
+	def host_id(self) -> str:
+		return self.context.host.id
 
-		# Set pxe config content
-		self.content = self._get_pxe_config_content()
-
-		try:
-			del self.append["pckey"]
-		except KeyError:
-			pass  # Key may be non-existing
-
-	def _get_pxe_config_content(self) -> str:
-		"""
-		Gets PXEConfig string.
-
-		This method extracts information about the PXEConfig from the
-		template file, parses it using information from the
-		productPropertyStates and assembles the data as a string.
-
-		:param template_file: Path of the PXE template file.
-		:type template_file: str
-
-		:returns: PXE configuration information as string.
-		:rtype: str
-
-		:raises Exception: In case uefi module is not licensed.
-		"""
-		logger.debug("Reading template '%s'", self.template_file)
-		with open(self.template_file, "r", encoding="utf-8") as file:
-			template_lines = file.readlines()
-
-		content = ""
-		append_line_properties = []
-		hostname, domain = self.host_id.split(".", 1)
-		for line in template_lines:
-			line = line.rstrip()
-			line = line.replace("%fqdn%", self.host_id).replace("%hostname%", hostname).replace("%domain%", domain)
-			for property_id, value in self.product_property_states.items():
-				logger.trace("Property: '%s': value: '%s'", property_id, value)
-				line = line.replace(f"%{property_id}%", value)
-
-			stripped_line = line.lstrip()
-			if stripped_line.startswith(("append", "linux")):
-				if stripped_line.startswith("append="):
-					append_line_properties = stripped_line.split("append=", 1)[1].strip('"').split()
-				else:
-					append_line_properties = stripped_line.split()[1:]
-				for key, value in self.append.items():
-					if value:
-						append_line_properties = [x for x in append_line_properties if not x.startswith(f"{key}=")]
-						if "bootimagerootpassword" in key.lower():
-							pwhash = password_hash(value).replace("$", r"\$")
-							append_line_properties.append(f"pwh={pwhash}")
-						elif "pwh" in key.lower():
-							pwhash = value.replace("$", r"\$")
-							append_line_properties.append(f"{key}={pwhash}")
-						else:
-							append_line_properties.append(f"{key}={value}")
-					else:
-						append_line_properties.append(str(key))
-
-				if stripped_line.startswith("append"):
-					content = f'{content}append="{" ".join(append_line_properties)}"\n'
-				else:
-					content = f"{content}linux {' '.join(append_line_properties)}\n"
-			else:
-				content = f"{content}{line}\n"
-
-		return content
+	@property
+	def product_id(self) -> str:
+		assert self.context.product
+		return self.context.product.product.id
 
 	def run(self) -> None:
 		with log_context({"instance": "PXEConfigWriter"}):
@@ -181,28 +76,29 @@ class PXEConfigWriter(Thread):
 		This method creates a regular file and append the PXE boot configuration through
 		to it. At the end the hooked callback is executed.
 		"""
-
 		logger.notice("Creating config %r and waiting for access", self.pxefiles)
 
 		inotify = Inotify()
 
+		assert self.context.product
+		grub_cfg = self.context.product.grub_cfg()
 		for pxefile in self.pxefiles:
-			if os.path.exists(pxefile):
-				logger.debug("Removing old config file %r", pxefile)
-				os.unlink(pxefile)
+			if pxefile.exists():
+				logger.debug("Removing old config file '%s'", pxefile)
+				pxefile.unlink()
 
-			logger.debug("Creating config file %r", pxefile)
-			with open(pxefile, "w", encoding="utf-8") as file:
-				file.write(self.content)
+			logger.debug("Creating config file '%s'", pxefile)
+			logger.trace(grub_cfg)
+			pxefile.write_text(grub_cfg, encoding="utf-8")
 			try:
 				shutil.chown(pxefile, -1, opsi_config.get("groups", "admingroup"))
-				os.chmod(pxefile, 0o644)
+				pxefile.chmod(0o640)
 			except Exception as err:
-				logger.error("Failed to set permissions on %r: %s", pxefile, err)
+				logger.error("Failed to set permissions on '%s': %s", pxefile, err)
 
-			logger.debug("Watching config file %r for read with inotify", pxefile)
+			logger.debug("Watching config file '%s' for read with inotify", pxefile)
 
-			inotify.add_watch(pxefile)
+			inotify.add_watch(str(pxefile))
 
 		file_accessed = None
 		while not self._should_stop and not file_accessed:
@@ -213,15 +109,24 @@ class PXEConfigWriter(Thread):
 					file_accessed = path
 					break
 
+		for pxefile in self.pxefiles:
+			try:
+				inotify.remove_watch(str(pxefile))
+			except Exception as err:
+				logger.error("Failed to remove inotify watch for '%s': %s", pxefile, err)
+
 		if file_accessed:
 			logger.info("Config file %r was accessed", file_accessed)
 			if self._callback:
 				self._callback(self)
 
 		for pxefile in self.pxefiles:
-			if os.path.exists(pxefile):
+			if pxefile.exists():
 				logger.notice("Deleting config file %r", pxefile)
-				os.unlink(pxefile)
+				try:
+					pxefile.unlink()
+				except Exception as err:
+					logger.error("Failed to delete config file '%s': %s", pxefile, err)
 			else:
 				logger.notice("Config file %r already deleted", pxefile)
 

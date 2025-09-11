@@ -3,36 +3,28 @@
 # All rights reserved.
 # License: AGPL-3.0-only
 
-"""
-opsipxeconfd
-"""
-
 import grp
 import os
 import secrets
 from pathlib import Path
-from socket import AF_UNIX, SOCK_STREAM
+from socket import AF_UNIX, SOCK_STREAM, socket
 from socket import error as socket_error
-from socket import socket
 from threading import Lock, Thread
 from time import asctime, localtime, time
 from typing import Any
 
-from opsicommon.config.opsi import OpsiConfig
 from opsicommon.logging import get_logger, log_context, secret_filter
-from opsicommon.objects import Host, NetbootProduct, OpsiClient, ProductOnClient
-from opsicommon.types import forceHostId, forceStringList
+from opsicommon.objects import Host, OpsiClient, ProductOnClient
+from opsicommon.types import forceHostId
 
-from opsipxeconfd.logging import init_logging
+from opsipxeconfd import PXE_CONFIG_DIR, get_depot_id, opsi_config
+from opsipxeconfd._logging import init_logging
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
-from opsipxeconfd.setup import get_service_connection
+from opsipxeconfd.service import get_service_connection
+from opsipxeconfd.template import get_template_context
 from opsipxeconfd.util import ClientConnection, StartupTask
 
-ELILO_X86 = "x86"
-ELILO_X64 = "x64"
-
 logger = get_logger()
-opsi_config = OpsiConfig()
 
 
 class Opsipxeconfd(Thread):
@@ -65,8 +57,6 @@ class Opsipxeconfd(Thread):
 		self._pxe_config_writers: list[PXEConfigWriter] = []
 		self._startup_task: StartupTask | None = None
 		self._opsi_admin_gid = grp.getgrnam(opsi_config.get("groups", "admingroup"))[2]
-		self._secure_boot_module = False
-		self._uefi_module = False
 		logger.comment("opsi pxe configuration service starting")
 		self.service = get_service_connection()
 
@@ -143,21 +133,7 @@ class Opsipxeconfd(Thread):
 		"""
 		logger.notice("Reloading opsipxeconfd")
 		init_logging(self.config)
-		self._get_licensing_info()
 		self._create_socket()
-
-	def _get_licensing_info(self) -> None:
-		info = self.service.backend_getLicensingInfo()  # type: ignore[attr-defined]
-		logger.debug("Got licensing info from service: %s", info)
-		if "uefi" in info["available_modules"]:
-			self._uefi_module = True
-		if "secureboot" in info["available_modules"]:
-			self._secure_boot_module = True
-		logger.info(
-			"uefi module is %s, secureboot module is %s",
-			"enabled" if self._uefi_module else "disabled",
-			"enabled" if self._secure_boot_module else "disabled",
-		)
 
 	def _create_socket(self) -> None:
 		"""
@@ -322,24 +298,24 @@ class Opsipxeconfd(Thread):
 		except Exception as err:
 			logger.error("Failed to remove PXE config writer: %s", err)
 
-		# renew objects and check if anythin changes on service since callback
 		try:
 			product_on_client: ProductOnClient = sorted(
 				self.service.productOnClient_getObjects(  # type: ignore[attr-defined]
 					productType="NetbootProduct",
-					clientId=pcw.product_on_client.clientId,
-					productId=pcw.product_on_client.productId,
+					clientId=pcw.host_id,
+					productId=pcw.product_id,
 				),
 				key=lambda poc: poc.modificationTime or "",
 				reverse=True,
 			)[0]
-		except IndexError:
+		except IndexError as err:
+			logger.warning("No ProductOnClient found for host '%s' and product '%s': %s", pcw.host_id, pcw.product_id, err)
 			return
 
-		always = product_on_client.actionRequest == "always"
 		product_on_client.setActionProgress("pxe boot configuration read")
-		if not always:
+		if product_on_client.actionRequest != "always":
 			product_on_client.setActionRequest("none")
+
 		self.service.productOnClient_updateObjects([product_on_client])  # type: ignore[attr-defined]
 
 	def status(self) -> str:
@@ -414,7 +390,7 @@ class Opsipxeconfd(Thread):
 				logger.info("No netboot products with action requests for client '%s' found.", host_id)
 				return "Boot configuration updated"
 
-			depot_id = str(self.config["depotId"])
+			depot_id = get_depot_id()
 
 			logger.debug("Searching for product '%s' on depot '%s'", product_on_client.productId, depot_id)
 			try:
@@ -436,13 +412,11 @@ class Opsipxeconfd(Thread):
 				logger.error("Product %s not found", product_on_depot)
 				return "Boot configuration updated"
 
-			pxe_config_template = self._get_pxe_config_template(product_on_client, product)
-			logger.debug("Using pxe config template '%s'", pxe_config_template)
+			context = get_template_context(
+				host=host, product_on_depot=product_on_depot, product_on_client=product_on_client, product=product
+			)
+			pxefiles = self._get_pxe_config_files(host, host_identifiers=context.config_states["netboot.host_identifiers"].str_values)
 
-			pxefiles = [
-				os.path.join(self.config["pxeDir"], f)
-				for f in self._get_pxe_config_file_names(host, use_mac_address=self.config["useMacAddress"])
-			]
 			stop_pxe_config_writers: set[PXEConfigWriter] = set()
 			for pcw in self._pxe_config_writers:
 				for pxefile in pxefiles:
@@ -457,53 +431,27 @@ class Opsipxeconfd(Thread):
 				pcw.stop()
 				pcw.join(5)
 
-			service_address = self._get_config_service_address(host_id)
-
-			# Append arguments
-			append = {
-				"hn": host_id.split(".")[0],
-				"dn": ".".join(host_id.split(".")[1:]),
-				"host_id": host_id,
-				"product": product.id,
-				"macaddress": host.getHardwareAddress(),
-				"service": service_address,
-			}
-			if self.config["useOneTimePassword"]:
-				# Use one time password
+			if context.config_states["netboot.use_host_onetime_password"].bool_value:
+				logger.info("Using one time password for host %r", host_id)
 				otp = secrets.token_hex(16)
 				# Only send needed attributes to prevent a loop
 				self.service.host_updateObjects([OpsiClient(id=host.id, oneTimePassword=otp)])  # type: ignore[attr-defined]
-				append["otp"] = otp
-				logger.debug("Using one time password for host %r", host_id)
+				context.linux.additional_cmdline_params["otp"] = otp
 			else:
-				# Use opsi host key
-				logger.debug("Using opsi host key for host %r", host_id)
-				append["pckey"] = host.getOpsiHostKey()
-				secret_filter.add_secrets(append["pckey"])
-
-			append.update(self._get_additional_bootimage_parameters(host_id))
-			logger.debug("Append params for %r: %r", host_id, append)
-
-			# Get product property states
-			product_property_states = {
-				property_id: ",".join(values)
-				for property_id, values in self.service.productPropertyState_getValues(  # type: ignore[attr-defined]
-					product_ids=[product.id], object_ids=[host_id]
-				).items()
-			}
+				logger.info("Using opsi host key for host %r", host_id)
+				opsi_host_key = host.getOpsiHostKey()
+				if opsi_host_key:
+					secret_filter.add_secrets(opsi_host_key)
+					context.linux.additional_cmdline_params["pckey"] = opsi_host_key
+				else:
+					logger.error("No opsi host key set for host %r", host_id)
 
 			pxe_config_writer: PXEConfigWriter | None = None
 			try:
 				logger.info("Creating thread for pxeconfig %d", len(self._pxe_config_writers) + 1)
 				pxe_config_writer = PXEConfigWriter(
-					template_file=pxe_config_template,
-					host_id=host_id,
-					product_on_client=product_on_client,
-					append=append,
-					product_property_states=product_property_states,
+					context=context,
 					pxefiles=pxefiles,
-					secure_boot_module=self._secure_boot_module,
-					uefi_module=self._uefi_module,
 					callback=self.pxe_config_writer_callback,
 				)
 				with self._pxe_config_writers_lock:
@@ -547,106 +495,35 @@ class Opsipxeconfd(Thread):
 			pcw.stopped_event.wait(5)
 			logger.notice("PXE boot configuration for host '%s' removed", host_id)
 
-	def _get_pxe_config_template(self, product_on_client: ProductOnClient, product: NetbootProduct) -> str:
-		"""
-		Get pxe template to use.
-
-		This method determines the pxe template file that should be used for a client
-		specified by fqdn in host_id. This depends on the architecture and the type
-		of NetbootProduct and action request.
-
-		:rtype: str
-		:returns: The absolute path to the template that should be used for the client.
-		"""
-		pxe_config_template = None
-		if product.pxeConfigTemplate:
-			if product.pxeConfigTemplate in ("install-x64", "install3264"):
-				logger.warning("Product %r is using obsolete pxe config template %r, using default.", product.id, product.pxeConfigTemplate)
-			else:
-				pxe_config_template = product.pxeConfigTemplate
-				logger.notice(
-					"Special pxe config template %r will be used used for product %r (host %r)",
-					pxe_config_template,
-					product.id,
-					product_on_client.clientId,
-				)
-
-		if not pxe_config_template:
-			logger.debug("Using default config template")
-			pxe_config_template = self.config["pxeConfTemplate"]
-
-		assert pxe_config_template
-
-		if not os.path.isabs(pxe_config_template):  # Not an absolute path
-			logger.debug("pxeConfigTemplate is not an absolute path.")
-			pxe_config_template = os.path.join(os.path.dirname(self.config["pxeConfTemplate"]), pxe_config_template)
-			logger.debug("pxeConfigTemplate changed to %s", pxe_config_template)
-
-		return pxe_config_template
-
 	@staticmethod
-	def _get_pxe_config_file_names(host: Host, use_mac_address: bool = True) -> list[str]:
+	def _get_pxe_config_files(host: Host, host_identifiers: list[str] | None = None) -> list[Path]:
+		pxe_config_path = Path(PXE_CONFIG_DIR)
+		if not host_identifiers:
+			host_identifiers = ["system_uuid", "mac_address"]
 		file_names = []
 		if host.systemUUID:
 			logger.debug("Got system UUID '%s' for host '%s'", host.systemUUID, host.id)
-			file_names.append(host.systemUUID)
+			filename = host.systemUUID
+			if "system_uuid" in host_identifiers:
+				file_names.append(pxe_config_path / filename)
+			else:
+				logger.debug(
+					"Not adding config file '%s' for host '%s' because system_uuid is not set in host_identifiers", filename, host.id
+				)
 		if host.hardwareAddress:
 			logger.debug("Got hardware address '%s' for host '%s'", host.hardwareAddress, host.id)
 			filename = f"01-{host.hardwareAddress.replace(':', '-')}"
-			if use_mac_address:
-				file_names.append(filename)
+			if "mac_address" in host_identifiers:
+				file_names.append(pxe_config_path / filename)
 			else:
-				logger.debug("Not adding config file '%s' for host '%s' because use_mac_address is false", filename, host.id)
+				logger.debug(
+					"Not adding config file '%s' for host '%s' because mac_address is not set in host_identifiers", filename, host.id
+				)
 		if not file_names:
-			if use_mac_address:
+			if "mac_address" in host_identifiers and "system_uuid" in host_identifiers:
 				raise RuntimeError(f"Neither system UUID nor hardware address known for host '{host.id}'")
-			raise RuntimeError(f"System UUID not known for host '{host.id}'")
+			if "system_uuid" in host_identifiers:
+				raise RuntimeError(f"System UUID not known for host '{host.id}'")
+			if "mac_address" in host_identifiers:
+				raise RuntimeError(f"Hardware address not known for host '{host.id}'")
 		return file_names
-
-	def _get_config_service_address(self, host_id: str) -> str:
-		"""
-		Returns the config service address for `host_id`.
-
-		This method requests the url of the configserver, ensures
-		that it ends with /rpc and returns it as a string.
-
-		:param host_id: id of a host.
-		:type host_id: str
-
-		:returns: url of the configserver.
-		:rtype: str
-		"""
-		configs = self.service.configState_getValues(  # type: ignore[attr-defined]
-			config_ids=["clientconfig.configserver.url"], object_ids=[host_id]
-		)
-		logger.debug(configs)
-		address = (configs.get(host_id, {}).get("clientconfig.configserver.url") or [None])[0]
-		if not address:
-			raise RuntimeError(f"Failed to get config server address for {host_id!r}")
-		if not address.endswith("/rpc"):
-			address += "/rpc"
-		return address
-
-	def _get_additional_bootimage_parameters(self, host_id: str) -> dict[str, str]:
-		"""
-		Returns additional bootimage parameters.
-
-		This method requests additional bootimage parameters set for host_id
-		and yields them (generator!).
-
-		:param host_id: fqdn of client.
-		:type host_id: str
-		:returns: key-value pairs as tuple (value possibly empty) as yield.
-		:rtype: Tuple
-		"""
-		configs = self.service.configState_getValues(  # type: ignore[attr-defined]
-			config_ids=["opsi-linux-bootimage.append"], object_ids=[host_id]
-		)
-		params = {}
-		for value in forceStringList(configs.get(host_id, {}).get("opsi-linux-bootimage.append", [])):
-			key = value
-			val = ""
-			if "=" in key:
-				key, val = value.split("=", 1)
-			params[key.lower().strip()] = val.strip()
-		return params

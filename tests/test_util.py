@@ -7,8 +7,7 @@ import os
 from pathlib import Path
 from unittest import mock
 
-from opsipxeconfd.setup import password_hash
-from opsipxeconfd.util import pid_file
+from opsipxeconfd.util import password_hash, pid_file
 
 
 def test_pid_file(tmp_path: Path) -> None:
@@ -19,17 +18,22 @@ def test_pid_file(tmp_path: Path) -> None:
 
 
 def test_password_hash() -> None:
-	with mock.patch("purecrypt.Crypt.generate_salt", lambda _hash_type: "$6$0123456789abcdef"):
+	with mock.patch("purecrypt.Crypt.generate_salt", lambda *args: "$6$0123456789abcdef"):
 		pw_hash = password_hash("password1234")
 	# mkpasswd -m sha-512 -S 0123456789abcdef -R 5000 password1234
 	assert pw_hash == "$6$0123456789abcdef$EfziIn9cELczcFpjUwHWzRm8Cb03CHBpyUyE4asFools/Zzi3Z7f1wvR6OtOix0zzr81ROdRdJowCWdk37Wo00"
 
 	for password in ("password1234", "üw9Ä%$3kföd&3ä3k!"):
-		pw_hash2 = password_hash(password)
-		assert "." not in pw_hash2
-		assert pw_hash != pw_hash2
-		parts = pw_hash.split("$")
-		assert len(parts) == 4
-		assert parts[0] == ""
-		assert parts[1] == "6"  # $6$ is SHA-512
-		assert len(parts[2]) == 16  # salt len 16
+		for _method in ("md5", "sha512"):
+			pw_hash2 = password_hash(password, method=_method)
+			assert "." not in pw_hash2
+			assert pw_hash != pw_hash2
+			parts = pw_hash2.split("$")
+			assert len(parts) == 4
+			assert parts[0] == ""
+			if _method == "md5":
+				assert parts[1] == "1"
+				assert len(parts[2]) == 8
+			else:
+				assert parts[1] == "6"
+				assert len(parts[2]) == 16

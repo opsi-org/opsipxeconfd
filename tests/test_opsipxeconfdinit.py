@@ -12,10 +12,8 @@ from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit
 
 def test_process_config(tmp_path: Path) -> None:
 	conf_file = tmp_path / "opsipxeconfd.conf"
-	conf_file.write_text("pxe config template = /path\nmax control connections = 50\nuse mac address = false\n")
+	conf_file.write_text("max control connections = 50\n")
 	with mock.patch.object(sys, "argv", ["opsipxeconfd", "-c", str(conf_file), "setup"]):
 		init = OpsipxeconfdInit()
 		init.process_config()
-		assert init.config["pxeConfTemplate"] == "/path"
 		assert init.config["maxConnections"] == 50
-		assert init.config["useMacAddress"] is False
