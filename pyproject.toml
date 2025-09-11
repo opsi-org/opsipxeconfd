@@ -1,6 +1,6 @@
 [project]
 name = "opsipxeconfd"
-version = "4.3.10.4"
+version = "4.3.10.5"
 description = "opsi pxe configuration service"
 readme = "README.md"
 license = "AGPL-3.0-only"
