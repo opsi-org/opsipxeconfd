@@ -7,7 +7,7 @@ from typing import Dict
 
 from opsicommon.logging import DEFAULT_COLORED_FORMAT, DEFAULT_FORMAT, LOG_NONE, handle_log_exception, logging_config
 
-LOG_FILE = "/var/log/opsi/opsipxeconfd/opsipxeconfd.log"
+from opsipxeconfd import LOG_FILE
 
 
 def init_logging(config: Dict) -> None:

@@ -457,11 +457,16 @@ class Opsipxeconfd(Thread):
 				)
 				with self._pxe_config_writers_lock:
 					self._pxe_config_writers.append(pxe_config_writer)
+
 				pxe_config_writer.start()
-				logger.notice("PXE boot configuration for host %s is now set at %s", host_id, pxefiles)
+				pxe_config_writer.ready_event.wait(15)
+				if pxe_config_writer.error:
+					raise pxe_config_writer.error
+
+				logger.notice("PXE boot configuration for host %r is now set at %s", host_id, [str(f) for f in pxefiles])
 				return "Boot configuration updated"
 			except Exception as err:
-				logger.error("Failed to create pxe config writer: %s", err)
+				logger.error("Failed to create pxe config for host %r: %s", host_id, err)
 				if pxe_config_writer:
 					with self._pxe_config_writers_lock:
 						try:

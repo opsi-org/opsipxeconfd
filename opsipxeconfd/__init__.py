@@ -10,13 +10,7 @@ from opsicommon.system.info import linux_distro_id_like
 
 __version__ = "4.3.9.2"
 
-opsi_config = OpsiConfig()
-
-
-def get_depot_id() -> str:
-	return opsi_config.get("host", "id")
-
-
+LOG_FILE = "/var/log/opsi/opsipxeconfd/opsipxeconfd.log"
 ERROR_MARKER = "(ERROR)"
 CONFIG_FILE = "/etc/opsi/opsipxeconfd.conf"
 PID_FILE = "/var/run/opsipxeconfd/opsipxeconfd.pid"
@@ -31,3 +25,9 @@ LEGACY_PXE_CONFIG_DIR = f"{LINUX_BOOTIMAGE_DIR}/cfg"
 GRUB_CFG_TEMPLATE = "/usr/share/opsipxeconfd/grub.cfg"
 GRUB_CFG = f"{PXE_CONFIG_DIR}/grub.cfg"
 DEFAULT_PRODUCT_GRUB_CFG = f"{LINUX_BOOTIMAGE_DIR}/grub.cfg"
+
+opsi_config = OpsiConfig()
+
+
+def get_depot_id() -> str:
+	return opsi_config.get("host", "id")

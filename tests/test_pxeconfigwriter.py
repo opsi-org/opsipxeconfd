@@ -4,7 +4,6 @@
 # License: AGPL-3.0-only
 
 import re
-import time
 from pathlib import Path
 from threading import Event
 from typing import Any
@@ -44,10 +43,8 @@ def test_pxe_config_writer(tmp_path: Path) -> None:
 	)
 	pcw.start()
 
-	for _ in range(5):
-		if all(pxefile.exists() for pxefile in pxefiles):
-			break
-		time.sleep(1)
+	pcw.ready_event.wait(5)
+	assert pcw.error is None
 
 	for pxefile in pxefiles:
 		data = pxefile.read_text(encoding="utf-8")
@@ -148,7 +145,6 @@ def test_pxe_config_oneTimePassword(tmp_path: Path) -> None:
 	):
 		Opsipxeconfd({}).update_boot_configuration(client_id)
 
-		time.sleep(2)
 		assert isinstance(mock_service_client.updated_host, OpsiClient)
 
 		data = (tmp_path / system_uuid).read_text(encoding="utf-8")

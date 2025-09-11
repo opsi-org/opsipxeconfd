@@ -12,6 +12,7 @@ from threading import Lock
 from typing import Any, Literal
 
 from jinja2 import Template
+from jinja2.exceptions import UndefinedError
 from opsicommon.logging import get_logger
 from opsicommon.objects import NetbootProduct, OpsiClient, OpsiDepotserver, ProductOnClient, ProductOnDepot
 from purecrypt import Method  # type: ignore[import]
@@ -246,7 +247,18 @@ class TemplateContextProduct:
 				logger.info("Using pxe config template file '%s' from product '%s'", grub_cfg, self._product.id)
 			grub_cfg = read_grub_cfg(pxe_config_template)
 
-		grub_cfg = Template(grub_cfg).render(self._context.context_args())
+		try:
+			context_args = self._context.context_args()
+			grub_cfg = Template(grub_cfg).render(context_args)
+		except UndefinedError as err:
+			logger.error(
+				"Error rendering grub config template for product '%s': %s\nTemplate:\n%s\nContext:\n%s",
+				self._product.id,
+				err,
+				grub_cfg,
+				context_args,
+			)
+			raise
 		# Replace legacy placeholders
 		hostname, domain = self._context.host.id.split(".", 1)
 		grub_cfg = grub_cfg.replace("%fqdn%", self._context.host.id)

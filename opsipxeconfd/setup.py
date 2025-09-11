@@ -10,8 +10,7 @@ from opsicommon.objects import OpsiDepotserver
 from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
 
-from opsipxeconfd import GRUB_CFG, get_depot_id
-from opsipxeconfd._logging import LOG_FILE
+from opsipxeconfd import GRUB_CFG, LOG_FILE, PXE_CONFIG_DIR, get_depot_id
 from opsipxeconfd.service import get_service_connection
 from opsipxeconfd.template import get_template_context, render_grub_cfg
 
@@ -31,9 +30,14 @@ def running_in_docker() -> bool:
 
 def setup_files() -> None:
 	logger.info("Setup files and permissions")
+
 	log_dir = Path(LOG_FILE).parent
 	log_dir.mkdir(parents=True, exist_ok=True)
 	set_rights(log_dir)
+
+	pxe_config_dir = Path(PXE_CONFIG_DIR)
+	pxe_config_dir.mkdir(parents=True, exist_ok=True)
+	set_rights(pxe_config_dir)
 
 
 def setup_limits() -> None:

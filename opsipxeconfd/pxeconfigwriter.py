@@ -40,9 +40,10 @@ class PXEConfigWriter(Thread):
 		self.context = context
 		self.pxefiles = pxefiles
 		self._callback = callback
-		self._running = False
 		self._should_stop = False
+		self.error: Exception | None = None
 		self.start_time = time.time()
+		self.ready_event = Event()
 		self.stopped_event = Event()
 
 		logger.info("PXEConfigWriter initializing: host_id %r, pxefiles %r", self.host_id, [str(p) for p in self.pxefiles])
@@ -61,12 +62,12 @@ class PXEConfigWriter(Thread):
 
 	def run(self) -> None:
 		with log_context({"instance": "PXEConfigWriter"}):
-			self._running = True
 			try:
 				self._run()
 			except Exception as err:
 				logger.error(err, exc_info=True)
-			self._running = False
+				self.error = err
+			self.ready_event.set()
 			self.stopped_event.set()
 
 	def _run(self) -> None:
@@ -99,6 +100,8 @@ class PXEConfigWriter(Thread):
 			logger.debug("Watching config file '%s' for read with inotify", pxefile)
 
 			inotify.add_watch(str(pxefile))
+
+		self.ready_event.set()
 
 		file_accessed = None
 		while not self._should_stop and not file_accessed:
