@@ -54,7 +54,7 @@ def test_pxe_config_writer(tmp_path: Path) -> None:
 
 	for pxefile in pxefiles:
 		data = pxefile.read_text(encoding="utf-8")
-		assert "grub_platform" in data
+		assert 'echo "grub.cfg"' in data
 		assert f"{host.id}\ngrub-cfg\n{host.id}\n" in data
 
 	# Wait for callback to finish

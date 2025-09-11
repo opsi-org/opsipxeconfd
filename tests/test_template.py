@@ -171,7 +171,7 @@ def test_render_grub_cfg(tmp_path: Path) -> None:
 
 	with patch("opsipxeconfd.template.GRUB_CFG_TEMPLATE", str(grub_cfg_template)):
 		data = render_grub_cfg(context)
-		assert "grub_platform" in data
+		assert 'echo "grub.cfg"' in data
 		assert 'echo "gfxmode"' in data
 		assert 'echo "password: $1$' in data
 		assert (
