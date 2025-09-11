@@ -6,11 +6,12 @@
 import grp
 import os
 import secrets
+from datetime import datetime
 from pathlib import Path
 from socket import AF_UNIX, SOCK_STREAM, socket
 from socket import error as socket_error
 from threading import Lock, Thread
-from time import asctime, localtime, time
+from time import time
 from typing import Any
 
 from opsicommon.logging import get_logger, log_context, secret_filter
@@ -334,13 +335,13 @@ class Opsipxeconfd(Thread):
 		with self._client_connection_lock:
 			result += f"{len(self._client_connections)} control connection(s) established\n"
 			for idx, connection in enumerate(self._client_connections, start=1):
-				result += f"    Connection {idx} established at: {asctime(localtime(connection.start_time))}\n"
+				result += f"    Connection {idx} established at: {datetime.fromtimestamp(connection.start_time).isoformat()}\n"
 
 		result += f"\n{len(self._pxe_config_writers)} boot configuration(s) set\n"
 		for pcw in self._pxe_config_writers:
 			result += (
-				f"Boot config for client '{pcw.host_id}' (path: {pcw.pxefiles}; configuration: {pcw.append}) "
-				f"set since {asctime(localtime(pcw.start_time))}\n"
+				f"Boot config for client '{pcw.host_id}' (path: {pcw.pxefiles}) "
+				f"set since {datetime.fromtimestamp(pcw.start_time).isoformat()}\n"
 			)
 		logger.notice(result)
 		return result
