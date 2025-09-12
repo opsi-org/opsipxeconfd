@@ -118,19 +118,19 @@ class PXEConfigWriter(Thread):
 				logger.error("Failed to remove inotify watch for '%s': %s", pxefile, err)
 
 		if file_accessed:
-			logger.notice("Config file %r was accessed", file_accessed)
+			logger.notice("Config file '%s' was accessed", file_accessed)
 			if self._callback:
 				self._callback(self)
 
 		for pxefile in self.pxefiles:
 			if pxefile.exists():
-				logger.notice("Deleting config file %r", pxefile)
+				logger.info("Deleting config file '%s'", pxefile)
 				try:
 					pxefile.unlink()
 				except Exception as err:
 					logger.error("Failed to delete config file '%s': %s", pxefile, err)
 			else:
-				logger.notice("Config file %r already deleted", pxefile)
+				logger.info("Config file '%s' already deleted", pxefile)
 
 	def stop(self) -> None:
 		"""
