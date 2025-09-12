@@ -110,10 +110,10 @@ def test_TemplateContext_linux_cmdline() -> None:
 
 	assert context.linux.cmdline() == "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
 	kernel_cmdline = context.linux.cmdline("netboot.linux-bootimage.cmdline")
-	kernel_cmdline = re.sub(r"pwh=\$6\$\S+", "pwh=...", kernel_cmdline)
+	kernel_cmdline = re.sub(r'pwh="\\\$6\\\$\S+', 'pwh="..."', kernel_cmdline)
 	assert kernel_cmdline == (
 		"quiet splash service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
-		'option3 option5="value with spaces","value,with,commas" sub1.option6=1,value2 pwh=...'
+		'option3 option5="value with spaces","value,with,commas" sub1.option6=1,value2 pwh="..."'
 	)
 
 	# additional_params override config states
@@ -123,10 +123,10 @@ def test_TemplateContext_linux_cmdline() -> None:
 		== "option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
 	)
 	kernel_cmdline = context.linux.cmdline("netboot.linux-bootimage.cmdline")
-	kernel_cmdline = re.sub(r"pwh=\$6\$\S+", "pwh=...", kernel_cmdline)
+	kernel_cmdline = re.sub(r'pwh="\\\$6\\\$\S+', 'pwh="..."', kernel_cmdline)
 	assert kernel_cmdline == (
 		"quiet splash option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
-		'option3 option5="value with spaces","value,with,commas" pwh=...'
+		'option3 option5="value with spaces","value,with,commas" pwh="..."'
 	)
 
 	# Test other prefix
