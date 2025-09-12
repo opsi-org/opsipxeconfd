@@ -3,6 +3,7 @@
 # All rights reserved.
 # License: AGPL-3.0-only
 
+import re
 import shutil
 from pathlib import Path
 from textwrap import dedent
@@ -38,7 +39,7 @@ def test_TemplateContextConfigStates() -> None:
 
 
 def test_TemplateContextConfigState_password_hash() -> None:
-	state = TemplateContextConfigState(id="netboot.grub.password", values=["secret"], _is_password=True)
+	state = TemplateContextConfigState(id="netboot.grub.password", values=["secret"])
 
 	pw_hash_md5 = state.password_hash("md5", "shadow")
 	assert pw_hash_md5
@@ -97,12 +98,16 @@ def test_TemplateContext_linux_cmdline() -> None:
 	context.config_states["netboot.linux-bootimage.cmdline.sub1.option6"] = TemplateContextConfigState(
 		id="netboot.linux-bootimage.cmdline.sub1.option6", values=["1", "value2"]
 	)
+	context.config_states["netboot.linux-bootimage.cmdline.pwh"] = TemplateContextConfigState(
+		id="netboot.linux-bootimage.cmdline.pwh", values=["secret"]
+	)
 
 	assert context.linux.cmdline() == "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
 	kernel_cmdline = context.linux.cmdline("netboot.linux-bootimage.cmdline")
+	kernel_cmdline = re.sub(r"pwh=\$6\$\S+", "pwh=...", kernel_cmdline)
 	assert kernel_cmdline == (
 		"service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
-		'option1 sub1.sub2.option2 option3 option5="value with spaces","value,with,commas" sub1.option6=1,value2'
+		'option3 option5="value with spaces","value,with,commas" sub1.option6=1,value2 pwh=...'
 	)
 
 	# additional_params override config states
@@ -111,9 +116,11 @@ def test_TemplateContext_linux_cmdline() -> None:
 		context.linux.cmdline()
 		== "option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
 	)
-	assert context.linux.cmdline("netboot.linux-bootimage.cmdline") == (
+	kernel_cmdline = context.linux.cmdline("netboot.linux-bootimage.cmdline")
+	kernel_cmdline = re.sub(r"pwh=\$6\$\S+", "pwh=...", kernel_cmdline)
+	assert kernel_cmdline == (
 		"option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
-		'sub1.sub2.option2 option3 option5="value with spaces","value,with,commas"'
+		'option3 option5="value with spaces","value,with,commas" pwh=...'
 	)
 
 	# Test other prefix
@@ -129,6 +136,12 @@ def test_TemplateContext_linux_cmdline() -> None:
 		kernel_cmdline
 		== "option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test sub1.option2=r,f"
 	)
+
+	# Test remove loglevel if splash is set
+	context.linux.additional_cmdline_params = {"splash": True, "loglevel": "3"}
+	kernel_cmdline = context.linux.cmdline("not.found")
+	assert "splash" in kernel_cmdline
+	assert "loglevel=3" not in kernel_cmdline
 
 
 def test_TemplateContext_grub_menu_entries() -> None:
@@ -171,9 +184,7 @@ def test_render_grub_cfg(tmp_path: Path) -> None:
 	)
 	context.host = OpsiClient(id="client1.opsi.test")
 	context.config_states["netboot.grub.graphicsmode"] = TemplateContextConfigState(id="netboot.grub.graphicsmode", values=[True])
-	context.config_states["netboot.grub.password"] = TemplateContextConfigState(
-		id="netboot.grub.password", values=["secret"], _is_password=True
-	)
+	context.config_states["netboot.grub.password"] = TemplateContextConfigState(id="netboot.grub.password", values=["secret"])
 	context.config_states["netboot.grub.timeout"] = TemplateContextConfigState(id="netboot.grub.timeout", values=["9"])
 	context.config_states["netboot.linux-bootimage.cmdline.option1"] = TemplateContextConfigState(
 		id="netboot.linux-bootimage.cmdline.option1", values=[True]

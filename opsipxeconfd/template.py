@@ -65,11 +65,6 @@ class TemplateContextConfigState:
 	id: str
 	values: list[str | bool] = field(default_factory=list)
 	_exists: bool = field(default=True, repr=False)
-	_is_password: bool = field(default=False, repr=False)
-
-	@property
-	def is_password(self) -> bool:
-		return self._is_password
 
 	@property
 	def exists(self) -> bool:
@@ -206,8 +201,8 @@ class TemplateContextLinux:
 				param_name = key.removeprefix(config_id_prefix).lstrip(".")
 				if param_name in self.additional_cmdline_params:
 					continue
-				if config_state.is_password:
-					cmdline.append(f"{param_name}={config_state.password_hash()}")
+				if param_name == "pwh":
+					cmdline.append(f"{param_name}={config_state.password_hash('sha512', 'shadow')}")
 					continue
 				values = config_state.values
 				if values and isinstance(values[0], bool):
@@ -224,8 +219,10 @@ class TemplateContextLinux:
 					vals.append(val)
 				if vals:
 					cmdline.append(f"{param_name}={','.join(vals)}")
-				else:
-					cmdline.append(param_name)
+
+		if "splash" in cmdline:
+			cmdline = [param for param in cmdline if not param.startswith("loglevel=")]
+
 		return " ".join(cmdline)
 
 
@@ -325,9 +322,7 @@ def get_template_context(
 	service = get_service_connection()
 	context.config_states = TemplateContextConfigStates(
 		{
-			config_id: TemplateContextConfigState(
-				id=config_id, values=values, _is_password=config_id in ("netboot.grub.password", "netboot.linux-bootimage.pwh")
-			)
+			config_id: TemplateContextConfigState(id=config_id, values=values)
 			for config_id, values in service.configState_getValues(  # type: ignore[attr-defined]
 				config_ids=["clientconfig.configserver.url", "netboot.*"], object_ids=[host.id]
 			)
