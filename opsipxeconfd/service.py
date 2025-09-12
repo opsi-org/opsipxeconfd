@@ -162,7 +162,6 @@ def get_service_connection() -> ServiceClient:
 			logger.warning(message)
 			sleep(5)
 
-	service = get_service_connection()
 	service.messagebus.register_messagebus_listener(get_messagebus_listener())
 	service.messagebus.connect(wait=True)
 	service.messagebus.send_message(
