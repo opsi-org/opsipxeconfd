@@ -101,12 +101,18 @@ def test_TemplateContext_linux_cmdline() -> None:
 	context.config_states["netboot.linux-bootimage.cmdline.pwh"] = TemplateContextConfigState(
 		id="netboot.linux-bootimage.cmdline.pwh", values=["secret"]
 	)
+	context.config_states["netboot.linux-bootimage.cmdline.splash"] = TemplateContextConfigState(
+		id="netboot.linux-bootimage.cmdline.splash", values=[True]
+	)
+	context.config_states["netboot.linux-bootimage.cmdline.quiet"] = TemplateContextConfigState(
+		id="netboot.linux-bootimage.cmdline.quiet", values=[True]
+	)
 
 	assert context.linux.cmdline() == "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
 	kernel_cmdline = context.linux.cmdline("netboot.linux-bootimage.cmdline")
 	kernel_cmdline = re.sub(r"pwh=\$6\$\S+", "pwh=...", kernel_cmdline)
 	assert kernel_cmdline == (
-		"service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
+		"quiet splash service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
 		'option3 option5="value with spaces","value,with,commas" sub1.option6=1,value2 pwh=...'
 	)
 
@@ -119,7 +125,7 @@ def test_TemplateContext_linux_cmdline() -> None:
 	kernel_cmdline = context.linux.cmdline("netboot.linux-bootimage.cmdline")
 	kernel_cmdline = re.sub(r"pwh=\$6\$\S+", "pwh=...", kernel_cmdline)
 	assert kernel_cmdline == (
-		"option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
+		"quiet splash option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
 		'option3 option5="value with spaces","value,with,commas" pwh=...'
 	)
 

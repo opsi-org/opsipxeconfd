@@ -93,7 +93,7 @@ def test_setup_grub_cfg(tmp_path: Path) -> None:
 			dedent("""
 			menuentry 'Start netboot installation' {
 				echo "Loading opsi-linux-bootimage - please wait..."
-				linux (${bootsrc})/opsi/opsi-linux-bootimage/kernel.${arch} service=http://opsi.test:4447/rpc splash
+				linux (${bootsrc})/opsi/opsi-linux-bootimage/kernel.${arch} splash service=http://opsi.test:4447/rpc
 				initrd (${bootsrc})/opsi/opsi-linux-bootimage/initramfs.${arch}
 				echo "Starting opsi-linux-bootimage - please wait..."
 			}

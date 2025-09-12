@@ -161,6 +161,11 @@ class TemplateContextGrub:
 
 @dataclass
 class TemplateContextLinux:
+	CMDLINE_PARAM_POSITION = {
+		"quiet": 1,
+		"splash": 2,
+		"loglevel": 3,
+	}
 	_context: TemplateContext
 	additional_cmdline_params: dict[str, str | bool] = field(default_factory=dict)
 
@@ -222,6 +227,8 @@ class TemplateContextLinux:
 
 		if "splash" in cmdline:
 			cmdline = [param for param in cmdline if not param.startswith("loglevel=")]
+
+		cmdline.sort(key=lambda param: self.CMDLINE_PARAM_POSITION.get(param.split("=", 1)[0], 99))
 
 		return " ".join(cmdline)
 
