@@ -38,6 +38,7 @@ def read_grub_cfg(pxe_config_template: str | None = None) -> str:
 			template_path, mtime, data = cache
 			try:
 				if template_path.stat().st_mtime == mtime:
+					logger.info("Using cached grub config template file '%s'", template_path)
 					return data
 			except FileNotFoundError:
 				pass
@@ -64,7 +65,7 @@ def read_grub_cfg(pxe_config_template: str | None = None) -> str:
 			logger.error("Grub config template %r not found", template_path)
 			return ""
 
-		logger.notice("Using grub config template file '%s'", template_path)
+		logger.info("Using grub config template file '%s'", template_path)
 
 		data = template_path.read_text(encoding="utf-8")
 		template_cache[pxe_config_template] = (template_path, template_path.stat().st_mtime, data)
