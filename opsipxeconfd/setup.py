@@ -70,6 +70,7 @@ setup_grub_cfg_lock = Lock()
 
 def setup_grub_cfg() -> None:
 	with setup_grub_cfg_lock:
+		logger.notice("Setting up GRUB configuration")
 		depot_id = get_depot_id()
 		service = get_service_connection()
 		try:
