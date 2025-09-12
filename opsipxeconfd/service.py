@@ -145,7 +145,7 @@ def get_service_connection() -> ServiceClient:
 		jsonrpc_create_objects=True,
 		jsonrpc_create_methods=True,
 	)
-	max_attempts = 6
+	max_attempts = 10
 	for attempt in range(1, max_attempts + 1):
 		try:
 			logger.notice("Connecting to opsi service at %r (attempt %d)", service.base_url, attempt)
