@@ -207,7 +207,10 @@ class TemplateContextLinux:
 				if param_name in self.additional_cmdline_params:
 					continue
 				if param_name == "pwh":
-					cmdline.append(f"{param_name}={config_state.password_hash('sha512', 'shadow')}")
+					pw_hash = config_state.password_hash("sha512", "shadow")
+					if pw_hash:
+						pw_hash = pw_hash.replace("$", r"\$")
+						cmdline.append(f'{param_name}="{pw_hash}"')
 					continue
 				values = config_state.values
 				if values and isinstance(values[0], bool):
