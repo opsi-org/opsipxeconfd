@@ -4,6 +4,7 @@
 # License: AGPL-3.0-only
 
 from pathlib import Path
+from threading import Lock
 
 from opsicommon.logging import get_logger
 from opsicommon.objects import OpsiDepotserver
@@ -11,7 +12,7 @@ from opsicommon.server.rights import set_rights
 from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
 
 from opsipxeconfd import GRUB_CFG, LOG_FILE, PXE_CONFIG_DIR, get_depot_id
-from opsipxeconfd.service import get_service_connection
+from opsipxeconfd.service import get_messagebus_listener, get_service_connection
 from opsipxeconfd.template import get_template_context, render_grub_cfg
 
 logger = get_logger()
@@ -64,33 +65,32 @@ def setup_limits() -> None:
 			logger.warning("Failed to set %s: %s", limit, err)
 
 
+setup_grub_cfg_lock = Lock()
+
+
 def setup_grub_cfg() -> None:
-	depot_id = get_depot_id()
-	service = get_service_connection()
-	try:
-		depot: OpsiDepotserver = service.host_getObjects(id=depot_id)[0]  # type: ignore[attr-defined]
-	except IndexError:
-		raise RuntimeError(f"Depot {depot_id!r} not found") from None
+	with setup_grub_cfg_lock:
+		depot_id = get_depot_id()
+		service = get_service_connection()
+		try:
+			depot: OpsiDepotserver = service.host_getObjects(id=depot_id)[0]  # type: ignore[attr-defined]
+		except IndexError:
+			raise RuntimeError(f"Depot {depot_id!r} not found") from None
 
-	context = get_template_context(host=depot)
-	data = render_grub_cfg(context)
-	grub_cfg = Path(GRUB_CFG)
-	grub_cfg.write_text(data, encoding="utf-8")
-	set_rights(grub_cfg)
+		context = get_template_context(host=depot)
+		data = render_grub_cfg(context)
+		grub_cfg = Path(GRUB_CFG)
+		grub_cfg.write_text(data, encoding="utf-8")
+		set_rights(grub_cfg)
 
 
-def setup(config: dict) -> None:
-	"""
-	Setup method for opsipxeconfd.
-
-	This method sets up the environment for the opsipxeconfd to run.
-	It creates necessary users and groups, initializes the backend and log file.
-
-	:param config: opsipxeconfd configuration dictionary as created by opsipxeconfdinit.
-	:type config: dict
-	"""
+def setup() -> None:
 	logger.notice("Running opsipxeconfd setup")
 	setup_limits()
 	po_setup_users_and_groups()
 	setup_files()
 	setup_grub_cfg()
+
+	get_messagebus_listener().set_netboot_config_changed_callback(setup_grub_cfg)
+
+	logger.notice("Setup finished")

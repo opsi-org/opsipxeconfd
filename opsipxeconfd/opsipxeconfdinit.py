@@ -16,9 +16,7 @@ from time import sleep
 from types import FrameType
 from typing import Any, Generator
 
-from configargparse import ArgParser  # type: ignore[import]
-from configargparse import ConfigFileParser  # type: ignore[import]
-from configargparse import ConfigFileParserException  # type: ignore[import]
+from configargparse import ArgParser, ConfigFileParser, ConfigFileParserException  # type: ignore[import-untyped]
 from opsicommon import __version__ as python_opsi_common_version
 from opsicommon.logging import LOG_WARNING, get_logger, log_context, set_filter_from_string
 from opsicommon.types import forceInt, forceUnicode, forceUnicodeList
@@ -271,7 +269,7 @@ class OpsipxeconfdInit:
 
 		if self.config.get("command") == "setup":
 			with log_context({"instance": "Opsipxeconfd setup"}):
-				setup(self.config)
+				setup()
 			return  # TODO: exit code handling
 
 		if self.config.get("command") == "start":
@@ -285,7 +283,7 @@ class OpsipxeconfdInit:
 
 			with log_context({"instance": "opsipxeconfd start"}):
 				with pid_file(PID_FILE):
-					setup(self.config)
+					setup()
 					self._opsipxeconfd = Opsipxeconfd(self.config)
 					self._opsipxeconfd.start()
 					sleep(1)

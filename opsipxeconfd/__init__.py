@@ -25,6 +25,7 @@ LEGACY_PXE_CONFIG_DIR = f"{LINUX_BOOTIMAGE_DIR}/cfg"
 GRUB_CFG_TEMPLATE = "/usr/share/opsipxeconfd/grub.cfg"
 GRUB_CFG = f"{PXE_CONFIG_DIR}/grub.cfg"
 DEFAULT_PRODUCT_GRUB_CFG = f"{LINUX_BOOTIMAGE_DIR}/grub.cfg"
+GRUB_CFG_MAX_UPDATE_INTERVAL = 10
 
 opsi_config = OpsiConfig()
 
