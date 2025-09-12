@@ -343,7 +343,7 @@ class Opsipxeconfd(Thread):
 				f"Boot config for client '{pcw.host_id}' (path: {pcw.pxefiles}) "
 				f"set since {datetime.fromtimestamp(pcw.start_time).isoformat()}\n"
 			)
-		logger.notice(result)
+		logger.notice("Status:\n%s", result)
 		return result
 
 	def remove_boot_configuration(self, host_id: str) -> str:

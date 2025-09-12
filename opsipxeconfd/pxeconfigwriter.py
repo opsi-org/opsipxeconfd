@@ -118,7 +118,7 @@ class PXEConfigWriter(Thread):
 				logger.error("Failed to remove inotify watch for '%s': %s", pxefile, err)
 
 		if file_accessed:
-			logger.info("Config file %r was accessed", file_accessed)
+			logger.notice("Config file %r was accessed", file_accessed)
 			if self._callback:
 				self._callback(self)
 
