@@ -205,10 +205,10 @@ class Opsipxeconfd(Thread):
 
 			logger.debug("Socket error: %s", err)
 			raise err
-		logger.notice("Got connection from client")
+
+		logger.info("Client #%d connected to socket %s", len(self._client_connections) + 1, self.config["port"])
 
 		client_connection = None
-		logger.info("Creating thread for connection %d", len(self._client_connections) + 1)
 		try:
 			client_connection = ClientConnection(self, sock, self.client_connection_callback)
 			with self._client_connection_lock:
