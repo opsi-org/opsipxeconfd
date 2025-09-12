@@ -31,6 +31,7 @@ template_cache_lock: Lock = Lock()
 
 def read_grub_cfg(pxe_config_template: str | None = None) -> str:
 	pxe_config_template = pxe_config_template or ""
+	template_path: Path | None = None
 	with template_cache_lock:
 		cache = template_cache.get(pxe_config_template)
 		if cache:
@@ -41,7 +42,6 @@ def read_grub_cfg(pxe_config_template: str | None = None) -> str:
 			except FileNotFoundError:
 				pass
 
-		template_path = Path(DEFAULT_PRODUCT_GRUB_CFG)
 		if pxe_config_template:
 			for path in Path(PXE_CONFIG_DIR), Path(LEGACY_PXE_CONFIG_DIR):
 				cfg = path / pxe_config_template
@@ -49,11 +49,22 @@ def read_grub_cfg(pxe_config_template: str | None = None) -> str:
 					template_path = cfg
 					break
 
+			if not template_path:
+				logger.error(
+					"Grub config template file %r not found in %r or %r, using default template",
+					pxe_config_template,
+					PXE_CONFIG_DIR,
+					LEGACY_PXE_CONFIG_DIR,
+				)
+
+		if not template_path:
+			template_path = Path(DEFAULT_PRODUCT_GRUB_CFG)
+
 		if not template_path.exists():
 			logger.error("Grub config template %r not found", template_path)
 			return ""
 
-		logger.info("Using grub config template file '%s'", template_path)
+		logger.notice("Using grub config template file '%s'", template_path)
 
 		data = template_path.read_text(encoding="utf-8")
 		template_cache[pxe_config_template] = (template_path, template_path.stat().st_mtime, data)
