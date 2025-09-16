@@ -518,7 +518,7 @@ class Opsipxeconfd(Thread):
 				)
 		if host.hardwareAddress:
 			logger.debug("Got hardware address '%s' for host '%s'", host.hardwareAddress, host.id)
-			filename = f"01-{host.hardwareAddress.replace(':', '-')}.cfg"
+			filename = f"{host.hardwareAddress.replace(':', '-')}.cfg"
 			if "mac_address" in host_identifiers:
 				file_names.append(pxe_config_path / filename)
 			else:

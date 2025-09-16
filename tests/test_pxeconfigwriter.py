@@ -26,7 +26,7 @@ def test_pxe_config_writer(tmp_path: Path) -> None:
 		host=host,
 		product=product,
 	)
-	pxefiles = [tmp_path / "01-00-11-22-33-44-55", tmp_path / "11112222-3333-4444-5555-666677778888"]
+	pxefiles = [tmp_path / "00-11-22-33-44-55.cfg", tmp_path / "11112222-3333-4444-5555-666677778888.cfg"]
 
 	grub_cfg_template = Path(tmp_path) / "template" / "grub.cfg"
 	grub_cfg_template.parent.mkdir(parents=True, exist_ok=True)
@@ -158,7 +158,7 @@ def test_pxe_config_oneTimePassword(tmp_path: Path) -> None:
 
 		assert isinstance(mock_service_client.updated_host, OpsiClient)
 
-		data = (tmp_path / system_uuid).read_text(encoding="utf-8")
+		data = (tmp_path / f"{system_uuid}.cfg").read_text(encoding="utf-8")
 		assert "default_grub_cfg" in data
 		match = re.search("otp=([a-z0-9]+)", data)
 		assert match
