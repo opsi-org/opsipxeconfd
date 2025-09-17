@@ -238,14 +238,16 @@ def test_render_grub_cfg(tmp_path: Path) -> None:
 
 
 def test_product_grub_cfg(tmp_path: Path) -> None:
-	pxe_config_dir = tmp_path / "cfg"
-	legacy_pxe_config_dir = tmp_path / "legacy_cfg"
+	opsi_pxe_dir = tmp_path / "opsi"
+	pxe_config_dir = opsi_pxe_dir / "cfg"
+	legacy_pxe_config_dir = opsi_pxe_dir / "opsi-linux-bootimage" / "cfg"
 	default_product_grub_cfg = tmp_path / "grub.cfg"
-	template_desinfect = pxe_config_dir / "desinfect"
+	template_desinfect = opsi_pxe_dir / "desinfect" / "grub.cfg"
 	legacy_template_igel = legacy_pxe_config_dir / "igel"
 
-	pxe_config_dir.mkdir()
-	legacy_pxe_config_dir.mkdir()
+	pxe_config_dir.mkdir(parents=True)
+	legacy_pxe_config_dir.mkdir(parents=True)
+	template_desinfect.parent.mkdir(parents=True)
 	template_desinfect.write_text("template_desinfect: {{host.id}} - {{product.id}}", encoding="utf-8")
 	legacy_template_igel.write_text("legacy_template_igel: {{host.id}} - {{product.id}}", encoding="utf-8")
 	default_product_grub_cfg.write_text("default_product_grub_cfg: {{host.id}} - {{product.id}}", encoding="utf-8")
@@ -260,7 +262,7 @@ def test_product_grub_cfg(tmp_path: Path) -> None:
 		return orig_read_text(self, encoding=encoding, errors=errors, newline=newline)
 
 	with (
-		patch("opsipxeconfd.template.PXE_CONFIG_DIR", str(pxe_config_dir)),
+		patch("opsipxeconfd.template.OPSI_PXE_DIR", str(opsi_pxe_dir)),
 		patch("opsipxeconfd.template.LEGACY_PXE_CONFIG_DIR", str(legacy_pxe_config_dir)),
 		patch("opsipxeconfd.template.DEFAULT_PRODUCT_GRUB_CFG", str(default_product_grub_cfg)),
 		patch("opsipxeconfd.template.Path.read_text", read_text),

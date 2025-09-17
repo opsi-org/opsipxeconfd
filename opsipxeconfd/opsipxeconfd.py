@@ -335,13 +335,15 @@ class Opsipxeconfd(Thread):
 		with self._client_connection_lock:
 			result += f"{len(self._client_connections)} control connection(s) established\n"
 			for idx, connection in enumerate(self._client_connections, start=1):
-				result += f"    Connection {idx} established at: {datetime.fromtimestamp(connection.start_time).isoformat()}\n"
+				result += (
+					f"    Connection {idx} established at: {datetime.fromtimestamp(connection.start_time).strftime('%Y-%m-%d %H:%M:%S')}\n"
+				)
 
 		result += f"\n{len(self._pxe_config_writers)} boot configuration(s) set\n"
 		for pcw in self._pxe_config_writers:
 			result += (
-				f"Boot config for client '{pcw.host_id}' (path: {pcw.pxefiles}) "
-				f"set since {datetime.fromtimestamp(pcw.start_time).isoformat()}\n"
+				f"Boot config for client '{pcw.host_id}' ({', '.join(str(f) for f in pcw.pxefiles)}) "
+				f"set since {datetime.fromtimestamp(pcw.start_time).strftime('%Y-%m-%d %H:%M:%S')}\n"
 			)
 		logger.notice("Status:\n%s", result)
 		return result

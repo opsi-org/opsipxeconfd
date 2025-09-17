@@ -17,7 +17,7 @@ from opsicommon.logging import get_logger
 from opsicommon.objects import NetbootProduct, OpsiClient, OpsiDepotserver, ProductOnClient, ProductOnDepot
 from purecrypt import Method  # type: ignore[import]
 
-from opsipxeconfd import DEFAULT_PRODUCT_GRUB_CFG, GRUB_CFG_TEMPLATE, LEGACY_PXE_CONFIG_DIR, PXE_CONFIG_DIR
+from opsipxeconfd import DEFAULT_PRODUCT_GRUB_CFG, GRUB_CFG_TEMPLATE, LEGACY_PXE_CONFIG_DIR, OPSI_PXE_DIR
 from opsipxeconfd.service import get_service_connection
 from opsipxeconfd.util import password_hash
 
@@ -44,19 +44,14 @@ def read_grub_cfg(pxe_config_template: str | None = None) -> str:
 				pass
 
 		if pxe_config_template:
-			for path in Path(PXE_CONFIG_DIR), Path(LEGACY_PXE_CONFIG_DIR):
-				cfg = path / pxe_config_template
+			cfgs = (Path(OPSI_PXE_DIR) / pxe_config_template / "grub.cfg", Path(LEGACY_PXE_CONFIG_DIR) / pxe_config_template)
+			for cfg in cfgs:
 				if cfg.exists():
 					template_path = cfg
 					break
 
 			if not template_path:
-				logger.error(
-					"Grub config template file %r not found in %r or %r, using default template",
-					pxe_config_template,
-					PXE_CONFIG_DIR,
-					LEGACY_PXE_CONFIG_DIR,
-				)
+				logger.error("Grub config template files %r not found, using default template", ", ".join(str(cfg) for cfg in cfgs))
 
 		if not template_path:
 			template_path = Path(DEFAULT_PRODUCT_GRUB_CFG)
