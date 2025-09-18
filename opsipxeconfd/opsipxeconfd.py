@@ -18,7 +18,7 @@ from opsicommon.logging import get_logger, log_context, secret_filter
 from opsicommon.objects import Host, OpsiClient, ProductOnClient
 from opsicommon.types import forceHostId
 
-from opsipxeconfd import PXE_CONFIG_DIR, get_depot_id, opsi_config
+from opsipxeconfd import PXE_CONFIG_DIR, __version__, get_depot_id, opsi_config
 from opsipxeconfd._logging import init_logging
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter
 from opsipxeconfd.service import get_service_connection
@@ -36,16 +36,6 @@ class Opsipxeconfd(Thread):
 	"""
 
 	def __init__(self, config: dict[str, Any]) -> None:
-		"""
-		Opsipxeconfd constructor.
-
-		This constructor initializes a new Opsipxeconfd instance.
-		Settings are set according to the proveded config dictionary.
-
-		:param config: Opsipxeconfd configuration dictionary as loaded from file
-		        or specified on command line at execution
-		:type config: Dict
-		"""
 		Thread.__init__(self)
 
 		self.config = config
@@ -58,7 +48,7 @@ class Opsipxeconfd(Thread):
 		self._pxe_config_writers: list[PXEConfigWriter] = []
 		self._startup_task: StartupTask | None = None
 		self._opsi_admin_gid = grp.getgrnam(opsi_config.get("groups", "admingroup"))[2]
-		logger.comment("opsi pxe configuration service starting")
+		logger.essential("opsi pxe configuration service version %s starting", __version__)
 		self.service = get_service_connection()
 
 	def set_config(self, config: dict[str, Any]) -> None:
@@ -477,7 +467,8 @@ class Opsipxeconfd(Thread):
 							pass  # Writer not in list
 				raise
 		except Exception as err:
-			logger.error(err, exc_info=True)
+			logger.error(err)
+			logger.debug(err, exc_info=True)
 			raise err
 
 	def _remove_current_config_writers(self, host_id: str) -> None:

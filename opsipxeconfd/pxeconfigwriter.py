@@ -76,7 +76,7 @@ class PXEConfigWriter(Thread):
 		This method creates a regular file and append the PXE boot configuration through
 		to it. At the end the hooked callback is executed.
 		"""
-		logger.notice("Creating config(s) %r and waiting for access", ", ".join(str(f) for f in self.pxefiles))
+		logger.info("Creating config(s) %r and waiting for access", ", ".join(str(f) for f in self.pxefiles))
 
 		inotify = Inotify()
 
