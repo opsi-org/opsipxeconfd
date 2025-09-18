@@ -144,7 +144,7 @@ def test_pxe_config_oneTimePassword(tmp_path: Path) -> None:
 				}
 			}
 
-		def productProperty_getValues(
+		def productPropertyState_getValues(
 			self,
 			product_ids: list[str] | str | None = None,
 			property_ids: list[str] | str | None = None,

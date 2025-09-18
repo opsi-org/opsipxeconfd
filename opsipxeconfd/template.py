@@ -378,7 +378,7 @@ def get_template_context(
 		context.product_property_states = TemplateContextProductPropertyStates(
 			{
 				product_property_id: TemplateContextProductPropertyState(id=product_property_id, values=values)
-				for product_property_id, values in service.productProperty_getValues(  # type: ignore[attr-defined]
+				for product_property_id, values in service.productPropertyState_getValues(  # type: ignore[attr-defined]
 					product_ids=[product.id], object_ids=[host.id]
 				)
 				.get(host.id, {})

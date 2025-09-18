@@ -339,7 +339,7 @@ def test_TemplateContext_product_cmdline() -> None:
 		client = ServiceClient()
 		setattr(
 			client,
-			"productProperty_getValues",
+			"productPropertyState_getValues",
 			lambda **kwargs: {
 				host_id: {
 					product_id: {
