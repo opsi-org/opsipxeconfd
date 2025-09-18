@@ -108,6 +108,8 @@ package:
     ln -sf grub-shim.x64.efi  opsi-netboot.x64.efi
     ln -sf grub.arm64.efi     opsi-netboot.arm64.efi
     ln -sf grub.x86.bios      opsi-netboot.x86.bios
+    # The old shim loads opsi-netboot.efi, can be removed when shim 16.1 is ready
+    ln -sf grub.x64.efi       opsi-netboot.efi
 
     # Create links for backward compatibility (old DHCP boot file names)
     cd ${DST}/rootfs/tftpboot/opsi/opsi-linux-bootimage/loader
