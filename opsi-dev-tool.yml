@@ -17,7 +17,7 @@ pull-binaries:
     server-type: binaryindex
 
   - name: opsi-grub
-    version: 2.12-59.1-nc
+    version: 2.12-61.1
     os: all
     architecture: x86
     extract: true
@@ -25,7 +25,7 @@ pull-binaries:
     server-type: binaryindex
 
   - name: opsi-grub
-    version: 2.12-59.1-nc
+    version: 2.12-61.1
     os: all
     architecture: x64
     extract: true
@@ -33,7 +33,7 @@ pull-binaries:
     server-type: binaryindex
 
   - name: opsi-grub
-    version: 2.12-59.1-nc
+    version: 2.12-61.1
     os: all
     architecture: arm64
     extract: true
