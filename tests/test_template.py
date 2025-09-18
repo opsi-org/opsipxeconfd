@@ -115,8 +115,10 @@ def test_TemplateContext_linux_cmdline() -> None:
 		id="netboot.linux-bootimage.cmdline.quiet", values=[True]
 	)
 
-	assert context.linux.cmdline() == "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
-	kernel_cmdline = context.linux.cmdline("netboot.linux-bootimage.cmdline")
+	assert (
+		context.opsi_linux_bootimage.cmdline(None) == "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
+	)
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline()
 	kernel_cmdline = re.sub(r'pwh="\\\$6\\\$\S+', 'pwh="..."', kernel_cmdline)
 	assert kernel_cmdline == (
 		"quiet splash service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
@@ -124,12 +126,12 @@ def test_TemplateContext_linux_cmdline() -> None:
 	)
 
 	# additional_params override config states
-	context.linux.additional_cmdline_params = {"option1": "value1", "sub1.option6": "overridden"}
+	context.opsi_linux_bootimage.additional_cmdline_params = {"option1": "value1", "sub1.option6": "overridden"}
 	assert (
-		context.linux.cmdline()
+		context.opsi_linux_bootimage.cmdline(None)
 		== "option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
 	)
-	kernel_cmdline = context.linux.cmdline("netboot.linux-bootimage.cmdline")
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline("netboot.linux-bootimage.cmdline")
 	kernel_cmdline = re.sub(r'pwh="\\\$6\\\$\S+', 'pwh="..."', kernel_cmdline)
 	assert kernel_cmdline == (
 		"quiet splash option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
@@ -139,20 +141,20 @@ def test_TemplateContext_linux_cmdline() -> None:
 	# Test other prefix
 	context.config_states["some.prefix.option1"] = TemplateContextConfigState(id="some.prefix.option1", values=[False])
 	context.config_states["some.prefix.sub1.option2"] = TemplateContextConfigState(id="some.prefix.sub1.option2", values=["r", "f"])
-	kernel_cmdline = context.linux.cmdline()
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline("")
 	assert (
 		kernel_cmdline
 		== "option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
 	)
-	kernel_cmdline = context.linux.cmdline("some.prefix")
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline("some.prefix")
 	assert (
 		kernel_cmdline
 		== "option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test sub1.option2=r,f"
 	)
 
 	# Test remove loglevel if splash is set
-	context.linux.additional_cmdline_params = {"splash": True, "loglevel": "3"}
-	kernel_cmdline = context.linux.cmdline("not.found")
+	context.opsi_linux_bootimage.additional_cmdline_params = {"splash": True, "loglevel": "3"}
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline("not.found")
 	assert "splash" in kernel_cmdline
 	assert "loglevel=3" not in kernel_cmdline
 
@@ -186,7 +188,7 @@ def test_render_grub_cfg(tmp_path: Path) -> None:
 
 	pxe_config_template = dedent("""
 		menuentry 'Start netboot for {{ product.name }}' {
-			linux (pxe)/opsi/opsi-linux-bootimage/kernel.x64 {{ linux.cmdline("netboot.linux-bootimage.cmdline") }}
+			linux (pxe)/opsi/opsi-linux-bootimage/kernel.x64 {{ opsi_linux_bootimage.cmdline() }}
 		}
 	""")
 	context = TemplateContext(
@@ -210,7 +212,7 @@ def test_render_grub_cfg(tmp_path: Path) -> None:
 		],
 	)
 	context.grub.primary_menu_entries = ["menuentry 'Primary Entry' { echo '{{host.id}}'; }"]
-	context.linux.additional_cmdline_params = {"hn": "client1", "dn": "opsi.test"}
+	context.opsi_linux_bootimage.additional_cmdline_params = {"hn": "client1", "dn": "opsi.test"}
 
 	with patch("opsipxeconfd.template.GRUB_CFG_TEMPLATE", str(grub_cfg_template)):
 		data = render_grub_cfg(context)
@@ -331,7 +333,7 @@ def test_product_grub_cfg(tmp_path: Path) -> None:
 				assert read_text_called == 2
 
 
-def test_TemplateContext_product_cmdline() -> None:
+def test_TemplateContext_product_property_state_cmdline() -> None:
 	host_id = "client1.opsi.test"
 	product_id = "memtest86"
 
@@ -369,6 +371,9 @@ def test_TemplateContext_product_cmdline() -> None:
 			product=NetbootProduct(id=product_id, productVersion="7.20", packageVersion="1", name="Memtest86+"),
 		)
 
-		assert context.product
-		assert context.product.cmdline() == 'nosmp nobigstatus screen.mode="1024 x 768" screen.rhs-up keyboard=legacy,usb'
-		assert context.product.cmdline(["nosmp", "nobench", "screen.mode"]) == 'nosmp screen.mode="1024 x 768"'
+		assert context.product_property_states
+		assert context.product_property_states.cmdline() == 'nosmp nobigstatus screen.mode="1024 x 768" screen.rhs-up keyboard=legacy,usb'
+		assert context.product_property_states.cmdline(["nosmp", "nobench", "screen.mode"]) == 'nosmp screen.mode="1024 x 768"'
+		assert context.product_property_states.cmdline(["*smp", "nobench", "screen.*"]) == 'nosmp screen.mode="1024 x 768" screen.rhs-up'
+		assert context.product_property_states.cmdline("screen.*") == 'screen.mode="1024 x 768" screen.rhs-up'
+		assert context.product_property_states.cmdline("screen.*", "screen.") == 'mode="1024 x 768" rhs-up'

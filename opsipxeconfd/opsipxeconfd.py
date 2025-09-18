@@ -439,13 +439,13 @@ class Opsipxeconfd(Thread):
 				otp = secrets.token_hex(16)
 				# Only send needed attributes to prevent a loop
 				self.service.host_updateObjects([OpsiClient(id=host.id, oneTimePassword=otp)])  # type: ignore[attr-defined]
-				context.linux.additional_cmdline_params["otp"] = otp
+				context.opsi_linux_bootimage.additional_cmdline_params["otp"] = otp
 			else:
 				logger.info("Using opsi host key for host %r", host_id)
 				opsi_host_key = host.getOpsiHostKey()
 				if opsi_host_key:
 					secret_filter.add_secrets(opsi_host_key)
-					context.linux.additional_cmdline_params["pckey"] = opsi_host_key
+					context.opsi_linux_bootimage.additional_cmdline_params["pckey"] = opsi_host_key
 				else:
 					logger.error("No opsi host key set for host %r", host_id)
 

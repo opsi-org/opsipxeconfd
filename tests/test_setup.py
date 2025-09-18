@@ -23,7 +23,7 @@ def test_setup_grub_cfg(tmp_path: Path) -> None:
 		dedent("""
 		menuentry 'Start netboot installation' {
 			echo "Loading opsi-linux-bootimage - please wait..."
-			linux (${bootsrc})/opsi/opsi-linux-bootimage/kernel.${arch} {{ linux.cmdline("netboot.linux-bootimage.cmdline") }}
+			linux (${bootsrc})/opsi/opsi-linux-bootimage/kernel.${arch} {{ opsi_linux_bootimage.cmdline() }}
 			initrd (${bootsrc})/opsi/opsi-linux-bootimage/initramfs.${arch}
 			echo "Starting opsi-linux-bootimage - please wait..."
 		}

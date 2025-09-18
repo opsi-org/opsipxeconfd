@@ -72,7 +72,7 @@ def test_pxe_config_oneTimePassword(tmp_path: Path) -> None:
 	client_id = "client1.opsi.test"
 	system_uuid = "11112222-3333-4444-5555-666677778888"
 	default_product_grub_cfg = tmp_path / "grub.cfg"
-	default_product_grub_cfg.write_text("default_grub_cfg: {{ linux.cmdline() }}", encoding="utf-8")
+	default_product_grub_cfg.write_text("default_grub_cfg: {{ opsi_linux_bootimage.cmdline() }}", encoding="utf-8")
 	grub_cfg_template = Path(tmp_path) / "template" / "grub.cfg"
 	grub_cfg_template.parent.mkdir(parents=True, exist_ok=True)
 	shutil.copy(Path("tests/data/grub.cfg"), grub_cfg_template)

@@ -6,10 +6,12 @@
 from __future__ import annotations
 
 import re
+from abc import abstractmethod
 from dataclasses import dataclass, field
+from fnmatch import fnmatch
 from pathlib import Path
 from threading import Lock
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
 
 from jinja2 import Template
 from jinja2.exceptions import UndefinedError
@@ -65,6 +67,25 @@ def read_grub_cfg(pxe_config_template: str | None = None) -> str:
 		data = template_path.read_text(encoding="utf-8")
 		template_cache[pxe_config_template] = (template_path, template_path.stat().st_mtime, data)
 		return data
+
+
+def cmdline_param_to_string(name: str, values: list[str | bool]) -> str | None:
+	if values and isinstance(values[0], bool):
+		if values[0]:
+			return name
+		return None
+
+	vals = []
+	for val in values:
+		if not val:
+			continue
+		val = str(val)
+		if " " in val or "," in val:
+			val = f'"{val}"'
+		vals.append(val)
+	if not vals:
+		return None
+	return f"{name}={','.join(vals)}"
 
 
 @dataclass
@@ -135,20 +156,48 @@ class TemplateContextProductPropertyState(TemplateContextConfigState):
 	pass
 
 
-class TemplateContextConfigStates(dict[str, TemplateContextConfigState]):
-	def __missing__(self, config_id: str) -> TemplateContextConfigState:
-		return TemplateContextConfigState(id=config_id, _exists=False)
+T = TypeVar("T", bound="TemplateContextStates")
 
-	def get_by_prefix(self, prefix: str) -> dict[str, TemplateContextConfigState]:
+
+class TemplateContextStates(dict[str, T]):
+	@abstractmethod
+	def __missing__(self, config_id: str) -> T:
+		pass
+
+	def get_by_prefix(self, prefix: str) -> dict[str, T]:
 		return {key: value for key, value in self.items() if key.startswith(prefix)}
 
+	def cmdline(self: T, pattern: list[str] | str | None = None, remove_prefix: list[str] | str | None = None) -> str:
+		"""
+		Generate Linux command line parameters from states.
+		Optionally filter states by patterns (fnmatch).
+		"""
+		pattern = [pattern] if isinstance(pattern, str) else pattern or []
+		remove_prefix = [remove_prefix] if isinstance(remove_prefix, str) else remove_prefix or []
 
-class TemplateContextProductPropertyStates(dict[str, TemplateContextProductPropertyState]):
-	def __missing__(self, config_id: str) -> TemplateContextProductPropertyState:
-		return TemplateContextProductPropertyState(id=config_id, _exists=False)
+		cmdline = []
+		for name, state in self.items():
+			if pattern and not any(fnmatch(name, p) for p in pattern or []):
+				continue
+			if remove_prefix:
+				for prefix in remove_prefix:
+					if name.startswith(prefix):
+						name = name[len(prefix) :]
+			string = cmdline_param_to_string(name, state.values)
+			if string:
+				cmdline.append(string)
 
-	def get_by_prefix(self, prefix: str) -> dict[str, TemplateContextProductPropertyState]:
-		return {key: value for key, value in self.items() if key.startswith(prefix)}
+		return " ".join(cmdline)
+
+
+class TemplateContextConfigStates(TemplateContextStates):
+	def __missing__(self, id: str) -> TemplateContextConfigState:
+		return TemplateContextConfigState(id=id, _exists=False)
+
+
+class TemplateContextProductPropertyStates(TemplateContextStates):
+	def __missing__(self, id: str) -> TemplateContextProductPropertyState:
+		return TemplateContextProductPropertyState(id=id, _exists=False)
 
 
 @dataclass
@@ -167,7 +216,7 @@ class TemplateContextGrub:
 
 
 @dataclass
-class TemplateContextLinux:
+class TemplateContextOpsiLinuxBootimage:
 	CMDLINE_PARAM_POSITION = {
 		"quiet": 1,
 		"splash": 2,
@@ -176,7 +225,7 @@ class TemplateContextLinux:
 	_context: TemplateContext
 	additional_cmdline_params: dict[str, str | bool] = field(default_factory=dict)
 
-	def cmdline(self, config_id_prefix: str | None = None) -> str:
+	def cmdline(self, config_id_prefix: str | None = "netboot.linux-bootimage.cmdline") -> str:
 		"""
 		Generate a Linux command line from config states starting with the given prefix.
 		Additional command line parameters can be set in `additional_cmdline_params` and will override
@@ -209,6 +258,7 @@ class TemplateContextLinux:
 
 		if config_id_prefix:
 			config_id_prefix = f"{config_id_prefix.rstrip('.')}."
+			self._context.config_states.cmdline
 			for key, config_state in self._context.config_states.get_by_prefix(config_id_prefix).items():
 				param_name = key.removeprefix(config_id_prefix).lstrip(".")
 				if param_name in self.additional_cmdline_params:
@@ -219,21 +269,9 @@ class TemplateContextLinux:
 						pw_hash = pw_hash.replace("$", r"\$")
 						cmdline.append(f'{param_name}="{pw_hash}"')
 					continue
-				values = config_state.values
-				if values and isinstance(values[0], bool):
-					if values[0]:
-						cmdline.append(param_name)
-					continue
-				vals = []
-				for val in values:
-					if not val:
-						continue
-					val = str(val)
-					if " " in val or "," in val:
-						val = f'"{val}"'
-					vals.append(val)
-				if vals:
-					cmdline.append(f"{param_name}={','.join(vals)}")
+				string = cmdline_param_to_string(param_name, config_state.values)
+				if string:
+					cmdline.append(string)
 
 		if "splash" in cmdline:
 			cmdline = [param for param in cmdline if not param.startswith("loglevel=")]
@@ -293,33 +331,6 @@ class TemplateContextProduct:
 
 		return grub_cfg
 
-	def cmdline(self, product_property_ids: list[str] | None = None) -> str:
-		"""
-		Generate a Linux command line from product property states.
-		"""
-		product_property_ids = product_property_ids or []
-		cmdline = []
-		for property_name, product_property_state in self._context.product_property_states.items():
-			if product_property_ids and property_name not in product_property_ids:
-				continue
-			values = product_property_state.values
-			if values and isinstance(values[0], bool):
-				if values[0]:
-					cmdline.append(property_name)
-				continue
-			vals = []
-			for val in values:
-				if not val:
-					continue
-				val = str(val)
-				if " " in val or "," in val:
-					val = f'"{val}"'
-				vals.append(val)
-			if vals:
-				cmdline.append(f"{property_name}={','.join(vals)}")
-
-		return " ".join(cmdline)
-
 
 class TemplateContext:
 	host: OpsiClient | OpsiDepotserver
@@ -329,7 +340,7 @@ class TemplateContext:
 	product_property_states: TemplateContextProductPropertyStates
 	config_states: TemplateContextConfigStates
 	grub: TemplateContextGrub
-	linux: TemplateContextLinux
+	opsi_linux_bootimage: TemplateContextOpsiLinuxBootimage
 
 	def __init__(
 		self,
@@ -345,7 +356,7 @@ class TemplateContext:
 		self.product_property_states = TemplateContextProductPropertyStates()
 		self.config_states = TemplateContextConfigStates()
 		self.grub = TemplateContextGrub(_context=self)
-		self.linux = TemplateContextLinux(_context=self)
+		self.opsi_linux_bootimage = TemplateContextOpsiLinuxBootimage(_context=self)
 
 	def context_args(self) -> dict:
 		return {attr: val for attr, val in self.__dict__.items() if not attr.startswith("_")}
