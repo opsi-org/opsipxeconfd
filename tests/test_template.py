@@ -10,9 +10,16 @@ from textwrap import dedent
 from unittest.mock import patch
 
 import pytest
+from opsicommon.client.opsiservice import ServiceClient
 from opsicommon.objects import NetbootProduct, OpsiClient
 
-from opsipxeconfd.template import TemplateContext, TemplateContextConfigState, TemplateContextConfigStates, render_grub_cfg
+from opsipxeconfd.template import (
+	TemplateContext,
+	TemplateContextConfigState,
+	TemplateContextConfigStates,
+	get_template_context,
+	render_grub_cfg,
+)
 
 
 def test_TemplateContextConfigStates() -> None:
@@ -322,3 +329,46 @@ def test_product_grub_cfg(tmp_path: Path) -> None:
 			else:
 				# Two template files modified, so two cache misses
 				assert read_text_called == 2
+
+
+def test_TemplateContext_product_cmdline() -> None:
+	host_id = "client1.opsi.test"
+	product_id = "memtest86"
+
+	def mock_get_service_connection() -> ServiceClient:
+		client = ServiceClient()
+		setattr(
+			client,
+			"productProperty_getValues",
+			lambda **kwargs: {
+				host_id: {
+					product_id: {
+						"nosmp": [True],
+						"nobench": [False],
+						"nobigstatus": [True],
+						"screen.mode": ["1024 x 768"],
+						"screen.rhs-up": [True],
+						"screen.vhs-up": [False],
+						"usbinit": [""],
+						"console": [],
+						"keyboard": ["legacy", "usb"],
+					}
+				}
+			},
+		)
+		setattr(
+			client,
+			"configState_getValues",
+			lambda **kwargs: {},
+		)
+		return client
+
+	with patch("opsipxeconfd.template.get_service_connection", mock_get_service_connection):
+		context = get_template_context(
+			host=OpsiClient(id=host_id),
+			product=NetbootProduct(id=product_id, productVersion="7.20", packageVersion="1", name="Memtest86+"),
+		)
+
+		assert context.product
+		assert context.product.cmdline() == 'nosmp nobigstatus screen.mode="1024 x 768" screen.rhs-up keyboard=legacy,usb'
+		assert context.product.cmdline(["nosmp", "nobench", "screen.mode"]) == 'nosmp screen.mode="1024 x 768"'

@@ -293,6 +293,33 @@ class TemplateContextProduct:
 
 		return grub_cfg
 
+	def cmdline(self, product_property_ids: list[str] | None = None) -> str:
+		"""
+		Generate a Linux command line from product property states.
+		"""
+		product_property_ids = product_property_ids or []
+		cmdline = []
+		for property_name, product_property_state in self._context.product_property_states.items():
+			if product_property_ids and property_name not in product_property_ids:
+				continue
+			values = product_property_state.values
+			if values and isinstance(values[0], bool):
+				if values[0]:
+					cmdline.append(property_name)
+				continue
+			vals = []
+			for val in values:
+				if not val:
+					continue
+				val = str(val)
+				if " " in val or "," in val:
+					val = f'"{val}"'
+				vals.append(val)
+			if vals:
+				cmdline.append(f"{property_name}={','.join(vals)}")
+
+		return " ".join(cmdline)
+
 
 class TemplateContext:
 	host: OpsiClient | OpsiDepotserver
@@ -347,6 +374,18 @@ def get_template_context(
 			.items()
 		}
 	)
+	if product:
+		context.product_property_states = TemplateContextProductPropertyStates(
+			{
+				product_property_id: TemplateContextProductPropertyState(id=product_property_id, values=values)
+				for product_property_id, values in service.productProperty_getValues(  # type: ignore[attr-defined]
+					product_ids=[product.id], object_ids=[host.id]
+				)
+				.get(host.id, {})
+				.get(product.id, {})
+				.items()
+			}
+		)
 	return context
 
 

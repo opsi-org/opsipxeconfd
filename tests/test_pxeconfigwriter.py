@@ -128,7 +128,7 @@ def test_pxe_config_oneTimePassword(tmp_path: Path) -> None:
 			property_ids: list[str] | str | None = None,
 			object_ids: list[str] | str | None = None,
 			with_defaults: bool = True,
-		) -> dict[str, dict[str, dict[str, list[Any]]]]:
+		) -> dict[str, dict[str, dict[str, list[str] | list[bool]]]]:
 			return {client_id: {}}
 
 		def configState_getValues(
@@ -143,6 +143,15 @@ def test_pxe_config_oneTimePassword(tmp_path: Path) -> None:
 					"netboot.use_host_onetime_password": [True],
 				}
 			}
+
+		def productProperty_getValues(
+			self,
+			product_ids: list[str] | str | None = None,
+			property_ids: list[str] | str | None = None,
+			object_ids: list[str] | str | None = None,
+			with_defaults: bool = True,
+		) -> dict[str, dict[str, dict[str, list[str] | list[bool]]]]:
+			return {}
 
 	mock_service_client = MockServiceClient()
 
