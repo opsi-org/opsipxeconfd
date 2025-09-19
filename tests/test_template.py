@@ -116,7 +116,8 @@ def test_TemplateContext_linux_cmdline() -> None:
 	)
 
 	assert (
-		context.opsi_linux_bootimage.cmdline(None) == "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
+		context.opsi_linux_bootimage.cmdline(config_id_prefix=None)
+		== "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
 	)
 	kernel_cmdline = context.opsi_linux_bootimage.cmdline()
 	kernel_cmdline = re.sub(r'pwh="\\\$6\\\$\S+', 'pwh="..."', kernel_cmdline)
@@ -125,36 +126,52 @@ def test_TemplateContext_linux_cmdline() -> None:
 		'option3 option5="value with spaces","value,with,commas" sub1.option6=1,value2 pwh="..."'
 	)
 
-	# additional_params override config states
+	# opsi_linux_bootimage.additional_cmdline_params override config states
 	context.opsi_linux_bootimage.additional_cmdline_params = {"option1": "value1", "sub1.option6": "overridden"}
 	assert (
-		context.opsi_linux_bootimage.cmdline(None)
-		== "option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
+		context.opsi_linux_bootimage.cmdline(config_id_prefix=None)
+		== "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test option1=value1 sub1.option6=overridden"
 	)
-	kernel_cmdline = context.opsi_linux_bootimage.cmdline("netboot.linux-bootimage.cmdline")
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline(config_id_prefix="netboot.linux-bootimage.cmdline")
 	kernel_cmdline = re.sub(r'pwh="\\\$6\\\$\S+', 'pwh="..."', kernel_cmdline)
 	assert kernel_cmdline == (
-		"quiet splash option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
-		'option3 option5="value with spaces","value,with,commas" pwh="..."'
+		"quiet splash service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test "
+		'option1=value1 option3 option5="value with spaces","value,with,commas" sub1.option6=overridden pwh="..."'
+	)
+
+	# additional_params override opsi_linux_bootimage.additional_cmdline_params and config states
+	context.opsi_linux_bootimage.additional_cmdline_params = {"option1": "value1", "sub1.option6": "overridden"}
+	assert (
+		context.opsi_linux_bootimage.cmdline(config_id_prefix=None)
+		== "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test option1=value1 sub1.option6=overridden"
+	)
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline(
+		additional_params={"option1": False, "sub1.option6": ["overridden1", "overridden2"], "hn": "overridden-host"},
+		config_id_prefix="netboot.linux-bootimage.cmdline",
+	)
+	kernel_cmdline = re.sub(r'pwh="\\\$6\\\$\S+', 'pwh="..."', kernel_cmdline)
+	assert kernel_cmdline == (
+		"quiet splash service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=overridden-host dn=opsi.test "
+		'option3 option5="value with spaces","value,with,commas" sub1.option6=overridden1,overridden2 pwh="..."'
 	)
 
 	# Test other prefix
 	context.config_states["some.prefix.option1"] = TemplateContextConfigState(id="some.prefix.option1", values=[False])
 	context.config_states["some.prefix.sub1.option2"] = TemplateContextConfigState(id="some.prefix.sub1.option2", values=["r", "f"])
-	kernel_cmdline = context.opsi_linux_bootimage.cmdline("")
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline(config_id_prefix="")
 	assert (
 		kernel_cmdline
-		== "option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test"
+		== "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test option1=value1 sub1.option6=overridden"
 	)
-	kernel_cmdline = context.opsi_linux_bootimage.cmdline("some.prefix")
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline(config_id_prefix="some.prefix")
 	assert (
 		kernel_cmdline
-		== "option1=value1 sub1.option6=overridden service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test sub1.option2=r,f"
+		== "service=http://opsi.test:4447/rpc host_id=client1.opsi.test hn=client1 dn=opsi.test option1=value1 sub1.option2=r,f sub1.option6=overridden"
 	)
 
 	# Test remove loglevel if splash is set
 	context.opsi_linux_bootimage.additional_cmdline_params = {"splash": True, "loglevel": "3"}
-	kernel_cmdline = context.opsi_linux_bootimage.cmdline("not.found")
+	kernel_cmdline = context.opsi_linux_bootimage.cmdline(config_id_prefix="not.found")
 	assert "splash" in kernel_cmdline
 	assert "loglevel=3" not in kernel_cmdline
 
@@ -222,7 +239,7 @@ def test_render_grub_cfg(tmp_path: Path) -> None:
 		assert (
 			dedent("""
 			menuentry 'Start netboot for Test Product' {
-				linux (pxe)/opsi/opsi-linux-bootimage/kernel.x64 hn=client1 dn=opsi.test host_id=client1.opsi.test product=test_product option1
+				linux (pxe)/opsi/opsi-linux-bootimage/kernel.x64 host_id=client1.opsi.test hn=client1 dn=opsi.test product=test_product option1
 			}
 			""")
 			in data

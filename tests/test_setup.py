@@ -68,7 +68,6 @@ def test_setup_grub_cfg(tmp_path: Path) -> None:
 	):
 		setup_grub_cfg()
 		data = grub_cfg.read_text(encoding="utf-8")
-		# print(data)
 		assert 'echo "gfxmode"' not in data
 		assert "set timeout=5" in data
 		assert "menuentry 'Local Disk' {" in data
@@ -85,7 +84,6 @@ def test_setup_grub_cfg(tmp_path: Path) -> None:
 		}
 		setup_grub_cfg()
 		data = grub_cfg.read_text(encoding="utf-8")
-		print(data)
 		assert 'echo "gfxmode"' in data
 		assert 'echo "password: $1$' in data
 		assert "set timeout=10" in data

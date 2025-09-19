@@ -69,18 +69,20 @@ def read_grub_cfg(pxe_config_template: str | None = None) -> str:
 		return data
 
 
-def cmdline_param_to_string(name: str, values: list[str | bool]) -> str | None:
-	if values and isinstance(values[0], bool):
-		if values[0]:
+def cmdline_param_to_string(name: str, values: list[str] | str | list[bool] | bool) -> str | None:
+	values_ = [v for v in values] if isinstance(values, list) else [values]
+
+	if values_ and isinstance(values_[0], bool):
+		if values_[0]:
 			return name
 		return None
 
 	vals = []
-	for val in values:
+	for val in values_:
 		if not val:
 			continue
 		val = str(val)
-		if " " in val or "," in val:
+		if " " in val or "," in val or "$" in val:
 			val = f'"{val}"'
 		vals.append(val)
 	if not vals:
@@ -223,61 +225,64 @@ class TemplateContextOpsiLinuxBootimage:
 		"loglevel": 3,
 	}
 	_context: TemplateContext
-	additional_cmdline_params: dict[str, str | bool] = field(default_factory=dict)
+	additional_cmdline_params: dict[str, list[str] | str | list[bool] | bool] = field(default_factory=dict)
 
-	def cmdline(self, config_id_prefix: str | None = "netboot.linux-bootimage.cmdline") -> str:
+	def cmdline(
+		self,
+		additional_params: dict[str, list[str] | str | list[bool] | bool] | None = None,
+		config_id_prefix: str | None = "netboot.linux-bootimage.cmdline",
+	) -> str:
 		"""
 		Generate a Linux command line from config states starting with the given prefix.
 		Additional command line parameters can be set in `additional_cmdline_params` and will override
 		any config state with the same name.
 		"""
-		cmdline = [f"{key}={value}" if not isinstance(value, bool) else str(key) for key, value in self.additional_cmdline_params.items()]
+		params: dict[str, list[str] | str | list[bool] | bool] = {}
 
-		if "service" not in self.additional_cmdline_params:
-			service = self._context.config_states["clientconfig.configserver.url"].str_value
-			if service:
-				if not service.endswith("/rpc"):
-					# TODO: Is this still needed?
-					service = f"{service.rstrip('/')}/rpc"
-				cmdline.append(f"service={service}")
+		service = self._context.config_states["clientconfig.configserver.url"].str_value
+		if service:
+			if not service.endswith("/rpc"):
+				# TODO: Is this still needed?
+				service = f"{service.rstrip('/')}/rpc"
+			params["service"] = service
 
 		if self._context.host and isinstance(self._context.host, OpsiClient):
 			hostname, domain = self._context.host.id.split(".", 1)
-			if "host_id" not in self.additional_cmdline_params:
-				cmdline.append(f"host_id={self._context.host.id}")
-			if "hn" not in self.additional_cmdline_params:
-				cmdline.append(f"hn={hostname}")
-			if "dn" not in self.additional_cmdline_params:
-				cmdline.append(f"dn={domain}")
-			if "macaddress" not in self.additional_cmdline_params and self._context.host.getHardwareAddress():
-				cmdline.append(f"macaddress={self._context.host.getHardwareAddress()}")
+			params["host_id"] = self._context.host.id
+			params["hn"] = hostname
+			params["dn"] = domain
+			hwaddr = self._context.host.getHardwareAddress()
+			if hwaddr:
+				params["macaddress"] = hwaddr
 
 		if self._context.product:
-			if "product" not in self.additional_cmdline_params:
-				cmdline.append(f"product={self._context.product.id}")
+			params["product"] = self._context.product.id
 
 		if config_id_prefix:
 			config_id_prefix = f"{config_id_prefix.rstrip('.')}."
 			self._context.config_states.cmdline
 			for key, config_state in self._context.config_states.get_by_prefix(config_id_prefix).items():
 				param_name = key.removeprefix(config_id_prefix).lstrip(".")
-				if param_name in self.additional_cmdline_params:
-					continue
 				if param_name == "pwh":
 					pw_hash = config_state.password_hash("sha512", "shadow")
 					if pw_hash:
-						pw_hash = pw_hash.replace("$", r"\$")
-						cmdline.append(f'{param_name}="{pw_hash}"')
+						params[param_name] = pw_hash.replace("$", r"\$")
 					continue
-				string = cmdline_param_to_string(param_name, config_state.values)
-				if string:
-					cmdline.append(string)
+				params[param_name] = config_state.values
 
-		if "splash" in cmdline:
-			cmdline = [param for param in cmdline if not param.startswith("loglevel=")]
+		if self.additional_cmdline_params:
+			params.update(self.additional_cmdline_params)
+		if additional_params:
+			params.update(additional_params)
 
-		cmdline.sort(key=lambda param: self.CMDLINE_PARAM_POSITION.get(param.split("=", 1)[0], 99))
+		if params.get("splash") and "loglevel" in params:
+			del params["loglevel"]
 
+		cmdline = []
+		for name in sorted(params, key=lambda param: self.CMDLINE_PARAM_POSITION.get(param.split("=", 1)[0], 99)):
+			string = cmdline_param_to_string(name, params[name])
+			if string:
+				cmdline.append(string)
 		return " ".join(cmdline)
 
 
