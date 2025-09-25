@@ -16,7 +16,8 @@ from time import sleep
 from types import FrameType
 from typing import Any, Generator
 
-from configargparse import ArgParser, ConfigFileParser, ConfigFileParserException  # type: ignore[import-untyped]
+from configargparse import ArgParser  # type: ignore[import-untyped]
+from configargparse import ConfigFileParser
 from opsicommon import __version__ as python_opsi_common_version
 from opsicommon.logging import LOG_WARNING, get_logger, log_context, set_filter_from_string
 from opsicommon.types import forceInt, forceUnicode, forceUnicodeList
@@ -76,7 +77,8 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 			if not line or line.startswith(("#", ";", "/")):
 				continue
 			if "=" not in line:
-				raise ConfigFileParserException(f"Unexpected line {i} in {getattr(stream, 'name', 'stream')}: {line}")
+				logger.warning(f"Unexpected line {i} in {getattr(stream, 'name', 'stream')}: {line}")
+				continue
 
 			(option, value) = line.split("=", 1)
 			option = option.strip()
@@ -98,7 +100,7 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 			elif option == "max control connections":
 				items["max-connections"] = value
 			else:
-				raise ConfigFileParserException(f"Unexpected option in line {i} in {getattr(stream, 'name', 'stream')}: {option}")
+				logger.warning(f"Unexpected option in line {i} in {getattr(stream, 'name', 'stream')}: {option}")
 		return items
 
 
@@ -392,5 +394,7 @@ class OpsipxeconfdInit:
 		os.dup2(0, 1)
 		os.dup2(0, 2)
 		# Duplicate standard input to standard output and standard error.
+		os.dup2(0, 1)
+		os.dup2(0, 2)
 		os.dup2(0, 1)
 		os.dup2(0, 2)
