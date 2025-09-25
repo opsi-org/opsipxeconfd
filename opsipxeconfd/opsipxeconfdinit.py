@@ -83,9 +83,7 @@ class OpsipxeconfdConfigFileParser(ConfigFileParser):
 			(option, value) = line.split("=", 1)
 			option = option.strip()
 			value = value.strip()
-			if option == "pid file":
-				items["pid-file"] = value
-			elif option == "log level":
+			if option == "log level":
 				items["log-level"] = value
 			elif option == "log level stderr":
 				items["log-level-stderr"] = value
@@ -388,13 +386,5 @@ class OpsipxeconfdInit:
 			os.open("/dev/null", os.O_RDWR)
 
 		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
-		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
-		# Duplicate standard input to standard output and standard error.
-		os.dup2(0, 1)
-		os.dup2(0, 2)
 		os.dup2(0, 1)
 		os.dup2(0, 2)
