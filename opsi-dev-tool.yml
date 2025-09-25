@@ -117,6 +117,10 @@ package:
     ln -s ../../loader/grub.x64.efi       opsi-netboot.efi
     ln -s ../../loader/grub.x86.bios      opsi-netboot.bios
 
+    # Some devices request /opsi-netboot.efi instead of /opsi/loader/opsi-netboot.efi when shim is loading opsi-netboot.efi
+    cd ${DST}/rootfs/tftpboot
+    ln -s opsi/loader/grub.x64.efi opsi-netboot.efi
+
   postinst_script: |
     # remove obsolete files
     [ -e /etc/logrotate.d/opsipxeconfd ] && rm /etc/logrotate.d/opsipxeconfd || true
