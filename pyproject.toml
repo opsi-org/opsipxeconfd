@@ -1,7 +1,7 @@
 [project]
 name = "opsipxeconfd"
 version = "4.3.13.1"
-description = "opsi pxe configuration service"
+description = "OPSI PXE Configuration Service"
 readme = "README.md"
 license = "AGPL-3.0-only"
 requires-python = ">=3.11"

@@ -8,8 +8,9 @@ import os
 import secrets
 from datetime import datetime
 from pathlib import Path
-from socket import AF_UNIX, SOCK_STREAM, socket
+from socket import AF_UNIX, SOCK_STREAM
 from socket import error as socket_error
+from socket import socket
 from threading import Lock, Thread
 from time import time
 from typing import Any
@@ -48,7 +49,7 @@ class Opsipxeconfd(Thread):
 		self._pxe_config_writers: list[PXEConfigWriter] = []
 		self._startup_task: StartupTask | None = None
 		self._opsi_admin_gid = grp.getgrnam(opsi_config.get("groups", "admingroup"))[2]
-		logger.essential("opsi pxe configuration service version %s starting", __version__)
+		logger.essential("OPSI PXE Configuration Service version %s starting", __version__)
 		self.service = get_service_connection()
 
 	def set_config(self, config: dict[str, Any]) -> None:
@@ -58,7 +59,7 @@ class Opsipxeconfd(Thread):
 		This method expects a configuration dictionary and overrides
 		the existing configuration with the new one.
 
-		:param config: Opsipxeconfd configuration dictionary.
+		:param config: opsipxeconfd configuration dictionary.
 		:type config: Dict
 		"""
 		logger.notice("Got new config")
@@ -68,20 +69,20 @@ class Opsipxeconfd(Thread):
 		"""
 		Execution status request.
 
-		This method returns whether this instance of Opsipxeconfd is running.
+		This method returns whether this instance of opsipxeconfd is running.
 
-		:returns: True if Opsipxeconfd is running, else False.
+		:returns: True if opsipxeconfd is running, else False.
 		:rtype: bool
 		"""
 		return self._running
 
 	def stop(self) -> None:
 		"""
-		Request to stop Opsipxeconfd thread.
+		Request to stop opsipxeconfd thread.
 
 		This method requests a stop and join for the associated
 		StartupTask instance. Afterwards it requests a stop
-		for the current Opsipxeconfd thread.
+		for the current opsipxeconfd thread.
 		"""
 		logger.notice("Stopping opsipxeconfd")
 
@@ -116,7 +117,7 @@ class Opsipxeconfd(Thread):
 
 	def reload(self) -> None:
 		"""
-		Reloads the Opsipxeconfd config.
+		Reloads the opsipxeconfd config.
 
 		This method reinitializes logging for the
 		(possibly altered) configuration dictionary.
@@ -217,12 +218,12 @@ class Opsipxeconfd(Thread):
 
 	def run(self) -> None:
 		"""
-		Opsipxeconfd thread main method.
+		opsipxeconfd thread main method.
 
-		This method is run on Opsipxeconfd execution.
+		This method is run on opsipxeconfd execution.
 		It creates backend, StartupTask and socket.
 		"""
-		with log_context({"instance": "Opsipxeconfd"}):
+		with log_context({"instance": "opsipxeconfd"}):
 			self._running = True
 			logger.notice("Starting opsipxeconfd main thread")
 			try:
@@ -232,7 +233,7 @@ class Opsipxeconfd(Thread):
 				self._create_socket()
 				while self._running:
 					self._get_connection()
-				logger.notice("Opsipxeconfd main thread exiting...")
+				logger.notice("opsipxeconfd main thread exiting...")
 			except Exception as err:
 				logger.error(err, exc_info=True)
 				self.error = str(err)
@@ -271,7 +272,7 @@ class Opsipxeconfd(Thread):
 
 		This method is hooked to a PXEConfigWriter instance.
 		It is run at the end of PXEConfigWriter thread execution.
-		The PXEConfigWriter is removed from the Opsipxeconfd instance
+		The PXEConfigWriter is removed from the opsipxeconfd instance
 		and backend and pxebootconfiguration are updated.
 
 		:param pcw: PXEConfigWriter this method should be hooked to.
@@ -314,9 +315,9 @@ class Opsipxeconfd(Thread):
 		Returns status information.
 
 		This method collects status information about a running
-		Opsipxeconfd instance. The result is returned as a string.
+		opsipxeconfd instance. The result is returned as a string.
 
-		:returns: Status information about running Opsipxeconfd.
+		:returns: Status information about running opsipxeconfd.
 		:rtype: str
 		"""
 		logger.notice("Getting opsipxeconfd status")
@@ -431,13 +432,13 @@ class Opsipxeconfd(Thread):
 				self.service.host_updateObjects([OpsiClient(id=host.id, oneTimePassword=otp)])  # type: ignore[attr-defined]
 				context.opsi_linux_bootimage.additional_cmdline_params["otp"] = otp
 			else:
-				logger.info("Using opsi host key for host %r", host_id)
+				logger.info("Using OPSI host key for host %r", host_id)
 				opsi_host_key = host.getOpsiHostKey()
 				if opsi_host_key:
 					secret_filter.add_secrets(opsi_host_key)
 					context.opsi_linux_bootimage.additional_cmdline_params["pckey"] = opsi_host_key
 				else:
-					logger.error("No opsi host key set for host %r", host_id)
+					logger.error("No OPSI host key set for host %r", host_id)
 
 			pxe_config_writer: PXEConfigWriter | None = None
 			try:
