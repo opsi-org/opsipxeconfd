@@ -108,8 +108,10 @@ package:
     cp ${SRC}/binaries/grub.x86/grub-pxe.x86.bios        ${DST}/rootfs/tftpboot/opsi/loader/grub.x86.bios
     cp ${SRC}/binaries/grub.x86/grub-pxe-debug.x86.bios  ${DST}/rootfs/tftpboot/opsi/loader/grub-debug.x86.bios
 
-    cp ${SRC}/binaries/grub-shim.x64.efi       ${DST}/rootfs/tftpboot/opsi/loader/grub-shim.x64.efi
-    cp ${SRC}/binaries/grub-shim.arm64.efi     ${DST}/rootfs/tftpboot/opsi/loader/grub-shim.arm64.efi
+    cp ${SRC}/binaries/grub-shim.x64.efi         ${DST}/rootfs/tftpboot/opsi/loader/grub-shim.x64.efi
+    cp ${SRC}/binaries/grub-shim-2011.x64.efi    ${DST}/rootfs/tftpboot/opsi/loader/grub-shim-2011.x64.efi
+    cp ${SRC}/binaries/grub-shim.arm64.efi       ${DST}/rootfs/tftpboot/opsi/loader/grub-shim.arm64.efi
+    cp ${SRC}/binaries/grub-shim-2011.arm64.efi  ${DST}/rootfs/tftpboot/opsi/loader/grub-shim-2011.arm64.efi
 
     # Create links for DHCP boot file names
     cd ${DST}/rootfs/tftpboot/opsi/loader
