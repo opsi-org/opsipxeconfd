@@ -8,10 +8,18 @@ project:
         License: {license}
 
 pull-binaries:
-  - name: opsi-shim
-    version: 15.8
+  - name: grub-shim
+    version: 16.1
     os: all
     architecture: x64
+    extract: true
+    destination: binaries
+    server-type: binaryindex
+
+  - name: grub-shim
+    version: 16.1
+    os: all
+    architecture: arm64
     extract: true
     destination: binaries
     server-type: binaryindex
@@ -100,16 +108,14 @@ package:
     cp ${SRC}/binaries/grub.x86/grub-pxe.x86.bios        ${DST}/rootfs/tftpboot/opsi/loader/grub.x86.bios
     cp ${SRC}/binaries/grub.x86/grub-pxe-debug.x86.bios  ${DST}/rootfs/tftpboot/opsi/loader/grub-debug.x86.bios
 
-    cp ${SRC}/binaries/opsi-shim/shimx64.efi.signed      ${DST}/rootfs/tftpboot/opsi/loader/grub-shim.x64.efi
+    cp ${SRC}/binaries/grub-shim/grub-shim.x64.efi       ${DST}/rootfs/tftpboot/opsi/loader/grub-shim.x64.efi
+    cp ${SRC}/binaries/grub-shim/grub-shim.arm64.efi     ${DST}/rootfs/tftpboot/opsi/loader/grub-shim.arm64.efi
 
     # Create links for DHCP boot file names
-    # Currently we do not support Secure Boot for ARM64 (shim not available)
     cd ${DST}/rootfs/tftpboot/opsi/loader
-    ln -sf grub-shim.x64.efi  opsi-netboot.x64.efi
-    ln -sf grub.arm64.efi     opsi-netboot.arm64.efi
-    ln -sf grub.x86.bios      opsi-netboot.x86.bios
-    # The old shim loads opsi-netboot.efi, can be removed when shim 16.1 is ready
-    ln -sf grub.x64.efi       opsi-netboot.efi
+    ln -sf grub-shim.x64.efi   opsi-netboot.x64.efi
+    ln -sf grub-shim.arm64.efi opsi-netboot.arm64.efi
+    ln -sf grub.x86.bios       opsi-netboot.x86.bios
 
     # Create links for backward compatibility (old DHCP boot file names)
     cd ${DST}/rootfs/tftpboot/opsi/opsi-linux-bootimage/loader
