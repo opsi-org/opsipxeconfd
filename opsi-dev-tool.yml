@@ -125,12 +125,14 @@ package:
     cd ${DST}/rootfs/tftpboot/opsi/opsi-linux-bootimage/loader
     ln -s ../../loader/grub-shim.x64.efi  shimx64.efi.signed
     ln -s ../../loader/grub-shim.x64.efi  grub-shim.x64.efi
+    ln -s ../../loader/grub.x64.efi       grub.x64.efi
     ln -s ../../loader/grub.x64.efi       opsi-netboot.efi
     ln -s ../../loader/grub.x86.bios      opsi-netboot.bios
 
-    # Some devices request /opsi-netboot.efi instead of /opsi/loader/opsi-netboot.efi when shim is loading opsi-netboot.efi
+    # Some devices request /grub.x64.efi instead of /opsi/loader/grub.x64.efi when shim is loading grub.x64.efi
     cd ${DST}/rootfs/tftpboot
-    ln -s opsi/loader/grub.x64.efi opsi-netboot.efi
+    ln -s opsi/loader/grub.x64.efi grub.x64.efi
+    ln -s opsi/loader/grub.arm64.efi grub.arm64.efi
 
   postinst_script: |
     # remove obsolete files
