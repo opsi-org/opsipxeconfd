@@ -761,7 +761,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/a6/91/86a6eac449ddfae23
 
 [[package]]
 name = "opsipxeconfd"
-version = "4.3.14.0"
+version = "4.3.14.3"
 source = { editable = "." }
 dependencies = [
     { name = "configargparse" },
@@ -1156,9 +1156,9 @@ dependencies = [
     { name = "wmi", marker = "sys_platform == 'win32'" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://pypi.uib.gmbh/packages/python_opsi_common-4.3.44.1.tar.gz", hash = "sha256:847e8e7fe60acd63f0cb292f5aec2ef11b124edb7f2e06baef613e44f6054049" }
+sdist = { url = "https://pypi.uib.gmbh/packages/python_opsi_common-4.3.44.1.tar.gz", hash = "sha256:9b5fbce6c4da1992d7d675ab348a8ce3878003e854eb875dd6c5152aad794fa1" }
 wheels = [
-    { url = "https://pypi.uib.gmbh/packages/python_opsi_common-4.3.44.1-py3-none-any.whl", hash = "sha256:d8cc2793603231c1d9df7fd03d3f48cdf634dce89dab66d326862d715e38f9a1" },
+    { url = "https://pypi.uib.gmbh/packages/python_opsi_common-4.3.44.1-py3-none-any.whl", hash = "sha256:965db1e3673bb1e33d864221a8541f4a37c2b268a4f7b6b1ae061932c6e004c8" },
 ]
 
 [[package]]
