@@ -135,6 +135,7 @@ package:
     ln -s opsi/loader/grub.arm64.efi grub.arm64.efi
 
   postinst_script: |
+    systemctl enable opsipxeconfd.service
     # remove obsolete files
     [ -e /etc/logrotate.d/opsipxeconfd ] && rm /etc/logrotate.d/opsipxeconfd || true
     # Move log files to new default location
