@@ -67,7 +67,7 @@ def test_TemplateContextConfigState_password_hash() -> None:
 
 	# Different method requested
 	state.values = [pw_hash_md5]
-	with pytest.raises(ValueError, match="Password is already hashed with method 1, but sha512 is requested"):
+	with pytest.raises(ValueError, match="Password is already hashed with method MD5, but sha512 is requested"):
 		state.password_hash("sha512", "shadow")
 
 	state.values = ["secret"]
@@ -341,13 +341,13 @@ def test_product_grub_cfg(tmp_path: Path) -> None:
 
 			if iteration == 0:
 				# Cache empty
-				assert read_text_called == 3
+				assert read_text_called == 4
 			elif iteration == 1:
 				# Cache hits
 				assert read_text_called == 0
 			else:
 				# Two template files modified, so two cache misses
-				assert read_text_called == 2
+				assert read_text_called == 3
 
 
 def test_TemplateContext_product_property_state_cmdline() -> None:

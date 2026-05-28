@@ -29,7 +29,7 @@ def set_tmp_path(tmp_path: Path) -> Generator[None, None, None]:
 		yield
 
 	with (
-		patch("opsicommon.config.OpsiConfig.config_file", opsi_conf),
+		patch("opsi.opsi.service.server._config.OpsiConfig.config_file", opsi_conf),
 		patch("opsipxeconfd.opsipxeconfdinit.pid_file", mock_pid_file),
 		patch("opsipxeconfd.opsipxeconfdinit.init_logging", lambda config: None),
 		patch("opsipxeconfd.opsipxeconfdinit.setup"),
