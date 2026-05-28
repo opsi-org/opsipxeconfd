@@ -6,7 +6,7 @@
 import time
 from unittest import mock
 
-from opsicommon.messagebus.message import EventMessage
+from opsi.opsi.messagebus import EventMessage
 
 from opsipxeconfd import get_depot_id
 from opsipxeconfd.service import get_messagebus_listener

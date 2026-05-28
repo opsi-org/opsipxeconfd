@@ -1,4 +1,4 @@
-image: docker.uib.gmbh/opsi/dev/pybuilder:deb9-py3.11
+image: docker.uib.gmbh/opsi/dev/pybuilder:deb9
 
 stages:
   - test
@@ -10,12 +10,12 @@ lint-and-pytest:
   tags:
     - docker-x64
   script:
-    - export UV_PYTHON="3.13"
+    - export UV_PYTHON="3.14"
     - export UV_PYTHON_PREFERENCE="only-managed"
     - opsi-dev-cli self upgrade
     - uv sync --frozen
     - uv run ruff check opsipxeconfd tests
-    - uv run mypy opsipxeconfd tests
+    - uv run ty check opsipxeconfd tests
     - uv run pytest --tb=short -x -o junit_family=xunit2 --junitxml=testreport.xml --cov-config .coveragerc --cov opsipxeconfd --cov-report term --cov-report xml -v tests
 
 build:linux-x64:
@@ -23,7 +23,7 @@ build:linux-x64:
   tags:
     - docker-x64
   script:
-    - export UV_PYTHON="3.13"
+    - export UV_PYTHON="3.14"
     - export UV_PYTHON_PREFERENCE="only-managed"
     - uv self update
     - uv sync --frozen
@@ -46,7 +46,7 @@ build:linux-arm64:
   tags:
     - docker-arm64
   script:
-    - export UV_PYTHON="3.13"
+    - export UV_PYTHON="3.14"
     - export UV_PYTHON_PREFERENCE="only-managed"
     - uv self update
     - uv sync --frozen

@@ -8,8 +8,8 @@ from pathlib import Path
 from textwrap import dedent
 from unittest.mock import patch
 
-from opsicommon.client.opsiservice import ServiceClient
-from opsicommon.objects import OpsiDepotserver
+from opsi.opsi.service.client import ServiceClient
+from opsi.opsi.service.model.object import OpsiDepotserver
 
 from opsipxeconfd.setup import setup_grub_cfg
 

@@ -7,7 +7,7 @@ import os
 import sys
 import warnings
 
-from opsicommon.logging import logger
+from opsi.logging import get_logger
 
 if getattr(sys, "frozen", False):
 	# Disable warnings if frozen
@@ -19,6 +19,8 @@ else:
 		sys.path.remove(package_base)
 
 from opsipxeconfd.opsipxeconfdinit import OpsipxeconfdInit  # noqa: E402
+
+logger = get_logger()
 
 
 def main() -> None:

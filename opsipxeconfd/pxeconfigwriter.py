@@ -11,9 +11,9 @@ from pathlib import Path
 from threading import Event, Thread
 from typing import Callable
 
-from inotify.adapters import Inotify  # type: ignore[import]
-from opsicommon.config.opsi import OpsiConfig
-from opsicommon.logging import get_logger, log_context
+from inotify.adapters import Inotify
+from opsi.logging import get_logger, log_context
+from opsi.opsi.service.server import OpsiConfig
 
 from opsipxeconfd.template import TemplateContext, render_grub_cfg
 

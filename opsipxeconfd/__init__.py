@@ -5,8 +5,8 @@
 
 import os
 
-from opsicommon.config.opsi import OpsiConfig
-from opsicommon.system.info import linux_distro_id_like
+from opsi.opsi.service.server import OpsiConfig
+from opsi.system.info import linux_distro_id_like
 
 __version__ = "4.3.9.2"
 

@@ -4,9 +4,9 @@ version = "4.3.15.2"
 description = "OPSI PXE Configuration Service"
 readme = "README.md"
 license = "AGPL-3.0-only"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = [
-	"python-opsi-common>=4.3.3,<4.4",
+	"python-opsi>=4.3.19.0,<4.4",
 	"inotify>=0.2",
 	"configargparse>=1.5",
 	"py-purecrypt>=0.1",
@@ -27,12 +27,11 @@ dev = [
 	"pytest>=8.1",
 	"pytest-cov>=5.0",
 	"pyinstaller>=6.2",
-	"mypy>=1.7",
 	# Pin setuptools to avoid warning:
 	# See https://setuptools.pypa.io/en/latest/pkg_resources.html.
 	# The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
 	"setuptools>=71.0,<80.9",
-
+	"ty>=0.0.40",
 ]
 
 [project.urls]
@@ -48,12 +47,6 @@ package = true
 
 [tool.ruff]
 line-length = 140
-
-[tool.mypy]
-disallow_untyped_calls = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-follow_imports = "silent"
 
 [tool.ruff.format]
 indent-style = "tab"

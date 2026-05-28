@@ -5,7 +5,7 @@
 
 from typing import Dict
 
-from opsicommon.logging import DEFAULT_COLORED_FORMAT, DEFAULT_FORMAT, LOG_NONE, handle_log_exception, logging_config
+from opsi.logging import DEFAULT_COLORED_FORMAT, DEFAULT_FORMAT, LOG_NONE, handle_log_exception, logging_config
 
 from opsipxeconfd import LOG_FILE
 

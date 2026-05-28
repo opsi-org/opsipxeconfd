@@ -10,7 +10,7 @@ from threading import Event
 from typing import Any
 from unittest import mock
 
-from opsicommon.objects import Host, NetbootProduct, OpsiClient, Product, ProductOnClient, ProductOnDepot
+from opsi.opsi.service.model.object import Host, NetbootProduct, OpsiClient, Product, ProductOnClient, ProductOnDepot
 
 from opsipxeconfd.opsipxeconfd import Opsipxeconfd
 from opsipxeconfd.pxeconfigwriter import PXEConfigWriter

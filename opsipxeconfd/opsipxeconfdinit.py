@@ -16,11 +16,10 @@ from time import sleep
 from types import FrameType
 from typing import Any, Generator
 
-from configargparse import ArgParser  # type: ignore[import-untyped]
-from configargparse import ConfigFileParser
-from opsicommon import __version__ as python_opsi_common_version
-from opsicommon.logging import LOG_WARNING, get_logger, log_context, set_filter_from_string
-from opsicommon.types import forceInt, forceUnicode, forceUnicodeList
+from configargparse import ArgParser, ConfigFileParser
+from opsi import __version__ as python_opsi_version
+from opsi.logging import LOG_WARNING, get_logger, log_context, set_filter_from_string
+from opsi.opsi.service.model.type import to_int, to_string, to_string_list
 
 from opsipxeconfd import CONFIG_FILE, ERROR_MARKER, PID_FILE, __version__
 from opsipxeconfd._logging import init_logging
@@ -47,16 +46,16 @@ def create_unix_socket(port: str, timeout: float = 5.0) -> Generator[socket, Non
 class ServerConnection:
 	def __init__(self, port: str, timeout: float = 10.0) -> None:
 		self.port = port
-		self.timeout = forceInt(timeout)
+		self.timeout = to_int(timeout)
 
 	def send_command(self, cmd: str) -> str:
 		with create_unix_socket(self.port, timeout=self.timeout) as unix_socket:
-			unix_socket.send(forceUnicode(cmd).encode("utf-8"))
+			unix_socket.send(to_string(cmd).encode("utf-8"))
 			result = ""
 			try:
 				for part in iter(lambda: unix_socket.recv(4096), b""):
 					logger.trace("Received %s", part)
-					result += forceUnicode(part)
+					result += to_string(part)
 			except Exception as err:
 				raise RuntimeError(f"Failed to receive: {err}") from err
 
@@ -116,10 +115,10 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		config_file_parser_class=OpsipxeconfdConfigFileParser,
 		formatter_class=lambda prog: ArgumentDefaultsHelpFormatter(prog, max_help_position=30, width=100),
 	)
-	parser.add("--version", "-v", help="Show version information and exit.", action="store_true")
-	parser.add("--no-fork", "-F", dest="nofork", help="Do not fork to background.", action="store_true")
-	parser.add("-c", "--conffile", required=False, is_config_file=True, default=CONFIG_FILE, help="Path to config file.")
-	parser.add(
+	parser.add_argument("--version", "-v", help="Show version information and exit.", action="store_true")
+	parser.add_argument("--no-fork", "-F", dest="nofork", help="Do not fork to background.", action="store_true")
+	parser.add_argument("-c", "--conffile", required=False, is_config_file=True, default=CONFIG_FILE, help="Path to config file.")
+	parser.add_argument(
 		"--log-level",
 		"--loglevel",
 		"--l",
@@ -132,7 +131,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 		+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets",
 	)
-	parser.add(
+	parser.add_argument(
 		"--max-log-size",
 		env_var="OPSIPXECONFD_MAX_LOG_SIZE",
 		type=float,
@@ -143,7 +142,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		+ "If you set this to 0 we recommend using a proper logrotate configuration"
 		+ "so that your disk does not get filled by the logs.",
 	)
-	parser.add(
+	parser.add_argument(
 		"--keep-rotated-logs",
 		env_var="OPSIPXECONFD_KEEP_ROTATED_LOGS",
 		type=int,
@@ -151,7 +150,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		dest="keepRotatedLogs",
 		help="Number of rotated log files to keep.",
 	)
-	parser.add(
+	parser.add_argument(
 		"--log-level-file",
 		env_var="OPSIPXECONFD_LOG_LEVEL_FILE",
 		type=int,
@@ -162,7 +161,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 		+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets",
 	)
-	parser.add(
+	parser.add_argument(
 		"--log-level-stderr",
 		env_var="OPSIPXECONFD_LOG_LEVEL_STDERR",
 		type=int,
@@ -173,13 +172,13 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		+ "0: nothing, 1: essential, 2: critical, 3: errors, 4: warnings, 5: notices"
 		+ " 6: infos, 7: debug messages, 8: trace messages, 9: secrets",
 	)
-	parser.add(
+	parser.add_argument(
 		"--log-filter",
 		env_var="OPSIPXECONFD_LOG_FILTER",
 		dest="logFilter",
 		help="Filter log records contexts (<ctx-name-1>=<val1>[,val2][;ctx-name-2=val3])",
 	)
-	parser.add(
+	parser.add_argument(
 		"--max-connections",
 		env_var="OPSIPXECONFD_MAX_CONNECTIONS",
 		type=int,
@@ -187,7 +186,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		dest="maxConnections",
 		help="Number of maximum simultaneous control connections.",
 	)
-	parser.add(
+	parser.add_argument(
 		"--max-pxe-config-writers",
 		env_var="OPSIPXECONFD_MAX_PXE_CONFIG_WRITERS",
 		type=int,
@@ -195,7 +194,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 		dest="maxPxeConfigWriters",
 		help="Number of maximum simultaneous pxe config writer threads.",
 	)
-	parser.add(
+	parser.add_argument(
 		"command",
 		nargs="?",
 		choices=("start", "stop", "status", "update", "setup"),
@@ -206,7 +205,7 @@ def parse_args(parse_config_file: bool = True) -> Namespace:
 	opts = parser.parse_args()
 
 	if opts.version:
-		print(f"{__version__} [python-opsi-common={python_opsi_common_version}]")
+		print(f"{__version__} [python-opsi={python_opsi_version}]")
 		sys.exit(0)
 
 	has_command = opts.command and (opts.command in ["start", "stop", "update", "status", "setup"])
@@ -298,7 +297,7 @@ class OpsipxeconfdInit:
 			with log_context({"instance": " ".join(["opsipxeconfd", self.config["command"]])}):
 				command = assemble_command(self.config)
 				con = ServerConnection(self.config["port"], timeout=5.0)
-				result = con.send_command(" ".join(forceUnicodeList(command)))
+				result = con.send_command(" ".join(to_string_list(command)))
 				print(result)
 
 	def process_config(self) -> None:

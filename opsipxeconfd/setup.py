@@ -6,10 +6,9 @@
 from pathlib import Path
 from threading import Lock
 
-from opsicommon.logging import get_logger
-from opsicommon.objects import OpsiDepotserver
-from opsicommon.server.rights import set_rights
-from opsicommon.server.setup import setup_users_and_groups as po_setup_users_and_groups
+from opsi.logging import get_logger
+from opsi.opsi.service.model.object import OpsiDepotserver
+from opsi.opsi.service.server import set_rights
 
 from opsipxeconfd import GRUB_CFG, LOG_FILE, PXE_CONFIG_DIR, get_depot_id
 from opsipxeconfd.service import get_messagebus_listener, get_service_connection
@@ -74,7 +73,7 @@ def setup_grub_cfg() -> None:
 		depot_id = get_depot_id()
 		service = get_service_connection()
 		try:
-			depot: OpsiDepotserver = service.host_getObjects(id=depot_id)[0]  # type: ignore[attr-defined]
+			depot: OpsiDepotserver = service.host_getObjects(id=depot_id)[0]  # ty: ignore[unresolved-attribute]
 		except IndexError:
 			raise RuntimeError(f"Depot {depot_id!r} not found") from None
 
@@ -88,7 +87,6 @@ def setup_grub_cfg() -> None:
 def setup() -> None:
 	logger.notice("Running opsipxeconfd setup")
 	setup_limits()
-	po_setup_users_and_groups()
 	setup_files()
 	setup_grub_cfg()
 

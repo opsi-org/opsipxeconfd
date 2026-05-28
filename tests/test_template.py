@@ -10,8 +10,8 @@ from textwrap import dedent
 from unittest.mock import patch
 
 import pytest
-from opsicommon.client.opsiservice import ServiceClient
-from opsicommon.objects import NetbootProduct, OpsiClient
+from opsi.opsi.service.client import ServiceClient
+from opsi.opsi.service.model.object import NetbootProduct, OpsiClient
 
 from opsipxeconfd.template import (
 	TemplateContext,
@@ -87,7 +87,7 @@ def test_TemplateContext_linux_cmdline() -> None:
 	)
 	context.config_states["netboot.linux-bootimage.cmdline.option1"] = TemplateContextConfigState(
 		id="netboot.linux-bootimage.cmdline.option1",
-		values=["", None],  # type: ignore
+		values=["", None],  # ty: ignore
 	)
 	context.config_states["netboot.linux-bootimage.cmdline.sub1.sub2.option2"] = TemplateContextConfigState(
 		id="netboot.linux-bootimage.cmdline.sub1.sub2.option2",
@@ -330,7 +330,7 @@ def test_product_grub_cfg(tmp_path: Path) -> None:
 						productVersion="1.0",
 						packageVersion="1",
 						name="Product 1",
-						pxeConfigTemplate=pxe_config_template,  # type: ignore
+						pxeConfigTemplate=str(pxe_config_template),
 					),
 				)
 				assert context.product

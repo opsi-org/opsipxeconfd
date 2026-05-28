@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import binascii
-import hashlib
 import os
 import time
 from contextlib import closing, contextmanager
@@ -14,17 +12,54 @@ from pathlib import Path
 from shlex import split as shlex_split
 from socket import socket
 from threading import Thread
-from typing import TYPE_CHECKING, Callable, Generator, Literal
+from typing import TYPE_CHECKING, Callable, Generator
 
-from opsicommon.logging import get_logger
-from opsicommon.system import ensure_not_already_running
-from opsicommon.types import forceHostId, forceString
-from purecrypt import Crypt, Method  # type: ignore[import]
+import psutil
+from opsi.logging import get_logger
+from opsi.opsi.service.model.type import to_host_id, to_string
 
 from opsipxeconfd import ERROR_MARKER, get_depot_id
 
 if TYPE_CHECKING:
 	from opsipxeconfd.opsipxeconfd import Opsipxeconfd
+
+
+def ensure_not_already_running(process_name: str | None = None) -> None:
+	container_procs = ("containerd-shim", "lxc-start")
+	our_pid = os.getpid()
+	other_pid = None
+	try:
+		our_proc = psutil.Process(our_pid)
+		if not process_name:
+			process_name = our_proc.name()
+		exe_name = f"{process_name}.exe"
+		ignore_pids = [p.pid for p in our_proc.children(recursive=True)]
+		ignore_pids += [p.pid for p in our_proc.parents()]
+		for proc in psutil.process_iter():
+			# logger.debug("Found running process: %s", proc)
+			if proc.name() == process_name or proc.name() == exe_name:
+				logger.debug("Found running '%s' process: %s", process_name, proc)
+
+				running_in_container_pid = 0
+				for parent in proc.parents():
+					if parent.name() in container_procs:
+						running_in_container_pid = parent.pid
+						break
+				if running_in_container_pid:
+					logger.debug("Process is running in container %d, skipping", running_in_container_pid)
+					continue
+
+				if proc.pid != our_pid and proc.pid not in ignore_pids:
+					other_pid = proc.pid
+					break
+	except Exception as err:
+		logger.debug("Check for running processes failed: %s", err)
+
+	if other_pid:
+		raise RuntimeError(f"Another '{process_name}' process is running (pids: {other_pid} / {our_pid}).")
+
+	if other_pid:
+		raise RuntimeError(f"Another '{process_name}' process is running (pids: {other_pid} / {our_pid}).")
 
 
 logger = get_logger()
@@ -59,40 +94,6 @@ def pid_file(pid_file_path: str | Path) -> Generator[None, None, None]:
 				logger.info("Removed pid file '%s'", pid_file_path)
 			except Exception as err:
 				logger.error("Failed to remove pid file '%s': %s", pid_file_path, err)
-
-
-def password_hash(
-	password: str, method: Literal["md5", "sha512", "pbkdf2-sha512"] = "sha512", format: Literal["shadow", "grub"] = "shadow"
-) -> str:
-	"""
-	Encode a password using the specified method and return a hash string for use in /etc/shadow.
-	"""
-	if format == "grub":
-		if method != "pbkdf2-sha512":
-			raise ValueError("For grub format only 'pbkdf2-sha512' method is supported")
-		iterations = 10000
-		salt = os.urandom(16)
-		hash_bytes = hashlib.pbkdf2_hmac("sha512", password.encode("utf-8"), salt, iterations)
-		return f"grub.pbkdf2.sha512.{iterations}.{binascii.hexlify(salt).decode().upper()}.{binascii.hexlify(hash_bytes).decode().upper()}"
-
-	elif format == "shadow":
-		if method not in ("md5", "sha512"):
-			raise ValueError("For shadow format only 'md5' and 'sha512' methods are supported")
-		for _ in range(50):
-			meth = Method.MD5 if method == "md5" else Method.SHA512
-			crypt = Crypt.for_method(meth)
-			salt = crypt.generate_salt(meth)
-			if meth == Method.SHA512:
-				salt = salt[:19]  # Limit salt length to 16 chars for SHA-512
-			pw_hash = crypt.encrypt(password, salt)
-			if "." in pw_hash:
-				# Invalid hash
-				continue
-			return pw_hash
-
-		raise RuntimeError("Failed to generate password hash")
-
-	raise ValueError("Format must be either 'shadow' or 'grub'")
 
 
 class StartupTask(Thread):
@@ -220,7 +221,7 @@ class ClientConnection(Thread):
 		logger.debug("Receiving data...")
 		with closing(self._socket):
 			try:
-				cmd = forceString(self._socket.recv(4096))
+				cmd = to_string(self._socket.recv(4096))
 				logger.info("Got command '%s'", cmd)
 
 				result = self._process_command(cmd)
@@ -274,11 +275,11 @@ class ClientConnection(Thread):
 			if command == "update":
 				if len(arguments) < 1:
 					raise ValueError("bad arguments for command 'update', needs <hostId>")
-				return self._opsipxeconfd.update_boot_configuration(forceHostId(arguments[0]))
+				return self._opsipxeconfd.update_boot_configuration(to_host_id(arguments[0]))
 			if command == "remove":
 				if len(arguments) < 1:
 					raise ValueError("bad arguments for command 'remove', needs <hostId>")
-				return self._opsipxeconfd.remove_boot_configuration(forceHostId(arguments[0]))
+				return self._opsipxeconfd.remove_boot_configuration(to_host_id(arguments[0]))
 
 			raise ValueError(f"Command '{cmd}' not supported")
 		except Exception as err:

@@ -11,16 +11,11 @@ from functools import lru_cache
 from time import sleep
 from typing import Callable
 
-from opsicommon.client.opsiservice import (
-	MessagebusListener,
-	OpsiServiceAuthenticationError,
-	OpsiServiceError,
-	OpsiServiceVerificationError,
-	ServiceClient,
-)
-from opsicommon.config.opsi import OpsiConfig
-from opsicommon.logging import get_logger, secret_filter
-from opsicommon.messagebus.message import ChannelSubscriptionRequestMessage, EventMessage, Message
+from opsi.exception import OpsiServiceAuthenticationError, OpsiServiceError, OpsiServiceVerificationError
+from opsi.logging import get_logger, secret_filter
+from opsi.opsi.messagebus import ChannelSubscriptionRequestMessage, EventMessage, Message
+from opsi.opsi.service.client import MessagebusListener, ServiceClient
+from opsi.opsi.service.server import OpsiConfig
 
 from opsipxeconfd import GRUB_CFG_MAX_UPDATE_INTERVAL, __version__, get_depot_id
 

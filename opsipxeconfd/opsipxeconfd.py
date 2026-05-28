@@ -8,16 +8,15 @@ import os
 import secrets
 from datetime import datetime
 from pathlib import Path
-from socket import AF_UNIX, SOCK_STREAM
+from socket import AF_UNIX, SOCK_STREAM, socket
 from socket import error as socket_error
-from socket import socket
 from threading import Lock, Thread
 from time import time
 from typing import Any
 
-from opsicommon.logging import get_logger, log_context, secret_filter
-from opsicommon.objects import Host, OpsiClient, ProductOnClient
-from opsicommon.types import forceHostId
+from opsi.logging import get_logger, log_context, secret_filter
+from opsi.opsi.service.model.object import Host, OpsiClient, ProductOnClient
+from opsi.opsi.service.model.type import to_host_id
 
 from opsipxeconfd import PXE_CONFIG_DIR, __version__, get_depot_id, opsi_config
 from opsipxeconfd._logging import init_logging
@@ -292,7 +291,7 @@ class Opsipxeconfd(Thread):
 
 		try:
 			product_on_client: ProductOnClient = sorted(
-				self.service.productOnClient_getObjects(  # type: ignore[attr-defined]
+				self.service.productOnClient_getObjects(  # ty: ignore[unresolved-attribute]
 					productType="NetbootProduct",
 					clientId=pcw.host_id,
 					productId=pcw.product_id,
@@ -308,7 +307,7 @@ class Opsipxeconfd(Thread):
 		if product_on_client.actionRequest != "always":
 			product_on_client.setActionRequest("none")
 
-		self.service.productOnClient_updateObjects([product_on_client])  # type: ignore[attr-defined]
+		self.service.productOnClient_updateObjects([product_on_client])  # ty: ignore[unresolved-attribute]
 
 	def status(self) -> str:
 		"""
@@ -359,13 +358,13 @@ class Opsipxeconfd(Thread):
 		:type host_id: str
 		"""
 		try:
-			host_id = forceHostId(host_id)
+			host_id = to_host_id(host_id)
 			logger.info("Updating PXE boot configuration for host '%s'", host_id)
 
 			self._remove_current_config_writers(host_id)
 
 			try:
-				host: OpsiClient = self.service.host_getObjects(id=host_id)[0]  # type: ignore[attr-defined]
+				host: OpsiClient = self.service.host_getObjects(id=host_id)[0]  # ty: ignore[unresolved-attribute]
 			except IndexError:
 				logger.info("Host %r not found", host_id)
 				return "Boot configuration updated"
@@ -375,7 +374,7 @@ class Opsipxeconfd(Thread):
 				return "Boot configuration updated"
 
 			try:
-				product_on_client = self.service.productOnClient_getObjects(  # type: ignore[attr-defined]
+				product_on_client = self.service.productOnClient_getObjects(  # ty: ignore[unresolved-attribute]
 					productType="NetbootProduct",
 					clientId=host_id,
 					actionRequest=["setup", "uninstall", "update", "always", "once", "custom"],
@@ -388,7 +387,7 @@ class Opsipxeconfd(Thread):
 
 			logger.debug("Searching for product '%s' on depot '%s'", product_on_client.productId, depot_id)
 			try:
-				product_on_depot = self.service.productOnDepot_getObjects(  # type: ignore[attr-defined]
+				product_on_depot = self.service.productOnDepot_getObjects(  # ty: ignore[unresolved-attribute]
 					productType="NetbootProduct", productId=product_on_client.productId, depotId=depot_id
 				)[0]
 			except IndexError:
@@ -396,7 +395,7 @@ class Opsipxeconfd(Thread):
 				return "Boot configuration updated"
 
 			try:
-				product = self.service.product_getObjects(  # type: ignore[attr-defined]
+				product = self.service.product_getObjects(  # ty: ignore[unresolved-attribute]
 					type="NetbootProduct",
 					id=product_on_depot.productId,
 					productVersion=product_on_depot.productVersion,
@@ -429,7 +428,7 @@ class Opsipxeconfd(Thread):
 				logger.info("Using one time password for host %r", host_id)
 				otp = secrets.token_hex(16)
 				# Only send needed attributes to prevent a loop
-				self.service.host_updateObjects([OpsiClient(id=host.id, oneTimePassword=otp)])  # type: ignore[attr-defined]
+				self.service.host_updateObjects([OpsiClient(id=host.id, oneTimePassword=otp)])  # ty: ignore[unresolved-attribute]
 				context.opsi_linux_bootimage.additional_cmdline_params["otp"] = otp
 			else:
 				logger.info("Using OPSI host key for host %r", host_id)

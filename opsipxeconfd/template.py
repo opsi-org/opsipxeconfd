@@ -15,13 +15,12 @@ from typing import Any, Literal, TypeVar
 
 from jinja2 import Template
 from jinja2.exceptions import UndefinedError
-from opsicommon.logging import get_logger
-from opsicommon.objects import NetbootProduct, OpsiClient, OpsiDepotserver, ProductOnClient, ProductOnDepot
-from purecrypt import Method  # type: ignore[import]
+from opsi.crypt.hash import PasswordHashAlgorithm, PasswordHashFormat, get_password_hash_algorithm, hash_password
+from opsi.logging import get_logger
+from opsi.opsi.service.model.object import NetbootProduct, OpsiClient, OpsiDepotserver, ProductOnClient, ProductOnDepot
 
 from opsipxeconfd import DEFAULT_PRODUCT_GRUB_CFG, GRUB_CFG_TEMPLATE, LEGACY_PXE_CONFIG_DIR, OPSI_PXE_DIR
 from opsipxeconfd.service import get_service_connection
-from opsipxeconfd.util import password_hash
 
 SHADOW_HASH_RE = re.compile(r"^\$([a-z0-9]){1,2}\$(.+)\$(.+)$")
 
@@ -143,15 +142,18 @@ class TemplateContextConfigState:
 				# Already hashed
 				return value
 		elif format == "shadow":
-			match = SHADOW_HASH_RE.match(value)
-			if match:
-				if match.group(1) == str(Method.MD5.value) and method == "md5":
+			try:
+				alg = get_password_hash_algorithm(value)  # Validate hash format
+			except ValueError:
+				alg = None
+			if alg:
+				if alg == PasswordHashAlgorithm.MD5 and method == "md5":
 					return value
-				if match.group(1) == str(Method.SHA512.value) and method == "sha512":
+				if alg == PasswordHashAlgorithm.SHA512 and method == "sha512":
 					return value
-				raise ValueError(f"Password is already hashed with method {match.group(1)}, but {method} is requested")
+				raise ValueError(f"Password is already hashed with method {alg}, but {method} is requested")
 
-		return password_hash(password=value, method=method, format=format)
+		return hash_password(password=value, algorithm=PasswordHashAlgorithm(method), format=PasswordHashFormat(format))
 
 
 class TemplateContextProductPropertyState(TemplateContextConfigState):
@@ -193,13 +195,13 @@ class TemplateContextStates(dict[str, T]):
 
 
 class TemplateContextConfigStates(TemplateContextStates):
-	def __missing__(self, id: str) -> TemplateContextConfigState:
-		return TemplateContextConfigState(id=id, _exists=False)
+	def __missing__(self, config_id: str) -> TemplateContextConfigState:
+		return TemplateContextConfigState(id=config_id, _exists=False)
 
 
 class TemplateContextProductPropertyStates(TemplateContextStates):
-	def __missing__(self, id: str) -> TemplateContextProductPropertyState:
-		return TemplateContextProductPropertyState(id=id, _exists=False)
+	def __missing__(self, config_id: str) -> TemplateContextProductPropertyState:
+		return TemplateContextProductPropertyState(id=config_id, _exists=False)
 
 
 @dataclass
@@ -383,7 +385,7 @@ def get_template_context(
 	context.config_states = TemplateContextConfigStates(
 		{
 			config_id: TemplateContextConfigState(id=config_id, values=values)
-			for config_id, values in service.configState_getValues(  # type: ignore[attr-defined]
+			for config_id, values in service.configState_getValues(  # ty: ignore[unresolved-attribute]
 				config_ids=["clientconfig.configserver.url", "netboot.*"], object_ids=[host.id]
 			)
 			.get(host.id, {})
@@ -394,7 +396,7 @@ def get_template_context(
 		context.product_property_states = TemplateContextProductPropertyStates(
 			{
 				product_property_id: TemplateContextProductPropertyState(id=product_property_id, values=values)
-				for product_property_id, values in service.productPropertyState_getValues(  # type: ignore[attr-defined]
+				for product_property_id, values in service.productPropertyState_getValues(  # ty: ignore[unresolved-attribute]
 					product_ids=[product.id], object_ids=[host.id]
 				)
 				.get(host.id, {})
